@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  web:
+     stdin_open: true
+     tty: true
+     build: .
+     command: go run .
+     volumes:
+       - .:/code
+     ports:
+       - "8654:8654"
+     environment:
+       - POSTGRES_NAME=kornet_kover
+       - POSTGRES_USER=postgres
