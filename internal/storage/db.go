@@ -43,14 +43,41 @@ func InitDB() {
 }
 
 func InitTables() {
-    commands := []string{}
-
-    commands = append(
-        commands, 
-        `CREATE TABLE IF NOT EXISTS sports (
-            id SERIAL PRIMARY KEY,
+    commands := []string{
+        `CREATE TABLE IF NOT EXISTS teams (
+            index VARCHAR(255) PRIMARY KEY,
             name VARCHAR(255) NOT NULL
-        )`)
+        )`,
+        `CREATE TABLE IF NOT EXISTS games (
+            id SERIAL PRIMARY KEY,
+            sport VARCHAR(255) NOT NULL,
+            home_index VARCHAR(255) REFERENCES teams(index),
+            away_index VARCHAR(255) REFERENCES teams(index),
+            home_score INT NOT NULL,
+            away_score INT NOT NULL,
+            date DATE NOT NULL,
+            CONSTRAINT uq_games UNIQUE(date, home_index)
+        )`,
+        `CREATE TABLE IF NOT EXISTS players (
+            id SERIAL PRIMARY KEY,
+            index VARCHAR(20) UNIQUE,
+            name VARCHAR(255)
+        )`,
+        `CREATE TABLE IF NOT EXISTS player_games (
+            id SERIAL PRIMARY KEY,
+            player_index VARCHAR(20) REFERENCES players(index),
+            game INT REFERENCES games(id),
+            team_index VARCHAR(255) REFERENCES teams(index),
+            minutes REAL NOT NULL,
+            points INT NOT NULL,
+            rebounds INT NOT NULL,
+            assists INT NOT NULL,
+            usg REAL NOT NULL,
+            ortg INT NOT NULL,
+            drtg INT NOT NULL,
+            CONSTRAINT uq_player_games UNIQUE(player_index, game)
+        )`,
+    }
 
     for _, command := range commands {
         _, err := db.Exec(command)
