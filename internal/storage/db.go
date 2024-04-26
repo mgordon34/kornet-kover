@@ -48,12 +48,11 @@ func InitTables() {
     commands = append(
         commands, 
         `CREATE TABLE IF NOT EXISTS sports (
-            id SERIAL PRIMARY KEYY,
+            id SERIAL PRIMARY KEY,
             name VARCHAR(255) NOT NULL
         )`)
 
     for _, command := range commands {
-        log.Printf("Executing command %v", command)
         _, err := db.Exec(command)
         if err != nil {
             log.Fatal("Error initializing table: ", err)
