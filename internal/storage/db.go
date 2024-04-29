@@ -56,14 +56,16 @@ func InitTables() {
             home_score INT NOT NULL,
             away_score INT NOT NULL,
             date DATE NOT NULL,
-            CONSTRAINT uq_games UNIQUE(date, home_index)
+            CONSTRAINT uq_games UNIQUE(date, sport, home_index)
         )`,
         `CREATE TABLE IF NOT EXISTS players (
             id SERIAL PRIMARY KEY,
             index VARCHAR(20) UNIQUE,
-            name VARCHAR(255)
+            sport VARCHAR(255) NOT NULL,
+            name VARCHAR(255),
+            CONSTRAINT uq_players UNIQUE(index, sport)
         )`,
-        `CREATE TABLE IF NOT EXISTS player_games (
+        `CREATE TABLE IF NOT EXISTS nba_player_games (
             id SERIAL PRIMARY KEY,
             player_index VARCHAR(20) REFERENCES players(index),
             game INT REFERENCES games(id),
