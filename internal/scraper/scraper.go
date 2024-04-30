@@ -8,8 +8,32 @@ import (
 	"time"
 
 	"github.com/gocolly/colly"
+	"github.com/mgordon34/kornet-kover/api/teams"
 )
 
+func ScrapeNbaTeams() {
+    c := colly.NewCollector()
+    var nbaTeams []teams.Team
+
+    c.OnHTML("table#confs_standings_E > tbody", func(t *colly.HTMLElement) {
+        t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            index := strings.Split(tr.ChildAttr("a", "href"), "/")[2]
+            name := tr.ChildText("a")
+            nbaTeams = append(nbaTeams, teams.Team{Index: index, Name: name})
+        })
+    })
+    c.OnHTML("table#confs_standings_W > tbody", func(t *colly.HTMLElement) {
+        t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            index := strings.Split(tr.ChildAttr("a", "href"), "/")[2]
+            name := tr.ChildText("a")
+            nbaTeams = append(nbaTeams, teams.Team{Index: index, Name: name})
+        })
+    })
+
+    c.Visit( "https://www.basketball-reference.com/leagues/NBA_2024_standings.html")
+
+    teams.AddTeams(nbaTeams)
+}
 
 func ScrapeGames(startDate time.Time, endDate time.Time) {
     baseUrl := "https://www.basketball-reference.com/boxscores/index.fcgi?month=%d&day=%d&year=%d"
