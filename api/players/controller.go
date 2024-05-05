@@ -36,7 +36,7 @@ func AddPlayers(players []Player) {
 
 	_, err = txn.Exec(`
 	INSERT INTO players (index, sport, name)
-	SELECT * FROM players_temp
+	SELECT index, sport, name FROM players_temp
 	ON CONFLICT DO NOTHING`)
 	if err != nil {
 		panic(err)

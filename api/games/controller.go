@@ -35,8 +35,8 @@ func AddGames(games []Game) {
 	}
 
 	_, err = txn.Exec(`
-	INSERT INTO players (sport, home_index, away_index, home_score, away_score, date)
-	SELECT * FROM games_temp
+	INSERT INTO games (sport, home_index, away_index, home_score, away_score, date)
+	SELECT sport, home_index, away_index, home_score, away_score, date FROM games_temp
 	ON CONFLICT DO NOTHING`)
 	if err != nil {
 		panic(err)
