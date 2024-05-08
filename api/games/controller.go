@@ -1,8 +1,11 @@
 package games
 
 import (
+	"log"
+    "errors"
+
 	"github.com/lib/pq"
-    "github.com/mgordon34/kornet-kover/internal/storage"
+	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
 func AddGames(games []Game) {
@@ -34,15 +37,37 @@ func AddGames(games []Game) {
 		panic(err)
 	}
 
-	_, err = txn.Exec(`
+    res, err := txn.Exec(`
 	INSERT INTO games (sport, home_index, away_index, home_score, away_score, date)
 	SELECT sport, home_index, away_index, home_score, away_score, date FROM games_temp
-	ON CONFLICT DO NOTHING`)
+	ON CONFLICT DO NOTHING
+    RETURNING ID`)
 	if err != nil {
 		panic(err)
 	}
+    id, err := res.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+    log.Printf("ID from game %v", id)
 
 	if err := txn.Commit(); err != nil {
 		panic(err)
 	}
+}
+
+func AddGame(game Game) (int, error) {
+    db := storage.GetDB()
+
+    sqlStmt := `
+	INSERT INTO games (sport, home_index, away_index, home_score, away_score, date)
+	VALUES ($1, $2, $3, $4, $5, $6)
+	ON CONFLICT DO NOTHING
+    RETURNING ID`
+    var resId int
+    err := db.QueryRow(sqlStmt, game.Sport, game.HomeIndex, game.AwayIndex, game.HomeScore, game.AwayScore, game.Date).Scan(&resId)
+	if err != nil {
+        return 0, errors.New("Row not written")
+	}
+    return resId, nil
 }

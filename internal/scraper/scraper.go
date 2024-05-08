@@ -1,5 +1,4 @@
 package scraper
-
 import (
 	"fmt"
 	"log"
@@ -43,7 +42,6 @@ func ScrapeGames(startDate time.Time, endDate time.Time) {
     c.OnHTML("td.gamelink", func(e *colly.HTMLElement) {
         games := e.ChildAttrs("a", "href")
         for _, gameString := range games {
-            log.Println(gameString)
             scrapeGame(gameString)
         }
     })
@@ -74,45 +72,53 @@ func scrapeGame(gameString string) {
             }
             scores[i] = score
         })
-
-        log.Printf("Away %s %d vs Home %s %d", teams[0], scores[0], teams[1], scores[1])
     })
 
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
         id := t.Attr("id")
         if strings.Contains(id, "game-basic") {
-            collectStats(t, playerGames)
             pSlice = append(pSlice, getPlayers(t)...)
+
+            teamIndex := strings.Split(id, "-")[1]
+            collectStats(t, playerGames, teamIndex)
         }
         if strings.Contains(id, "game-advanced") {
-            collectStats(t, playerGames)
+            teamIndex := strings.Split(id, "-")[1]
+            collectStats(t, playerGames, teamIndex)
         }
     })
 
     c.Visit(baseUrl + gameString)
+
     dateString := strings.Split(gameString, "/")[2][:8]
     dateString = fmt.Sprintf("%s-%s-%s", dateString[:4], dateString[4:6], dateString[6:8])
     date, err := time.Parse("2006-01-02", dateString)
     if err != nil {
         return
     }
-    log.Printf("Date: %s", dateString)
 
-
-    game := []games.Game {{
+    game := games.Game {
         Sport: "nba",
         HomeIndex: teams[1],
         AwayIndex: teams[0],
         HomeScore: scores[1],
         AwayScore: scores[0],
         Date: date,
-    }}
+    }
     log.Printf("Game: %v", game)
-    games.AddGames(game)
+    gameId, err := games.AddGame(game)
+    if err != nil {
+        return
+    }
+
     players.AddPlayers(pSlice)
+
+    var pgSlice []players.PlayerGame
+    pgSlice = fixPlayerStats(gameId, playerGames)
+    players.AddPlayerGames(pgSlice)
 }
 
-func collectStats(t *colly.HTMLElement, playerGames map[string]players.PlayerGame) {
+func collectStats(t *colly.HTMLElement, playerGames map[string]players.PlayerGame, tIndex string) {
     t.ForEach("tbody > tr", func(i int, tr *colly.HTMLElement) {
         if i == 5 {
             return 
@@ -122,7 +128,7 @@ func collectStats(t *colly.HTMLElement, playerGames map[string]players.PlayerGam
 
         _, exists := playerGames[index]
         if !exists {
-            playerGames[index] = players.PlayerGame{PlayerIndex: index}
+            playerGames[index] = players.PlayerGame{PlayerIndex: index, TeamIndex: tIndex}
         }
         tr.ForEach("td", func(i int, td *colly.HTMLElement) {
             stat := td.Attr("data-stat")
@@ -141,8 +147,8 @@ func getPlayers(t *colly.HTMLElement) []players.Player{
         }
 
         index := strings.Split(tr.ChildAttr("a", "href"), "/")[3]
+        index = strings.TrimSuffix(index, ".html")
         name := tr.ChildText("a")
-        log.Printf("Player: %s - %s", name, index)
 
         pSlice = append(pSlice, players.Player{Index: index, Sport: "nba", Name: name})
     })
@@ -157,7 +163,7 @@ func addPlayerStat(stat string, value string, playerGame players.PlayerGame) pla
         minStr, secStr := s[0], s[1]
         minutes, _ := strconv.Atoi(minStr)
         seconds, _ := strconv.Atoi(secStr)
-        minsPlayed := float32(minutes) + float32(seconds/60)
+        minsPlayed := float32(minutes) + float32(seconds)/60
         playerGame.Minutes = minsPlayed
     case "pts":
         points, _ := strconv.Atoi(value)
@@ -180,4 +186,18 @@ func addPlayerStat(stat string, value string, playerGame players.PlayerGame) pla
         playerGame.Drtg = drtg
     }
     return playerGame
+}
+
+func fixPlayerStats(gameId int, pMap map[string]players.PlayerGame) []players.PlayerGame {
+    var pSlice []players.PlayerGame
+
+    for _, v := range pMap {
+        if v.Minutes == 0 {
+            continue
+        }
+        v.Game = gameId
+        pSlice = append(pSlice, v)
+    }
+
+    return pSlice
 }
