@@ -42,12 +42,15 @@ func ScrapeGames(startDate time.Time, endDate time.Time) {
     c.OnHTML("td.gamelink", func(e *colly.HTMLElement) {
         games := e.ChildAttrs("a", "href")
         for _, gameString := range games {
+            time.Sleep(4 * time.Second)
             scrapeGame(gameString)
         }
     })
 
     for d := startDate; d.After(endDate) == false; d = d.AddDate(0, 0, 1) {
         log.Printf("Scraping games for date: %v", d)
+        time.Sleep(4 * time.Second)
+
         c.Visit(fmt.Sprintf(baseUrl, d.Month(), d.Day(), d.Year()))
     }
 }
