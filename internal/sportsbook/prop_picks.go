@@ -9,7 +9,15 @@ import (
 	"os"
 	"strings"
 	"time"
+
+    "github.com/mgordon34/kornet-kover/api/odds"
 )
+
+var markets = map[string]string{
+    "points": "player_points_over_under",
+    "rebounds": "player_rebounds_over_under",
+    "assists": "player_assists_over_under",
+}
 
 type APIGetter func(url string, addlArgs []string) (response string, err error)
 
@@ -26,6 +34,33 @@ type GamesResponse struct {
 	} `json:"games"`
 }
 
+type OddsResponse struct {
+	GameID      string `json:"game_id"`
+	Sportsbooks []struct {
+		BookieKey string `json:"bookie_key"`
+		Market    struct {
+			MarketKey string `json:"market_key"`
+			Outcomes  []struct {
+				Timestamp       string  `json:"timestamp"`
+				Handicap        float32 `json:"handicap"`
+				Odds            int     `json:"odds"`
+				Participant     int     `json:"participant"`
+				ParticipantName string  `json:"participant_name"`
+				Name            string  `json:"name"`
+				Description     string  `json:"description"`
+				Deep            any     `json:"deep"`
+			} `json:"outcomes"`
+		} `json:"market"`
+	} `json:"sportsbooks"`
+}
+
+type PlayerLine struct {
+    Side string
+    Line float32
+    Odds int
+    Timestamp time.Time
+}
+
 func requestPropOdds(endpoint string, addlArgs []string) (response string, err error) {
     base_url := "https://api.prop-odds.com" + endpoint + "?"
     args := []string{
@@ -33,7 +68,6 @@ func requestPropOdds(endpoint string, addlArgs []string) (response string, err e
         "tz=" + "America/New_York",
     }
     args = append(args, addlArgs...)
-    log.Printf("url: %s", base_url + strings.Join(args[:], "&"))
 
     res, err := http.Get(base_url + strings.Join(args[:], "&"))
 	if err != nil {
@@ -48,24 +82,22 @@ func requestPropOdds(endpoint string, addlArgs []string) (response string, err e
 		os.Exit(1)
 	}
 
-    log.Printf("Body: %v", buf.String())
-    log.Printf("Request: %v", res.Request.URL)
-
     return buf.String(), err
 }
 
-func GetGames(startDate time.Time, endDate time.Time) int {
-    var gameIds []string
+func GetGames(startDate time.Time, endDate time.Time) {
     for d := startDate; d.After(endDate) == false; d = d.AddDate(0, 0, 1) {
         log.Printf("Scraping games for date: %v", d)
 
-        gameIds = append(gameIds, GetGamesForDate(d, requestPropOdds)...)
+        var odds []odds.PlayerOdds
+        gameIds := GetGamesForDate(d, requestPropOdds)
         for _, gameId := range gameIds {
-            log.Printf("gameId: %s", gameId)
+            for stat, market := range markets {
+                log.Printf("Getting odds for %s for game %s", stat, gameId)
+                odds = append(odds, GetOddsForMarket(gameId, market, requestPropOdds)...)
+            }
         }
     }
-
-    return len(gameIds)
 }
 
 func GetGamesForDate(date time.Time, apiGetter APIGetter) []string {
@@ -88,4 +120,41 @@ func GetGamesForDate(date time.Time, apiGetter APIGetter) []string {
     }
 
     return gameIds
+}
+
+func GetOddsForMarket(gameId string, market string, apiGetter APIGetter) []odds.PlayerOdds {
+    res, err := apiGetter(fmt.Sprintf("/beta/odds/%s/%s", gameId, market), nil)
+    if err != nil {
+        log.Fatalf("Error requesting prop-odds service: %v", err)
+    }
+
+    var odds OddsResponse
+    // var oddsMap map[string]PlayerLine
+    if err := json.Unmarshal([]byte(res), &odds); err != nil {
+        panic(err)
+    }
+    for _, bookie := range odds.Sportsbooks {
+        if bookie.BookieKey != "pinnacle" {
+            continue
+        }
+        for _, outcome := range bookie.Market.Outcomes {
+            playerName := parseNameFromDescription(outcome.Description)
+            timestamp, err := time.Parse("2006-01-02T15:04:05", outcome.Timestamp)
+            if err != nil {
+                log.Fatalf("Error parsing timestamp: %v", err)
+            }
+            side := outcome.Name
+            line := outcome.Handicap
+            odds := outcome.Odds
+            log.Printf("%s[%v]: %s %f at %d", playerName, timestamp, side, line, odds)
+        }
+    }
+
+    return nil
+}
+
+func parseNameFromDescription(description string) string {
+    descriptionSlice := strings.Split(description, " ")
+    nameSlice := descriptionSlice[:len(descriptionSlice) - 1]
+    return strings.Join(nameSlice, " ")
 }

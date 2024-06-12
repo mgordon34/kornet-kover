@@ -24,6 +24,5 @@ func main() {
     }
     // scraper.ScrapeGames(startDate, endDate)
 
-    id := sportsbook.GetGames(startDate, endDate)
-    log.Printf("Number of games: %d", id)
+    sportsbook.GetGames(startDate, endDate)
 }

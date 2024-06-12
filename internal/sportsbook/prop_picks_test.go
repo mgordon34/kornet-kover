@@ -14,7 +14,7 @@ func mockPropOddsGames(endpoint string, addlArgs []string) (response string, err
     return response, nil
 }
 
-func TestHelloName(t *testing.T) {
+func TestGetGamesForDate(t *testing.T) {
     startDate, _ := time.Parse("2006-01-02", "2023-10-24")
     want := []string {"4622c02f9bd1df188631c86e04036049","9b3130e607f80aa4912aa184e2f4eab3"}
     res := GetGamesForDate(startDate, mockPropOddsGames)
