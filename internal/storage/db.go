@@ -78,6 +78,16 @@ func InitTables() {
             drtg INT NOT NULL,
             CONSTRAINT uq_player_games UNIQUE(player_index, game)
         )`,
+        `CREATE TABLE IF NOT EXISTS player_odds (
+            id SERIAL PRIMARY KEY,
+            player_index VARCHAR(20) REFERENCES players(index),
+            date DATE NOT NULL,
+            stat VARCHAR(50),
+            line REAL NOT NULL,
+            over_odds INT NOT NULL,
+            under_odds INT NOT NULL,
+            CONSTRAINT uq_prop_index UNIQUE(player_index, date, stat)
+        )`,
     }
 
     for _, command := range commands {
