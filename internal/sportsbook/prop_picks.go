@@ -128,12 +128,13 @@ func GetOddsForMarket(gameId string, market string, apiGetter APIGetter) []odds.
         log.Fatalf("Error requesting prop-odds service: %v", err)
     }
 
-    var odds OddsResponse
     // var oddsMap map[string]PlayerLine
-    if err := json.Unmarshal([]byte(res), &odds); err != nil {
+    
+    var oddsResponse OddsResponse
+    if err := json.Unmarshal([]byte(res), &oddsResponse); err != nil {
         panic(err)
     }
-    for _, bookie := range odds.Sportsbooks {
+    for _, bookie := range oddsResponse.Sportsbooks {
         if bookie.BookieKey != "pinnacle" {
             continue
         }

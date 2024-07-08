@@ -1,8 +1,10 @@
 package players
 
 import (
+	"log"
+
 	"github.com/lib/pq"
-    "github.com/mgordon34/kornet-kover/internal/storage"
+	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
 func AddPlayers(players []Player) {
@@ -89,4 +91,17 @@ func AddPlayerGames(pGames []PlayerGame) {
 	if err := txn.Commit(); err != nil {
 		panic(err)
 	}
+}
+
+func PlayerNameToIndex(playerName string) (string, error) {
+    db := storage.GetDB()
+    sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
+
+    var index string
+    row := db.QueryRow(sql, playerName)
+    if err := row.Scan(&index); err != nil {
+        log.Printf("Error finding player index for %s", playerName)
+        return "", err
+    }
+    return index, nil
 }
