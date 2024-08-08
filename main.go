@@ -4,10 +4,8 @@ import (
 	"log"
 	"time"
 
-	// "github.com/mgordon34/kornet-kover/internal/sportsbook"
+	"github.com/mgordon34/kornet-kover/internal/sportsbook"
 	"github.com/mgordon34/kornet-kover/internal/storage"
-
-	"github.com/mgordon34/kornet-kover/api/players"
 )
 
 func main() {
@@ -26,11 +24,5 @@ func main() {
     endDate = startDate
     // scraper.ScrapeGames(startDate, endDate)
 
-    // sportsbook.GetGames(startDate, endDate)
-
-    index, err := players.PlayerNameToIndex("Aaron Gordon")
-    log.Printf("index: %s", index)
-    if err != nil {
-    log.Printf("err: %v", err)
-    }
+    sportsbook.GetGames(startDate, endDate)
 }

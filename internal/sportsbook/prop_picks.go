@@ -11,6 +11,7 @@ import (
 	"time"
 
     "github.com/mgordon34/kornet-kover/api/odds"
+    "github.com/mgordon34/kornet-kover/api/players"
 )
 
 var markets = map[string]string{
@@ -94,7 +95,7 @@ func GetGames(startDate time.Time, endDate time.Time) {
         for _, gameId := range gameIds {
             for stat, market := range markets {
                 log.Printf("Getting odds for %s for game %s", stat, gameId)
-                odds = append(odds, GetOddsForMarket(gameId, market, requestPropOdds)...)
+                odds = append(odds, GetOddsForMarket(gameId, market, stat, requestPropOdds)...)
             }
         }
     }
@@ -122,14 +123,14 @@ func GetGamesForDate(date time.Time, apiGetter APIGetter) []string {
     return gameIds
 }
 
-func GetOddsForMarket(gameId string, market string, apiGetter APIGetter) []odds.PlayerOdds {
+func GetOddsForMarket(gameId string, market string, stat string, apiGetter APIGetter) []odds.PlayerOdds {
+    // var oddsMap map[string]odds.PlayerOdds
+
     res, err := apiGetter(fmt.Sprintf("/beta/odds/%s/%s", gameId, market), nil)
     if err != nil {
         log.Fatalf("Error requesting prop-odds service: %v", err)
     }
 
-    // var oddsMap map[string]PlayerLine
-    
     var oddsResponse OddsResponse
     if err := json.Unmarshal([]byte(res), &oddsResponse); err != nil {
         panic(err)
@@ -140,6 +141,10 @@ func GetOddsForMarket(gameId string, market string, apiGetter APIGetter) []odds.
         }
         for _, outcome := range bookie.Market.Outcomes {
             playerName := parseNameFromDescription(outcome.Description)
+            playerIndex, err := players.PlayerNameToIndex(playerName)
+            if err != nil {
+                log.Printf("Error getting player index from name %s: %v", playerName, err)
+            }
             timestamp, err := time.Parse("2006-01-02T15:04:05", outcome.Timestamp)
             if err != nil {
                 log.Fatalf("Error parsing timestamp: %v", err)
@@ -147,7 +152,14 @@ func GetOddsForMarket(gameId string, market string, apiGetter APIGetter) []odds.
             side := outcome.Name
             line := outcome.Handicap
             odds := outcome.Odds
-            log.Printf("%s[%v]: %s %f at %d", playerName, timestamp, side, line, odds)
+            po := odds.PlayerOdds{
+                PlayerIndex: playerIndex,
+                Date: timestamp,
+                Stat: stat,
+                Line: line,
+            }
+            log.Printf("PlayerOdds: %v", po)
+            log.Printf("%s[%v]: %s %f at %d", playerIndex, timestamp, side, line, odds)
         }
     }
 
