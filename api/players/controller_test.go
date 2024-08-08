@@ -19,3 +19,13 @@ func TestPlayerNameToIndex(t *testing.T) {
         t.Fatalf(`PlayerNameToIndex = %s, want match for %s`, index, want)
     }
 }
+
+func TestPlayerNameToIndexWithBadName(t *testing.T) {
+    storage.InitDB()
+
+    badName := "Aaron Gordo"
+    index, err := PlayerNameToIndex(badName)
+    if err == nil {
+        t.Fatalf(`PlayerNameToIndex incorrectly found result: %v`, index)
+    }
+}
