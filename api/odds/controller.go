@@ -5,25 +5,25 @@ import (
     "github.com/mgordon34/kornet-kover/internal/storage"
 )
 
-func AddPlayerOdds(playerOdds []PlayerOdds) {
+func AddPlayerOdds(playerLines []PlayerLine) {
     db := storage.GetDB()
 	txn, _ := db.Begin()
 	_, err := txn.Exec(`
-	CREATE TEMP TABLE player_odds_temp
+	CREATE TEMP TABLE player_lines_temp
 	ON COMMIT DROP
-	AS SELECT * FROM player_odds
+	AS SELECT * FROM player_lines
 	WITH NO DATA`)
 	if err != nil {
 		panic(err)
 	}
 
-	stmt, err := txn.Prepare(pq.CopyIn("player_odds_temp", "player_index", "date", "stat", "line", "over_odds", "under_odds"))
+	stmt, err := txn.Prepare(pq.CopyIn("player_lines_temp", "sport", "player_index", "timestamp", "stat", "side", "line", "odds"))
 	if err != nil {
 		panic(err)
 	}
 
-	for _, p := range playerOdds {
-		if _, err := stmt.Exec(p.PlayerIndex, p.Date, p.Stat, p.Line, p.OverOdds, p.UnderOdds); err != nil {
+	for _, p := range playerLines {
+		if _, err := stmt.Exec(p.Sport, p.PlayerIndex, p.Timestamp, p.Stat, p.Side, p.Line, p.Odds); err != nil {
 			panic(err)
 		}
 	}
@@ -35,8 +35,8 @@ func AddPlayerOdds(playerOdds []PlayerOdds) {
 	}
 
 	_, err = txn.Exec(`
-	INSERT INTO player_odds (player_index, date, stat, line, over_odds, under_odds)
-	SELECT player_index, date, stat, line, over_odds, under_odds FROM player_odds_temp
+	INSERT INTO player_lines (sport, player_index, timestamp, stat, side, line, odds)
+	SELECT sport, player_index, timestamp, stat, side, line, odds FROM player_lines_temp
 	ON CONFLICT DO NOTHING`)
 	if err != nil {
 		panic(err)

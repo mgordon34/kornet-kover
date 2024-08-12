@@ -2,11 +2,12 @@ package odds
 
 import "time"
 
-type PlayerOdds struct {
+type PlayerLine struct {
+    Sport           string    `json:"sport"`
     PlayerIndex     string    `json:"player_index"`
-    Date            time.Time `json:"date"`
+    Timestamp       time.Time `json:"timestamp"`
     Stat            string    `json:"stat"`
+    Side            string    `json:"side"`
     Line            float32   `json:"line"`
-    OverOdds        int       `json:"over_odds"`
-    UnderOdds       int       `json:"under_odds"`
+    Odds            int       `json:"odds"`
 }

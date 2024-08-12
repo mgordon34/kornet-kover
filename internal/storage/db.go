@@ -78,15 +78,16 @@ func InitTables() {
             drtg INT NOT NULL,
             CONSTRAINT uq_player_games UNIQUE(player_index, game)
         )`,
-        `CREATE TABLE IF NOT EXISTS player_odds (
+        `CREATE TABLE IF NOT EXISTS player_lines (
             id SERIAL PRIMARY KEY,
+            sport VARCHAR(255) NOT NULL,
             player_index VARCHAR(20) REFERENCES players(index),
-            date DATE NOT NULL,
+            timestamp timestamp NOT NULL,
             stat VARCHAR(50),
+            side VARCHAR(50),
             line REAL NOT NULL,
-            over_odds INT NOT NULL,
-            under_odds INT NOT NULL,
-            CONSTRAINT uq_prop_index UNIQUE(player_index, date, stat)
+            odds INT NOT NULL,
+            CONSTRAINT uq_prop_index UNIQUE(sport, player_index, timestamp, stat, line)
         )`,
     }
 
