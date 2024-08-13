@@ -87,7 +87,7 @@ func InitTables() {
             side VARCHAR(50),
             line REAL NOT NULL,
             odds INT NOT NULL,
-            CONSTRAINT uq_prop_index UNIQUE(sport, player_index, timestamp, stat, line)
+            CONSTRAINT uq_prop_index UNIQUE(sport, player_index, timestamp, stat, side)
         )`,
     }
 

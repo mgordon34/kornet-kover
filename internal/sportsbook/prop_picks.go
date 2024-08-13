@@ -22,46 +22,6 @@ var markets = map[string]string{
 
 type APIGetter func(url string, addlArgs []string) (response string, err error)
 
-type GamesResponse struct {
-	League string `json:"league"`
-	Date   string `json:"date"`
-	Games  []struct {
-		ID             int       `json:"id"`
-		GameID         string    `json:"game_id"`
-		AwayTeam       string    `json:"away_team"`
-		HomeTeam       string    `json:"home_team"`
-		StartTimestamp time.Time `json:"start_timestamp"`
-		Participants   []any     `json:"participants"`
-	} `json:"games"`
-}
-
-type OddsResponse struct {
-	GameID      string `json:"game_id"`
-	Sportsbooks []struct {
-		BookieKey string `json:"bookie_key"`
-		Market    struct {
-			MarketKey string `json:"market_key"`
-			Outcomes  []struct {
-				Timestamp       string  `json:"timestamp"`
-				Handicap        float32 `json:"handicap"`
-				Odds            int     `json:"odds"`
-				Participant     int     `json:"participant"`
-				ParticipantName string  `json:"participant_name"`
-				Name            string  `json:"name"`
-				Description     string  `json:"description"`
-				Deep            any     `json:"deep"`
-			} `json:"outcomes"`
-		} `json:"market"`
-	} `json:"sportsbooks"`
-}
-
-type PlayerLine struct {
-    Side string
-    Line float32
-    Odds int
-    Timestamp time.Time
-}
-
 func requestPropOdds(endpoint string, addlArgs []string) (response string, err error) {
     base_url := "https://api.prop-odds.com" + endpoint + "?"
     args := []string{
@@ -90,19 +50,39 @@ func GetGames(startDate time.Time, endDate time.Time) {
     for d := startDate; d.After(endDate) == false; d = d.AddDate(0, 0, 1) {
         log.Printf("Scraping games for date: %v", d)
 
-        var odds []odds.PlayerOdds
-        gameIds := GetGamesForDate(d, requestPropOdds)
-        for _, gameId := range gameIds {
+        var lines []odds.PlayerLine
+        games := GetGamesForDate(d, requestPropOdds)
+        for _, game := range games {
             for stat, market := range markets {
-                log.Printf("Getting odds for %s for game %s", stat, gameId)
-                odds = append(odds, GetOddsForMarket(gameId, market, stat, requestPropOdds)...)
+                log.Printf("Getting odds for %s for game %s", stat, game.ID)
+                lines = append(lines, GetLinesForMarket(game, market, stat, requestPropOdds)...)
             }
         }
+
+        odds.AddPlayerLines(lines)
     }
 }
 
-func GetGamesForDate(date time.Time, apiGetter APIGetter) []string {
-    var gameIds []string
+type GamesResponse struct {
+	League string `json:"league"`
+	Date   string `json:"date"`
+	Games  []struct {
+		ID             int       `json:"id"`
+		GameID         string    `json:"game_id"`
+		AwayTeam       string    `json:"away_team"`
+		HomeTeam       string    `json:"home_team"`
+		StartTimestamp time.Time `json:"start_timestamp"`
+		Participants   []any     `json:"participants"`
+	} `json:"games"`
+}
+
+type Game struct {
+    ID string
+    Timestamp time.Time
+}
+
+func GetGamesForDate(date time.Time, apiGetter APIGetter) []Game {
+    var games []Game
 
     dateArg := "date=" + fmt.Sprintf("%d-%d-%d", date.Year(), date.Month(), date.Day())
     addlArgs := []string {dateArg}
@@ -112,21 +92,41 @@ func GetGamesForDate(date time.Time, apiGetter APIGetter) []string {
         log.Fatalf("Error requesting prop-odds service: %v", err)
     }
 
-    var games GamesResponse
-    if err := json.Unmarshal([]byte(res), &games); err != nil {
+    var gamesResponses GamesResponse
+    if err := json.Unmarshal([]byte(res), &gamesResponses); err != nil {
         panic(err)
     }
-    for _, game := range games.Games {
-        gameIds = append(gameIds, game.GameID)
+    for _, game := range gamesResponses.Games {
+        games = append(games, Game{ID: game.GameID, Timestamp: game.StartTimestamp})
     }
 
-    return gameIds
+    return games
 }
 
-func GetOddsForMarket(gameId string, market string, stat string, apiGetter APIGetter) []odds.PlayerOdds {
-    // var oddsMap map[string]odds.PlayerOdds
+type OddsResponse struct {
+	GameID      string `json:"game_id"`
+	Sportsbooks []struct {
+		BookieKey string `json:"bookie_key"`
+		Market    struct {
+			MarketKey string `json:"market_key"`
+			Outcomes  []struct {
+				Timestamp       string  `json:"timestamp"`
+				Handicap        float32 `json:"handicap"`
+				Odds            int     `json:"odds"`
+				Participant     int     `json:"participant"`
+				ParticipantName string  `json:"participant_name"`
+				Name            string  `json:"name"`
+				Description     string  `json:"description"`
+				Deep            any     `json:"deep"`
+			} `json:"outcomes"`
+		} `json:"market"`
+	} `json:"sportsbooks"`
+}
 
-    res, err := apiGetter(fmt.Sprintf("/beta/odds/%s/%s", gameId, market), nil)
+func GetLinesForMarket(game Game, market string, stat string, apiGetter APIGetter) []odds.PlayerLine {
+    var lines []odds.PlayerLine
+
+    res, err := apiGetter(fmt.Sprintf("/beta/odds/%s/%s", game.ID, market), nil)
     if err != nil {
         log.Fatalf("Error requesting prop-odds service: %v", err)
     }
@@ -149,21 +149,24 @@ func GetOddsForMarket(gameId string, market string, stat string, apiGetter APIGe
             if err != nil {
                 log.Fatalf("Error parsing timestamp: %v", err)
             }
-            side := outcome.Name
-            line := outcome.Handicap
-            odds := outcome.Odds
-            po := odds.PlayerOdds{
+            pl := odds.PlayerLine{
+                Sport: "nba",
                 PlayerIndex: playerIndex,
-                Date: timestamp,
+                Timestamp: timestamp,
                 Stat: stat,
-                Line: line,
+                Side: outcome.Name,
+                Line: outcome.Handicap,
+                Odds: outcome.Odds,
             }
-            log.Printf("PlayerOdds: %v", po)
-            log.Printf("%s[%v]: %s %f at %d", playerIndex, timestamp, side, line, odds)
+            // Remove lines that were posted more than 20 minutes after game start
+            if timestamp.Before(game.Timestamp.Add(time.Minute * 20)){
+                log.Println(pl)
+                lines = append(lines, pl)
+            }
         }
     }
 
-    return nil
+    return lines
 }
 
 func parseNameFromDescription(description string) string {

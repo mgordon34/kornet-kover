@@ -5,7 +5,7 @@ import (
     "github.com/mgordon34/kornet-kover/internal/storage"
 )
 
-func AddPlayerOdds(playerLines []PlayerLine) {
+func AddPlayerLines(playerLines []PlayerLine) {
     db := storage.GetDB()
 	txn, _ := db.Begin()
 	_, err := txn.Exec(`
