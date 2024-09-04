@@ -4,8 +4,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-    // "github.com/mgordon34/kornet-kover/api/odds"
+	// "github.com/mgordon34/kornet-kover/api/odds"
 )
 
 func mockPropOddsGames(endpoint string, addlArgs []string) (response string, err error) {
@@ -25,18 +24,29 @@ func mockPropOddsOdds(endpoint string, addlArgs []string) (response string, err 
 
 func TestGetGamesForDate(t *testing.T) {
     startDate, _ := time.Parse("2006-01-02", "2023-10-24")
-    want := []string {"4622c02f9bd1df188631c86e04036049","9b3130e607f80aa4912aa184e2f4eab3"}
+    t1, _ := time.Parse("2006-01-02T15:04:05", "2023-10-24T23:30:00")
+    t2, _ := time.Parse("2006-01-02T15:04:05", "2023-10-25T02:00:00")
+    want := []Game {
+        {
+            ID: "4622c02f9bd1df188631c86e04036049",
+            Timestamp: t1,
+        },
+        {
+            ID: "9b3130e607f80aa4912aa184e2f4eab3",
+            Timestamp: t2,
+        },
+    }
     res := GetGamesForDate(startDate, mockPropOddsGames)
     if !reflect.DeepEqual(res, want){
-        t.Fatalf(`GetGamesForDate = %q, want match for %q`, res, want)
+        t.Fatalf(`getgamesfordate = %q, want match for %q`, res, want)
     }
 }
 
-// func TestGetOddsForMarket(t *testing.T) {
-//     gameId := "4622c02f9bd1df188631c86e04036049"
+// func testgetoddsformarket(t *testing.t) {
+//     gameid := "4622c02f9bd1df188631c86e04036049"
 //     market := "rebounds"
-//     timestamp, _ := time.Parse("2006-01-02", "2023-10-24T22:37:45")
-//     want := odds.PlayerOdds {
+//     timestamp, _ := time.parse("2006-01-02", "2023-10-24t22:37:45")
+//     want := odds.playerOdds {
 //         PlayerIndex: "Test",
 //         Date: timestamp,
 //         Stat: "rebounds",
