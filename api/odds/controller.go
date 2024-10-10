@@ -1,7 +1,7 @@
 package odds
 
 import (
-	"github.com/lib/pq"
+    "github.com/lib/pq"
     "github.com/mgordon34/kornet-kover/internal/storage"
 )
 
