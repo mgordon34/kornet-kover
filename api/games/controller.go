@@ -3,7 +3,7 @@ package games
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mgordon34/kornet-kover/internal/storage"
@@ -85,13 +85,8 @@ func GetLastGame() (Game, error) {
     row, _ := db.Query(context.Background(), sql)
     game, err := pgx.CollectOneRow(row, pgx.RowToStructByName[Game])
     if err != nil {
-        log.Printf("CollectRows error: %v", err)
-        return Game{}, errors.New("Error getting last game")
+        return Game{}, errors.New(fmt.Sprintf("Error getting last game: %v", err))
     }
-    log.Printf("Found game: %v", game)
-    // if err := row.Scan(&game); err != nil {
-    //     log.Print("Error finding game")
-    //     return Game{}, err
-    // }
+
     return game, nil
 }

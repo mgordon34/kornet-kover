@@ -13,10 +13,6 @@ import (
 )
 
 func main() {
-    // storage.InitDB()
-    // storage.InitTables()
-    db := storage.GetDB()
-    log.Println(db)
     storage.InitTables()
 
     game, err := games.GetLastGame()
