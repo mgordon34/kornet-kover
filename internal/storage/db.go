@@ -2,8 +2,6 @@ package storage
 
 import (
     "context"
-    "database/sql"
-    "fmt"
     "log"
     "os"
     "sync"
@@ -25,31 +23,6 @@ func Close() {
 	pgInstance.Close()
 }
 
-var db *sql.DB
-
-func PGXInitDB() {
-    err := godotenv.Load()
-    if err != nil {
-        log.Fatal("Error loading .env file")
-    }
-
-    dbpool, err := pgxpool.New(context.Background(), os.Getenv("DB_URL"))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer dbpool.Close()
-
-	var greeting string
-	err = dbpool.QueryRow(context.Background(), "select name from players where index='tatumja01' limit 1").Scan(&greeting)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
-	}
-
-	fmt.Println(greeting)
-}
-
 func GetDB() (*pgxpool.Pool) {
     pgOnce.Do(func() {
         err := godotenv.Load()
@@ -68,35 +41,9 @@ func GetDB() (*pgxpool.Pool) {
 	return pgInstance
 }
 
-func InitDB() {
-    err := godotenv.Load()
-    if err != nil {
-        log.Fatal("Error loading .env file")
-    }
-
-    dbHost := os.Getenv("DB_HOST")
-    dbPort := os.Getenv("DB_PORT")
-    dbUser := os.Getenv("DB_USER")
-    dbPass := os.Getenv("DB_PASSWORD")
-    dbName := os.Getenv("DB_NAME")
-
-    connectstring := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", dbHost, dbUser, dbPass, dbName, dbPort)
-    fmt.Println(connectstring)
-    db, err = sql.Open("postgres", fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", dbHost, dbUser, dbPass, dbName, dbPort))
-
-    if err != nil {
-        panic(err.Error())
-    }
-
-    err = db.Ping()
-    if err != nil {
-        panic(err.Error())
-    }
-
-    fmt.Println("Successfully connected to database")
-}
-
 func InitTables() {
+    GetDB()
+
     commands := []string{
         `CREATE TABLE IF NOT EXISTS teams (
             index VARCHAR(255) PRIMARY KEY,
@@ -153,7 +100,3 @@ func InitTables() {
         }
     }
 }
-
-// func GetDB() *sql.DB {
-// 	return db
-// }
