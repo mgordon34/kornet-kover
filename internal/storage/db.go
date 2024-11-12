@@ -1,17 +1,72 @@
 package storage
 
 import (
-
+    "context"
     "database/sql"
     "fmt"
     "log"
     "os"
+    "sync"
 
     "github.com/joho/godotenv"
+    "github.com/jackc/pgx/v5/pgxpool"
 )
 
+var (
+	pgInstance *pgxpool.Pool
+	pgOnce     sync.Once
+)
+
+func Ping(ctx context.Context) error {
+	return pgInstance.Ping(ctx)
+}
+
+func Close() {
+	pgInstance.Close()
+}
 
 var db *sql.DB
+
+func PGXInitDB() {
+    err := godotenv.Load()
+    if err != nil {
+        log.Fatal("Error loading .env file")
+    }
+
+    dbpool, err := pgxpool.New(context.Background(), os.Getenv("DB_URL"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer dbpool.Close()
+
+	var greeting string
+	err = dbpool.QueryRow(context.Background(), "select name from players where index='tatumja01' limit 1").Scan(&greeting)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println(greeting)
+}
+
+func GetDB() (*pgxpool.Pool) {
+    pgOnce.Do(func() {
+        err := godotenv.Load()
+        if err != nil {
+            log.Fatal("Error loading .env file")
+        }
+
+        dbpool, err := pgxpool.New(context.Background(), os.Getenv("DB_URL"))
+        if err != nil {
+            log.Fatalf("Unable to connect to database: %v\n", err)
+        }
+
+        pgInstance = dbpool
+	})
+
+	return pgInstance
+}
 
 func InitDB() {
     err := godotenv.Load()
@@ -92,13 +147,13 @@ func InitTables() {
     }
 
     for _, command := range commands {
-        _, err := db.Exec(command)
+        _, err := pgInstance.Exec(context.Background(), command)
         if err != nil {
             log.Fatal("Error initializing table: ", err)
         }
     }
 }
 
-func GetDB() *sql.DB {
-	return db
-}
+// func GetDB() *sql.DB {
+// 	return db
+// }

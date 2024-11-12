@@ -158,7 +158,7 @@ func GetLinesForMarket(game Game, market string, stat string, apiGetter APIGette
                 Line: outcome.Handicap,
                 Odds: outcome.Odds,
             }
-            // Remove lines that were posted more than 20 minutes after game start
+            // Only add lines with timestamps before game start + 20 minutes
             if timestamp.Before(game.Timestamp.Add(time.Minute * 20)){
                 log.Println(pl)
                 lines = append(lines, pl)

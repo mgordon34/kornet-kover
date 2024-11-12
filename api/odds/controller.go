@@ -2,6 +2,8 @@ package odds
 
 import (
     "github.com/lib/pq"
+
+    "github.com/mgordon34/kornet-kover/api/players"
     "github.com/mgordon34/kornet-kover/internal/storage"
 )
 
@@ -45,4 +47,17 @@ func AddPlayerLines(playerLines []PlayerLine) {
 	if err := txn.Commit(); err != nil {
 		panic(err)
 	}
+}
+
+func GetPlayerLinesForPlayer(player players.Player) ([]PlayerLine, error) {
+    db := storage.GetDB()
+    sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
+
+    var index string
+    row := db.QueryRow(sql, playerName)
+    if err := row.Scan(&index); err != nil {
+        log.Printf("Error finding player index for %s", playerName)
+        return "", err
+    }
+    return index, nil
 }
