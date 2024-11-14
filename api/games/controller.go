@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mgordon34/kornet-kover/internal/storage"
@@ -22,6 +23,7 @@ func AddGame(game Game) (int, error) {
 	if err != nil {
         return 0, err
 	}
+    log.Printf("Added game: %v", game)
     return resId, nil
 }
 
