@@ -56,48 +56,6 @@ func AddPlayers(players []Player) {
     log.Printf("Added %d players to DB", len(players))
 }
 
-// func AddPlayers(players []Player) {
-//     db := storage.GetDB()
-// 	txn, _ := db.Begin()
-// 	_, err := txn.Exec(`
-// 	CREATE TEMP TABLE players_temp
-// 	ON COMMIT DROP
-// 	AS SELECT * FROM players
-// 	WITH NO DATA`)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 
-// 	stmt, err := txn.Prepare(pq.CopyIn("players_temp", "index", "sport", "name"))
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 
-// 	for _, p := range players {
-// 		if _, err := stmt.Exec(p.Index, p.Sport, p.Name); err != nil {
-// 			panic(err)
-// 		}
-// 	}
-// 	if _, err := stmt.Exec(); err != nil {
-// 		panic(err)
-// 	}
-// 	if err := stmt.Close(); err != nil {
-// 		panic(err)
-// 	}
-// 
-// 	_, err = txn.Exec(`
-// 	INSERT INTO players (index, sport, name)
-// 	SELECT index, sport, name FROM players_temp
-// 	ON CONFLICT DO NOTHING`)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 
-// 	if err := txn.Commit(); err != nil {
-// 		panic(err)
-// 	}
-// }
-// 
 // func AddPlayerGames(pGames []PlayerGame) {
 //     db := storage.GetDB()
 // 	txn, _ := db.Begin()
@@ -142,15 +100,15 @@ func AddPlayers(players []Player) {
 // 	}
 // }
 // 
-// func PlayerNameToIndex(playerName string) (string, error) {
-//     db := storage.GetDB()
-//     sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
-// 
-//     var index string
-//     row := db.QueryRow(sql, playerName)
-//     if err := row.Scan(&index); err != nil {
-//         log.Printf("Error finding player index for %s", playerName)
-//         return "", err
-//     }
-//     return index, nil
-// }
+func PlayerNameToIndex(playerName string) (string, error) {
+    db := storage.GetDB()
+    sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
+
+    var index string
+    row := db.QueryRow(context.Background(), sql, playerName)
+    if err := row.Scan(&index); err != nil {
+        log.Printf("Error finding player index for %s", playerName)
+        return "", err
+    }
+    return index, nil
+}
