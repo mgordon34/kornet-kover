@@ -1,63 +1,76 @@
 package odds
 
 import (
-    "github.com/lib/pq"
+	"context"
 
-    "github.com/mgordon34/kornet-kover/api/players"
-    "github.com/mgordon34/kornet-kover/internal/storage"
+	"github.com/jackc/pgx/v5"
+
+	"github.com/mgordon34/kornet-kover/api/players"
+	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
 func AddPlayerLines(playerLines []PlayerLine) {
     db := storage.GetDB()
-	txn, _ := db.Begin()
-	_, err := txn.Exec(`
-	CREATE TEMP TABLE player_lines_temp
-	ON COMMIT DROP
-	AS SELECT * FROM player_lines
-	WITH NO DATA`)
+	txn, _ := db.Begin(context.Background())
+	_, err := txn.Exec(
+        context.Background(),
+        `CREATE TEMP TABLE player_lines_temp
+        ON COMMIT DROP
+        AS SELECT * FROM player_lines
+        WITH NO DATA`,
+    )
 	if err != nil {
 		panic(err)
 	}
 
-	stmt, err := txn.Prepare(pq.CopyIn("player_lines_temp", "sport", "player_index", "timestamp", "stat", "side", "line", "odds"))
+    var teamsInterface [][]interface{}
+    for _, playerLine := range playerLines {
+        teamsInterface = append(teamsInterface, []interface{}{
+            playerLine.Sport,
+            playerLine.PlayerIndex,
+            playerLine.Timestamp,
+            playerLine.Stat,
+            playerLine.Side,
+            playerLine.Line,
+            playerLine.Odds,
+        })
+    }
+
+	_, err = txn.CopyFrom(
+        context.Background(),
+        pgx.Identifier{"player_lines_temp"},
+        []string{
+            "sport",
+            "player_index",
+            "timestamp",
+            "stat",
+            "side",
+            "line",
+            "odds",
+        },
+        pgx.CopyFromRows(teamsInterface),
+    )
 	if err != nil {
 		panic(err)
 	}
 
-	for _, p := range playerLines {
-		if _, err := stmt.Exec(p.Sport, p.PlayerIndex, p.Timestamp, p.Stat, p.Side, p.Line, p.Odds); err != nil {
-			panic(err)
-		}
-	}
-	if _, err := stmt.Exec(); err != nil {
-		panic(err)
-	}
-	if err := stmt.Close(); err != nil {
-		panic(err)
-	}
 
-	_, err = txn.Exec(`
-	INSERT INTO player_lines (sport, player_index, timestamp, stat, side, line, odds)
-	SELECT sport, player_index, timestamp, stat, side, line, odds FROM player_lines_temp
-	ON CONFLICT DO NOTHING`)
+	_, err = txn.Exec(
+        context.Background(),
+        `INSERT INTO player_lines (sport, player_index, timestamp, stat, side, line, odds)
+        SELECT sport, player_index, timestamp, stat, side, line, odds FROM player_lines_temp
+        ON CONFLICT DO NOTHING`,
+    )
 	if err != nil {
 		panic(err)
 	}
 
-	if err := txn.Commit(); err != nil {
+	if err := txn.Commit(context.Background()); err != nil {
 		panic(err)
 	}
 }
 
 func GetPlayerLinesForPlayer(player players.Player) ([]PlayerLine, error) {
-    db := storage.GetDB()
-    sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
-
-    var index string
-    row := db.QueryRow(sql, playerName)
-    if err := row.Scan(&index); err != nil {
-        log.Printf("Error finding player index for %s", playerName)
-        return "", err
-    }
-    return index, nil
+    playerLines := []PlayerLine{}
+    return playerLines, nil
 }
