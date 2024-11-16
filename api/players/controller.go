@@ -56,50 +56,74 @@ func AddPlayers(players []Player) {
     log.Printf("Added %d players to DB", len(players))
 }
 
-// func AddPlayerGames(pGames []PlayerGame) {
-//     db := storage.GetDB()
-// 	txn, _ := db.Begin()
-// 	_, err := txn.Exec(`
-// 	CREATE TEMP TABLE player_games_temp
-// 	ON COMMIT DROP
-// 	AS SELECT * FROM nba_player_games
-// 	WITH NO DATA`)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 
-// 	stmt, err := txn.Prepare(pq.CopyIn("player_games_temp", "player_index", "game", "team_index",
-//             "minutes", "points", "rebounds", "assists", "usg", "ortg", "drtg", ))
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 
-// 	for _, p := range pGames {
-// 		if _, err := stmt.Exec(p.PlayerIndex, p.Game, p.TeamIndex, p.Minutes, p.Points, p.Rebounds,
-//                 p.Assists, p.Usg, p.Ortg, p.Drtg); err != nil {
-// 			panic(err)
-// 		}
-// 	}
-// 	if _, err := stmt.Exec(); err != nil {
-// 		panic(err)
-// 	}
-// 	if err := stmt.Close(); err != nil {
-// 		panic(err)
-// 	}
-// 
-// 	_, err = txn.Exec(`
-// 	INSERT INTO nba_player_games (player_index, game, team_index, minutes, points, rebounds, assists, usg, ortg, drtg)
-// 	SELECT player_index, game, team_index, minutes, points, rebounds, assists, usg, ortg, drtg FROM player_games_temp
-// 	ON CONFLICT DO NOTHING`)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 
-// 	if err := txn.Commit(); err != nil {
-// 		panic(err)
-// 	}
-// }
-// 
+func AddPlayerGames(pGames []PlayerGame) {
+    db := storage.GetDB()
+	txn, _ := db.Begin(context.Background())
+	_, err := txn.Exec(
+        context.Background(),
+        `CREATE TEMP TABLE player_games_temp
+        ON COMMIT DROP
+        AS SELECT * FROM nba_player_games
+        WITH NO DATA`,
+    )
+	if err != nil {
+		panic(err)
+	}
+    var playersInterface [][]interface{}
+    for _, pGame := range pGames {
+        playersInterface = append(
+            playersInterface,
+            []interface{}{
+                pGame.PlayerIndex,
+                pGame.Game,
+                pGame.TeamIndex,
+                pGame.Minutes,
+                pGame.Points,
+                pGame.Rebounds,
+                pGame.Assists,
+                pGame.Usg,
+                pGame.Ortg,
+                pGame.Drtg,
+            },
+        )
+    }
+
+	_, err = txn.CopyFrom(
+        context.Background(),
+        pgx.Identifier{"player_games_temp"},
+        []string{
+            "player_index",
+            "game",
+            "team_index",
+            "minutes",
+            "points",
+            "rebounds",
+            "assists",
+            "usg",
+            "ortg",
+            "drtg",
+        },
+        pgx.CopyFromRows(playersInterface),
+    )
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = txn.Exec(
+        context.Background(),
+        ` INSERT INTO nba_player_games (player_index, game, team_index, minutes, points, rebounds, assists, usg, ortg, drtg)
+        SELECT player_index, game, team_index, minutes, points, rebounds, assists, usg, ortg, drtg FROM player_games_temp
+        ON CONFLICT DO NOTHING`,
+    )
+	if err != nil {
+		panic(err)
+	}
+
+	if err := txn.Commit(context.Background()); err != nil {
+		panic(err)
+	}
+}
+
 func PlayerNameToIndex(playerName string) (string, error) {
     db := storage.GetDB()
     sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
