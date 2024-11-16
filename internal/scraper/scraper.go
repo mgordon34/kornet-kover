@@ -1,8 +1,9 @@
 package scraper
+
 import (
 	"fmt"
 	"log"
-    "strconv"
+	"strconv"
 	"strings"
 	"time"
 
@@ -108,7 +109,6 @@ func scrapeGame(gameString string) {
         AwayScore: scores[0],
         Date: date,
     }
-    log.Printf("Game: %v", game)
     gameId, err := games.AddGame(game)
     if err != nil {
         return
