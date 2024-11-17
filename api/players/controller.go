@@ -53,7 +53,6 @@ func AddPlayers(players []Player) {
 	if err := txn.Commit(context.Background()); err != nil {
 		panic(err)
 	}
-    log.Printf("Added %d players to DB", len(players))
 }
 
 func AddPlayerGames(pGames []PlayerGame) {
