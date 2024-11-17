@@ -2,6 +2,7 @@ package odds
 
 import (
 	"context"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 
@@ -10,6 +11,7 @@ import (
 )
 
 func AddPlayerLines(playerLines []PlayerLine) {
+    log.Printf("Adding %d player lines", len(playerLines))
     db := storage.GetDB()
 	txn, _ := db.Begin(context.Background())
 	_, err := txn.Exec(
@@ -20,7 +22,7 @@ func AddPlayerLines(playerLines []PlayerLine) {
         WITH NO DATA`,
     )
 	if err != nil {
-		panic(err)
+        log.Fatal(err)
 	}
 
     var teamsInterface [][]interface{}
@@ -51,7 +53,7 @@ func AddPlayerLines(playerLines []PlayerLine) {
         pgx.CopyFromRows(teamsInterface),
     )
 	if err != nil {
-		panic(err)
+        log.Fatal(err)
 	}
 
 
@@ -62,12 +64,13 @@ func AddPlayerLines(playerLines []PlayerLine) {
         ON CONFLICT DO NOTHING`,
     )
 	if err != nil {
-		panic(err)
+        log.Fatal(err)
 	}
 
 	if err := txn.Commit(context.Background()); err != nil {
-		panic(err)
+        log.Fatal(err)
 	}
+    log.Println("success adding player_lines")
 }
 
 func GetPlayerLinesForPlayer(player players.Player) ([]PlayerLine, error) {
