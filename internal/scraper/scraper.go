@@ -204,3 +204,20 @@ func fixPlayerStats(gameId int, pMap map[string]players.PlayerGame) []players.Pl
 
     return pSlice
 }
+
+// UpdateGames will add any new game and corresponding stats to the database
+// This is done by utilizing GetLastGame to determine the date window to perform game scraping
+// Returns the number of new games added or error
+// TODO: Optimizations for offseason could be made here
+func UpdateGames() error{
+    lastGame, err := games.GetLastGame()
+    if err != nil {
+        return err
+    }
+
+    startDate := lastGame.Date
+    endDate := time.Now()
+    ScrapeGames(startDate, endDate)
+
+    return nil
+}
