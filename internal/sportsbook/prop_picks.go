@@ -140,17 +140,18 @@ func GetLinesForMarket(game Game, market string, stat string, apiGetter APIGette
             continue
         }
         for _, outcome := range bookie.Market.Outcomes {
-            playerIndex, err := players.PlayerNameToIndex(outcome.ParticipantName)
             nameSplit := strings.Split(outcome.Name, " ")
+            playerName := strings.Join(nameSplit[:len(nameSplit) - 2], " ")
             side := nameSplit[len(nameSplit) - 2]
+            playerIndex, err := players.PlayerNameToIndex(playerName)
             if err != nil {
-                log.Printf("Error getting player index from name %s: %v", outcome.ParticipantName, err)
                 continue
             }
             timestamp, err := time.Parse("2006-01-02T15:04:05", outcome.Timestamp)
             if err != nil {
                 log.Fatalf("Error parsing timestamp: %v", err)
             }
+
             pl := odds.PlayerLine{
                 Sport: "nba",
                 PlayerIndex: playerIndex,
