@@ -3,10 +3,10 @@ package odds
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
@@ -73,7 +73,23 @@ func AddPlayerLines(playerLines []PlayerLine) {
     log.Println("success adding player_lines")
 }
 
-func GetPlayerLinesForPlayer(player players.Player) ([]PlayerLine, error) {
-    playerLines := []PlayerLine{}
-    return playerLines, nil
+func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
+    startDate := date.Add(time.Hour * 7)
+    endDate := startDate.AddDate(0, 0, 1)
+
+    db := storage.GetDB()
+    sql := `SELECT pl.sport, pl.player_index, pl.timestamp, pl.stat, pl.side, pl.line, pl.odds FROM player_lines pl INNER JOIN
+                (select player_index, stat, side, max(timestamp) as latest from player_lines where timestamp between ($1) and ($2) group by player_index, stat, side) mpl 
+                on pl.timestamp = mpl.latest and pl.player_index = mpl.player_index and pl.stat = mpl.stat and pl.side = mpl.side;`
+
+    rows, err := db.Query(context.Background(), sql, startDate, endDate)
+    if err != nil {
+        log.Fatal("Error querying for player lines: ", err)
+    }
+    pLines, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlayerLine])
+    if err != nil {
+        log.Fatal("Error converting rows to playerLines: ", err)
+    }
+
+    return pLines, nil
 }
