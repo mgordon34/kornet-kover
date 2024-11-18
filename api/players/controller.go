@@ -2,8 +2,8 @@ package players
 
 import (
 	"context"
+	"strings"
 	"log"
-	// "log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mgordon34/kornet-kover/internal/storage"
@@ -126,6 +126,10 @@ func AddPlayerGames(pGames []PlayerGame) {
 func PlayerNameToIndex(playerName string) (string, error) {
     db := storage.GetDB()
     sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
+    playerName = strings.ReplaceAll(playerName, ".", "")
+    if playerName == "Alexandre Sarr" {
+        playerName = "Alex Sarr"
+    }
 
     var index string
     row := db.QueryRow(context.Background(), sql, playerName)
