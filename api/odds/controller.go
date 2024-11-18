@@ -93,3 +93,36 @@ func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
 
     return pLines, nil
 }
+
+type PlayerOdds struct {
+    Over    PlayerLine
+    Under   PlayerLine
+}
+
+func GetPlayerOddsForDate(date time.Time) (map[string]PlayerOdds, error) {
+    oddsMap := make(map[string]PlayerOdds)
+    lines, err := GetPlayerLinesForDate(date)
+    if err != nil {
+        return oddsMap, err
+    }
+    for _, line := range lines {
+        log.Println(line)
+        addLineToOddsMap(oddsMap, line)
+    }
+
+    return oddsMap, nil
+}
+
+func addLineToOddsMap(oddsMap map[string]PlayerOdds, line PlayerLine) {
+    if _, ok := oddsMap[line.PlayerIndex]; !ok {
+        oddsMap[line.PlayerIndex] = PlayerOdds{}
+    }
+
+    pOdds := oddsMap[line.PlayerIndex]
+    if line.Side == "Over" {
+        pOdds.Over = line
+    } else {
+        pOdds.Under = line
+    }
+    oddsMap[line.PlayerIndex] = pOdds
+}
