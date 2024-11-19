@@ -3,6 +3,7 @@ package players
 import (
 	"context"
 	"strings"
+    "time"
 	"log"
 
 	"github.com/jackc/pgx/v5"
@@ -138,4 +139,23 @@ func AddPlayerGames(pGames []PlayerGame) {
 	if err := txn.Commit(context.Background()); err != nil {
 		panic(err)
 	}
+}
+
+func GetPlayerStats(player Player, startDate time.Time, endDate time.Time) (NBAAvg, error) {
+    db := storage.GetDB()
+    sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
+            avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
+                left join games on games.id = nba_player_games.game
+                where nba_player_games.player_index = ($1) and games.date between ($2) and ($3)`
+
+    rows, err := db.Query(context.Background(), sql, player.Index, startDate, endDate)
+    if err != nil {
+        log.Fatal("Error querying for player lines: ", err)
+    }
+    stats, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[NBAAvg])
+    if err != nil {
+        log.Fatal("Error converting rows to playerLines: ", err)
+    }
+
+    return stats, nil
 }

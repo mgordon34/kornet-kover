@@ -17,17 +17,22 @@ type PlayerGame struct {
     Usg             float32     `json:"usg"`
     Ortg            int         `json:"drtg"`
     Drtg            int         `json:"ortg"`
+} 
+
+type NBAAvg struct {
+    NumGames     int         `json:"num_minutes"`
+    Minutes      float32     `json:"avg_minutes"`
+    Points       float32     `json:"avg_points"`
+    Rebounds     float32     `json:"avg_rebounds"`
+    Assists      float32     `json:"avg_assists"`
+    Usg          float32     `json:"avg_usg"`
+    Ortg         float32     `json:"avg_drtg"`
+    Drtg         float32     `json:"avg_ortg"`
 }
 
 type PIPFactor struct {
     PlayerIndex     string      `json:"player_index"`
     OtherIndex      string      `json:"other_index"`
     Relationship    string      `json:"relationship"`
-    NumGames        int         `json:"num_games"`
-    AVGPoints       float32     `json:"avg_points"`
-    AVGRebounds     float32     `json:"avg_rebounds"`
-    AVGAssists      float32     `json:"avg_assists"`
-    AVGUsg          float32     `json:"avg_usg"`
-    AVGOrtg         float32     `json:"avg_drtg"`
-    AVGDrtg         float32     `json:"avg_ortg"`
+    Averages        *NBAAvg
 }
