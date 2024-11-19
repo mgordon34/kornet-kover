@@ -56,6 +56,24 @@ func AddPlayers(players []Player) {
 	}
 }
 
+func GetPlayer(index string) (Player, error) {
+    db := storage.GetDB()
+    sql := `SELECT index, sport, name from players where index = ($1)`
+
+    rows, err := db.Query(context.Background(), sql, index)
+    if err != nil {
+        log.Fatal("Error querying for player index: ", err)
+    }
+
+    player, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Player])
+    if err != nil {
+        log.Println("Error converting player: ", err)
+        return Player{}, err
+    }
+
+    return player, nil
+}
+
 func PlayerNameToIndex(playerName string) (string, error) {
     db := storage.GetDB()
     sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
