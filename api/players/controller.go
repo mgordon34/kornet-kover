@@ -2,9 +2,9 @@ package players
 
 import (
 	"context"
-	"strings"
-    "time"
 	"log"
+	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mgordon34/kornet-kover/internal/storage"
@@ -150,11 +150,12 @@ func GetPlayerStats(player Player, startDate time.Time, endDate time.Time) (NBAA
 
     rows, err := db.Query(context.Background(), sql, player.Index, startDate, endDate)
     if err != nil {
-        log.Fatal("Error querying for player lines: ", err)
+        log.Fatal("Error querying for player stats: ", err)
     }
+
     stats, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[NBAAvg])
     if err != nil {
-        log.Fatal("Error converting rows to playerLines: ", err)
+        return NBAAvg{}, err
     }
 
     return stats, nil
