@@ -55,6 +55,23 @@ func AddPlayers(players []Player) {
 	}
 }
 
+func PlayerNameToIndex(playerName string) (string, error) {
+    db := storage.GetDB()
+    sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
+    playerName = strings.ReplaceAll(playerName, ".", "")
+    if playerName == "Alexandre Sarr" {
+        playerName = "Alex Sarr"
+    }
+
+    var index string
+    row := db.QueryRow(context.Background(), sql, playerName)
+    if err := row.Scan(&index); err != nil {
+        log.Printf("Error finding player index for %s", playerName)
+        return "", err
+    }
+    return index, nil
+}
+
 func AddPlayerGames(pGames []PlayerGame) {
     db := storage.GetDB()
 	txn, _ := db.Begin(context.Background())
@@ -121,21 +138,4 @@ func AddPlayerGames(pGames []PlayerGame) {
 	if err := txn.Commit(context.Background()); err != nil {
 		panic(err)
 	}
-}
-
-func PlayerNameToIndex(playerName string) (string, error) {
-    db := storage.GetDB()
-    sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
-    playerName = strings.ReplaceAll(playerName, ".", "")
-    if playerName == "Alexandre Sarr" {
-        playerName = "Alex Sarr"
-    }
-
-    var index string
-    row := db.QueryRow(context.Background(), sql, playerName)
-    if err := row.Scan(&index); err != nil {
-        log.Printf("Error finding player index for %s", playerName)
-        return "", err
-    }
-    return index, nil
 }
