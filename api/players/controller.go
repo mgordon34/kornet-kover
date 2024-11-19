@@ -178,3 +178,54 @@ func GetPlayerStats(player Player, startDate time.Time, endDate time.Time) (NBAA
 
     return stats, nil
 }
+
+type Relationship int
+
+const (
+    Teammate Relationship = iota
+    Opponent
+)
+
+func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) (NBAAvg, error) {
+    db := storage.GetDB()
+    sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
+            avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
+                left join games gg on gg.id = nba_player_games.game
+                where nba_player_games.player_index = ($1) and gg.date between ($3) and ($4)`
+    opponent_filter := `
+        AND (
+            SELECT COUNT(*) FROM games ga
+            LEFT JOIN nba_player_games pg ON pg.game=ga.id
+            WHERE ga.id=gg.id AND pg.player_index IN (($1),($2))
+        ) > 1`
+    teammate_filter := `
+         AND (
+             SELECT COUNT(*) FROM games ga
+             LEFT JOIN nba_player_games pg ON pg.game=ga.id
+             WHERE ga.id=gg.id AND pg.player_index=($1)
+         ) = 1
+         AND (
+             SELECT COUNT(*) FROM games ga
+             LEFT JOIN nba_player_games pg ON pg.game=ga.id
+             WHERE ga.id=gg.id AND pg.player_index=($2)
+         ) = 0`
+
+    switch relationship {
+    case Teammate:
+        sql = sql + teammate_filter
+    case Opponent:
+        sql = sql + opponent_filter
+    }
+
+    rows, err := db.Query(context.Background(), sql, player.Index, defender.Index, startDate, endDate)
+    if err != nil {
+        log.Fatal("Error querying for player stats: ", err)
+    }
+
+    stats, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[NBAAvg])
+    if err != nil {
+        return NBAAvg{}, err
+    }
+
+    return stats, nil
+}
