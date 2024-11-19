@@ -91,6 +91,21 @@ func InitTables() {
             odds INT NOT NULL,
             CONSTRAINT uq_prop_index UNIQUE(sport, player_index, timestamp, stat, side)
         )`,
+        `CREATE TABLE IF NOT EXISTS nba_pip_factors (
+            id SERIAL PRIMARY KEY,
+            player_index VARCHAR(20) REFERENCES players(index),
+            other_index VARCHAR(20) REFERENCES players(index),
+            relationship VARCHAR(50),
+            num_games INT,
+            avg_minutes REAL NOT NULL,
+            avg_points REAL NOT NULL,
+            avg_rebounds REAL NOT NULL,
+            avg_assists REAL NOT NULL,
+            avg_usg REAL NOT NULL,
+            avg_ortg REAL NOT NULL,
+            avg_drtg REAL NOT NULL,
+            CONSTRAINT uq_pip_factors UNIQUE(player_index, other_index, relationship)
+        )`,
     }
 
     for _, command := range commands {
