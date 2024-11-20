@@ -1,6 +1,8 @@
 module github.com/mgordon34/kornet-kover
 
-go 1.22.2
+go 1.22.6
+
+toolchain go1.22.9
 
 require (
 	github.com/gocolly/colly v1.2.0
