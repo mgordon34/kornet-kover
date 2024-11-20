@@ -19,17 +19,6 @@ type PlayerGame struct {
     Drtg            int         `json:"ortg"`
 } 
 
-type NBAAvg struct {
-    NumGames     int         `json:"num_minutes"`
-    Minutes      float32     `json:"avg_minutes"`
-    Points       float32     `json:"avg_points"`
-    Rebounds     float32     `json:"avg_rebounds"`
-    Assists      float32     `json:"avg_assists"`
-    Usg          float32     `json:"avg_usg"`
-    Ortg         float32     `json:"avg_drtg"`
-    Drtg         float32     `json:"avg_ortg"`
-}
-
 type PIPFactor struct {
     PlayerIndex     string      `json:"player_index"`
     OtherIndex      string      `json:"other_index"`

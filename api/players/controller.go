@@ -159,7 +159,7 @@ func AddPlayerGames(pGames []PlayerGame) {
 	}
 }
 
-func GetPlayerStats(player Player, startDate time.Time, endDate time.Time) (NBAAvg, error) {
+func GetPlayerStats(player Player, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
     db := storage.GetDB()
     sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
             avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
@@ -186,8 +186,8 @@ const (
     Opponent
 )
 
-func GetPlayerStatsByYear(player Player, startDate time.Time, endDate time.Time) map[int]NBAAvg {
-    playerStats := make(map[int]NBAAvg)
+func GetPlayerStatsByYear(player Player, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
+    playerStats := make(map[int]PlayerAvg)
 
     for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
         useDate := d.AddDate(1, 0, 0)
@@ -201,7 +201,7 @@ func GetPlayerStatsByYear(player Player, startDate time.Time, endDate time.Time)
     return playerStats
 }
 
-func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) (NBAAvg, error) {
+func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
     db := storage.GetDB()
     sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
             avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
@@ -245,8 +245,8 @@ func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relat
     return stats, nil
 }
 
-func GetPlayerStatsWithPlayerByYear(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) map[int]NBAAvg {
-    playerStats := make(map[int]NBAAvg)
+func GetPlayerStatsWithPlayerByYear(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
+    playerStats := make(map[int]PlayerAvg)
 
     for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
         useDate := d.AddDate(1, 0, 0)
@@ -258,4 +258,15 @@ func GetPlayerStatsWithPlayerByYear(player Player, defender Player, relationship
     }
 
     return playerStats
+}
+
+func CalculatePIPFactor(controlMap map[int]PlayerAvg, relatedMap map[int]PlayerAvg) PlayerAvg {
+    for year := range controlMap {
+        pChange := relatedMap[year].CompareAvg(controlMap[year])
+        log.Printf("Control: %v", controlMap[year])
+        log.Printf("Related: %v", relatedMap[year])
+        log.Printf("PChanges: %v", pChange)
+    }
+
+    return NBAAvg{}
 }
