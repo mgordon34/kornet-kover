@@ -186,6 +186,21 @@ const (
     Opponent
 )
 
+func GetPlayerStatsByYear(player Player, startDate time.Time, endDate time.Time) map[int]NBAAvg {
+    playerStats := make(map[int]NBAAvg)
+
+    for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
+        useDate := d.AddDate(1, 0, 0)
+        if useDate.After(endDate){
+            useDate = endDate
+        }
+
+        playerStats[d.Year()], _ = GetPlayerStats(player, d, useDate)
+    }
+
+    return playerStats
+}
+
 func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) (NBAAvg, error) {
     db := storage.GetDB()
     sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
@@ -228,4 +243,19 @@ func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relat
     }
 
     return stats, nil
+}
+
+func GetPlayerStatsWithPlayerByYear(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) map[int]NBAAvg {
+    playerStats := make(map[int]NBAAvg)
+
+    for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
+        useDate := d.AddDate(1, 0, 0)
+        if useDate.After(endDate){
+            useDate = endDate
+        }
+
+        playerStats[d.Year()], _ = GetPlayerStatsWithPlayer(player, defender, relationship, d, useDate)
+    }
+
+    return playerStats
 }
