@@ -186,7 +186,7 @@ const (
     Opponent
 )
 
-func GetPlayerStatsByYear(player Player, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
+func GetPlayerPerByYear(player Player, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
     playerStats := make(map[int]PlayerAvg)
 
     for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
@@ -195,7 +195,8 @@ func GetPlayerStatsByYear(player Player, startDate time.Time, endDate time.Time)
             useDate = endDate
         }
 
-        playerStats[d.Year()], _ = GetPlayerStats(player, d, useDate)
+        yearlyStats, _ := GetPlayerStats(player, d, useDate)
+        playerStats[d.Year()] = yearlyStats.ConvertToPer()
     }
 
     return playerStats
@@ -245,7 +246,7 @@ func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relat
     return stats, nil
 }
 
-func GetPlayerStatsWithPlayerByYear(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
+func GetPlayerPerWithPlayerByYear(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
     playerStats := make(map[int]PlayerAvg)
 
     for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
@@ -254,7 +255,8 @@ func GetPlayerStatsWithPlayerByYear(player Player, defender Player, relationship
             useDate = endDate
         }
 
-        playerStats[d.Year()], _ = GetPlayerStatsWithPlayer(player, defender, relationship, d, useDate)
+        yearlyStats, _ := GetPlayerStatsWithPlayer(player, defender, relationship, d, useDate)
+        playerStats[d.Year()] = yearlyStats.ConvertToPer()
     }
 
     return playerStats
@@ -263,9 +265,9 @@ func GetPlayerStatsWithPlayerByYear(player Player, defender Player, relationship
 func CalculatePIPFactor(controlMap map[int]PlayerAvg, relatedMap map[int]PlayerAvg) PlayerAvg {
     for year := range controlMap {
         pChange := relatedMap[year].CompareAvg(controlMap[year])
-        log.Printf("Control: %v", controlMap[year])
-        log.Printf("Related: %v", relatedMap[year])
-        log.Printf("PChanges: %v", pChange)
+        log.Printf("[%v]Control: %v", year, controlMap[year])
+        log.Printf("[%v]Related: %v", year, relatedMap[year])
+        log.Printf("[%v]PChanges: %v", year, pChange)
     }
 
     return NBAAvg{}

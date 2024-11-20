@@ -7,6 +7,7 @@ func getStatPchange(controlStat float32, newStat float32) float32 {
 type PlayerAvg interface {
     IsValid() bool
     CompareAvg(PlayerAvg) PlayerAvg
+    ConvertToPer() PlayerAvg
 }
 
 type NBAAvg struct {
@@ -27,6 +28,7 @@ func (n NBAAvg) IsValid() bool {
 func (n NBAAvg) CompareAvg(controlAvg PlayerAvg) PlayerAvg {
     nbaControl := controlAvg.(NBAAvg)
     return NBAAvg{
+        NumGames: n.NumGames,
         Minutes: getStatPchange(nbaControl.Minutes, n.Minutes),
         Points: getStatPchange(nbaControl.Points, n.Points),
         Rebounds: getStatPchange(nbaControl.Rebounds, n.Rebounds),
@@ -34,5 +36,22 @@ func (n NBAAvg) CompareAvg(controlAvg PlayerAvg) PlayerAvg {
         Usg: getStatPchange(nbaControl.Usg, n.Usg),
         Ortg: getStatPchange(nbaControl.Ortg, n.Ortg),
         Drtg: getStatPchange(nbaControl.Drtg, n.Drtg),
+    }
+}
+
+func (n NBAAvg) ConvertToPer() PlayerAvg { 
+    if n.IsValid() {
+        return NBAAvg{
+            NumGames: n.NumGames,
+            Minutes: n.Minutes,
+            Points: n.Points / n.Minutes,
+            Rebounds: n.Rebounds / n.Minutes,
+            Assists: n.Assists / n.Minutes,
+            Usg: n.Usg / n.Minutes,
+            Ortg: n.Ortg / n.Minutes,
+            Drtg: n.Drtg / n.Minutes,
+        }
+    } else {
+        return n
     }
 }
