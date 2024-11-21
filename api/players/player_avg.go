@@ -8,6 +8,7 @@ type PlayerAvg interface {
     IsValid() bool
     AddAvg(PlayerAvg) PlayerAvg
     CompareAvg(PlayerAvg) PlayerAvg
+    PredictStats(PlayerAvg) PlayerAvg
     ConvertToPer() PlayerAvg
 }
 
@@ -72,5 +73,24 @@ func (n NBAAvg) ConvertToPer() PlayerAvg {
         }
     } else {
         return n
+    }
+}
+
+func (n NBAAvg) PredictStats(pipFactor PlayerAvg) PlayerAvg {
+    if !pipFactor.IsValid() {
+        return n
+    }
+    nbaPip := pipFactor.(NBAAvg)
+    predictedMinutes := (n.Minutes + nbaPip.Minutes * 100) 
+
+    return NBAAvg{
+        NumGames: nbaPip.NumGames,
+        Minutes: predictedMinutes,
+        Points: (n.Points + n.Points * nbaPip.Points) * predictedMinutes,
+        Rebounds: (n.Rebounds + n.Rebounds * nbaPip.Rebounds) * predictedMinutes,
+        Assists: (n.Assists + n.Assists * nbaPip.Assists) * predictedMinutes,
+        Usg: (n.Usg + n.Usg * nbaPip.Usg) * predictedMinutes,
+        Ortg: (n.Ortg + n.Ortg * nbaPip.Ortg) * predictedMinutes,
+        Drtg: (n.Drtg + n.Drtg * nbaPip.Drtg) * predictedMinutes,
     }
 }

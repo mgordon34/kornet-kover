@@ -68,5 +68,8 @@ func runGetPlayerPip() {
     controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
     affectedMap := players.GetPlayerPerWithPlayerByYear(player, pplayer, players.Opponent, startDate, endDate)
     pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
+    prediction := controlMap[2024].PredictStats(pipFactor)
     log.Println(pipFactor)
+    log.Println(controlMap[2024])
+    log.Println(prediction)
 }
