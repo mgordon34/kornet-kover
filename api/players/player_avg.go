@@ -6,6 +6,7 @@ func getStatPchange(controlStat float32, newStat float32) float32 {
 
 type PlayerAvg interface {
     IsValid() bool
+    AddAvg(PlayerAvg) PlayerAvg
     CompareAvg(PlayerAvg) PlayerAvg
     ConvertToPer() PlayerAvg
 }
@@ -23,6 +24,24 @@ type NBAAvg struct {
 
 func (n NBAAvg) IsValid() bool {
     return n.NumGames > 0
+}
+
+func (n NBAAvg) AddAvg(a PlayerAvg) PlayerAvg {
+    if !a.IsValid(){
+        return n
+    }
+    nba := a.(NBAAvg)
+    total_games := float32(n.NumGames + nba.NumGames)
+    return NBAAvg{
+        NumGames: n.NumGames + nba.NumGames,
+        Minutes: (n.Minutes * float32(n.NumGames) + nba.Minutes * float32(nba.NumGames)) / total_games,
+        Points: (n.Points * float32(n.NumGames) + nba.Points * float32(nba.NumGames)) / total_games,
+        Rebounds: (n.Rebounds * float32(n.NumGames) + nba.Rebounds * float32(nba.NumGames)) / total_games,
+        Assists: (n.Assists * float32(n.NumGames) + nba.Assists * float32(nba.NumGames)) / total_games,
+        Usg: (n.Usg * float32(n.NumGames) + nba.Usg * float32(nba.NumGames)) / total_games,
+        Ortg: (n.Ortg * float32(n.NumGames) + nba.Ortg * float32(nba.NumGames)) / total_games,
+        Drtg: (n.Drtg * float32(n.NumGames) + nba.Drtg * float32(nba.NumGames)) / total_games,
+    }
 }
 
 func (n NBAAvg) CompareAvg(controlAvg PlayerAvg) PlayerAvg {
