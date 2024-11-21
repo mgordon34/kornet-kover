@@ -267,8 +267,9 @@ func CalculatePIPFactor(controlMap map[int]PlayerAvg, relatedMap map[int]PlayerA
     for year := range controlMap {
         if totals == nil {
             totals = relatedMap[year]
+        } else {
+            totals = totals.AddAvg(relatedMap[year])
         }
-        totals = totals.AddAvg(relatedMap[year])
     }
 
     return totals.CompareAvg(controlMap[2024])
