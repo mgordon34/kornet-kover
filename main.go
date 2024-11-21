@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
+	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/scraper"
 	"github.com/mgordon34/kornet-kover/internal/sportsbook"
 	"github.com/mgordon34/kornet-kover/internal/storage"
@@ -13,6 +14,8 @@ import (
 func main() {
     storage.InitTables()
     log.Println("Initialized DB")
+
+    runGetPlayerPip()
 }
 
 func runUpdateGames() {
@@ -46,4 +49,24 @@ func runGetPlayerOdds() {
     for i, pOdds := range oddsMap {
         log.Printf("Player: %v, Odds: %v", i, pOdds)
     }
+}
+
+func runGetPlayerPip() {
+    startDate, err := time.Parse("2006-01-02", "2018-10-13")
+    if err != nil {
+        log.Fatal("Error parsing time: ", err)
+    }
+    endDate, err := time.Parse("2006-01-02", "2024-11-16")
+    if err != nil {
+        log.Fatal("Error parsing time: ", err)
+    }
+    index := "tatumja01"
+    player, err := players.GetPlayer(index)
+    pindex := "daniedy01"
+    pplayer, err := players.GetPlayer(pindex)
+
+    controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
+    affectedMap := players.GetPlayerPerWithPlayerByYear(player, pplayer, players.Opponent, startDate, endDate)
+    pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
+    log.Println(pipFactor)
 }
