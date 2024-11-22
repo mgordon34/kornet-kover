@@ -6,6 +6,12 @@ type Player struct {
     Name        string    `json:"name"`
 }
 
+type Roster struct {
+    Starters        []string
+    Bench           []string
+    Out             []string
+}
+
 type PlayerGame struct {
     PlayerIndex     string      `json:"player_index"`
     Game            int         `json:"game"`

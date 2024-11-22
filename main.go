@@ -6,6 +6,7 @@ import (
 
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
+	"github.com/mgordon34/kornet-kover/internal/analysis"
 	"github.com/mgordon34/kornet-kover/internal/scraper"
 	"github.com/mgordon34/kornet-kover/internal/sportsbook"
 	"github.com/mgordon34/kornet-kover/internal/storage"
@@ -15,7 +16,7 @@ func main() {
     storage.InitTables()
     log.Println("Initialized DB")
 
-    runGetPlayerPip()
+    runAnalysis()
 }
 
 func runUpdateGames() {
@@ -61,15 +62,25 @@ func runGetPlayerPip() {
         log.Fatal("Error parsing time: ", err)
     }
     index := "tatumja01"
-    player, err := players.GetPlayer(index)
     pindex := "daniedy01"
-    pplayer, err := players.GetPlayer(pindex)
 
-    controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
-    affectedMap := players.GetPlayerPerWithPlayerByYear(player, pplayer, players.Opponent, startDate, endDate)
+    controlMap := players.GetPlayerPerByYear(index, startDate, endDate)
+    affectedMap := players.GetPlayerPerWithPlayerByYear(index, pindex, players.Opponent, startDate, endDate)
     pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
     prediction := controlMap[2024].PredictStats(pipFactor)
     log.Println(pipFactor)
     log.Println(controlMap[2024])
     log.Println(prediction)
+}
+
+func runAnalysis() {
+    awayRoster := players.Roster{Starters: []string{"daniedy01", "johnsja05", "wallake01", "risacza01", "capelca01"}}
+    homeRoster := players.Roster{Starters: []string{"whitede01", "tatumja01", "brownja02", "holidjr01", "horfoal01"}}
+
+    results := analysis.RunAnalysisOnGame(homeRoster, awayRoster)
+
+    for _, outcome := range results {
+        log.Printf("[%v]: Base Stats: %v", outcome.PlayerIndex, outcome.BaseStats)
+        log.Printf("[%v]: Predicted Stats: %v", outcome.PlayerIndex, outcome.Prediction)
+    }
 }
