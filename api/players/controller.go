@@ -159,14 +159,14 @@ func AddPlayerGames(pGames []PlayerGame) {
 	}
 }
 
-func GetPlayerStats(player Player, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
+func GetPlayerStats(player string, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
     db := storage.GetDB()
     sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
             avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
                 left join games on games.id = nba_player_games.game
                 where nba_player_games.player_index = ($1) and games.date between ($2) and ($3)`
 
-    rows, err := db.Query(context.Background(), sql, player.Index, startDate, endDate)
+    rows, err := db.Query(context.Background(), sql, player, startDate, endDate)
     if err != nil {
         log.Fatal("Error querying for player stats: ", err)
     }
@@ -186,7 +186,7 @@ const (
     Opponent
 )
 
-func GetPlayerPerByYear(player Player, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
+func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
     playerStats := make(map[int]PlayerAvg)
 
     for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
@@ -202,7 +202,7 @@ func GetPlayerPerByYear(player Player, startDate time.Time, endDate time.Time) m
     return playerStats
 }
 
-func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
+func GetPlayerStatsWithPlayer(player string, defender string, relationship Relationship, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
     db := storage.GetDB()
     sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
             avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
@@ -233,7 +233,7 @@ func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relat
         sql = sql + opponent_filter
     }
 
-    rows, err := db.Query(context.Background(), sql, player.Index, defender.Index, startDate, endDate)
+    rows, err := db.Query(context.Background(), sql, player, defender, startDate, endDate)
     if err != nil {
         log.Fatal("Error querying for player stats: ", err)
     }
@@ -246,7 +246,7 @@ func GetPlayerStatsWithPlayer(player Player, defender Player, relationship Relat
     return stats, nil
 }
 
-func GetPlayerPerWithPlayerByYear(player Player, defender Player, relationship Relationship, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
+func GetPlayerPerWithPlayerByYear(player string, defender string, relationship Relationship, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
     playerStats := make(map[int]PlayerAvg)
 
     for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
