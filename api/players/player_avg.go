@@ -10,6 +10,7 @@ type PlayerAvg interface {
     CompareAvg(PlayerAvg) PlayerAvg
     PredictStats(PlayerAvg) PlayerAvg
     ConvertToPer() PlayerAvg
+    ConvertToStats() PlayerAvg
 }
 
 type NBAAvg struct {
@@ -46,6 +47,9 @@ func (n NBAAvg) AddAvg(a PlayerAvg) PlayerAvg {
 }
 
 func (n NBAAvg) CompareAvg(controlAvg PlayerAvg) PlayerAvg {
+    if !n.IsValid() {
+        return n
+    }
     nbaControl := controlAvg.(NBAAvg)
     return NBAAvg{
         NumGames: n.NumGames,
@@ -70,6 +74,23 @@ func (n NBAAvg) ConvertToPer() PlayerAvg {
             Usg: n.Usg / n.Minutes,
             Ortg: n.Ortg / n.Minutes,
             Drtg: n.Drtg / n.Minutes,
+        }
+    } else {
+        return n
+    }
+}
+
+func (n NBAAvg) ConvertToStats() PlayerAvg { 
+    if n.IsValid() {
+        return NBAAvg{
+            NumGames: n.NumGames,
+            Minutes: n.Minutes,
+            Points: n.Points * n.Minutes,
+            Rebounds: n.Rebounds * n.Minutes,
+            Assists: n.Assists * n.Minutes,
+            Usg: n.Usg * n.Minutes,
+            Ortg: n.Ortg * n.Minutes,
+            Drtg: n.Drtg * n.Minutes,
         }
     } else {
         return n
