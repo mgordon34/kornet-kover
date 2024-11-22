@@ -11,6 +11,7 @@ type Analysis struct {
     PlayerIndex     string
     BaseStats       players.PlayerAvg
     Prediction      players.PlayerAvg
+    Outliers        map[string]float32
 }
 
 func RunAnalysisOnGame(roster players.Roster, opponents players.Roster) []Analysis {
@@ -30,17 +31,38 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster) []Analys
             if totalPip == nil {
                 totalPip = pipFactor
             } else {
-                totalPip.AddAvg(pipFactor)
+                totalPip = totalPip.AddAvg(pipFactor)
             }
         }
 
         prediction := controlMap[2024].PredictStats(totalPip)
         baseStats := controlMap[2024].ConvertToStats()
+        outliers :=  GetOutliers(baseStats, prediction)
         predictedStats = append(
             predictedStats,
-            Analysis{PlayerIndex: player, BaseStats: baseStats, Prediction: prediction},
+            Analysis{
+                PlayerIndex: player,
+                BaseStats: baseStats,
+                Prediction: prediction,
+                Outliers: outliers,
+            },
         )
     }
 
     return predictedStats
+}
+
+func GetOutliers(baseStats players.PlayerAvg, predictedStats players.PlayerAvg) map[string]float32 {
+    outliers := make(map[string]float32)
+
+    bStats := baseStats.GetStats()
+    pStats := predictedStats.GetStats()
+    for stat, value := range pStats {
+        pDiff := (value - bStats[stat]) / bStats[stat]
+        if pDiff < -.2 ||  pDiff > .2 {
+            outliers[stat] = pDiff
+        }
+    }
+
+    return outliers
 }

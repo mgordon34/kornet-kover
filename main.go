@@ -82,5 +82,9 @@ func runAnalysis() {
     for _, outcome := range results {
         log.Printf("[%v]: Base Stats: %v", outcome.PlayerIndex, outcome.BaseStats)
         log.Printf("[%v]: Predicted Stats: %v", outcome.PlayerIndex, outcome.Prediction)
+
+        for stat, value := range outcome.Outliers {
+            log.Printf("[%v]: Outlier %v: %v", outcome.PlayerIndex, stat, value)
+        }
     }
 }

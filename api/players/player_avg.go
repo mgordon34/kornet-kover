@@ -11,6 +11,7 @@ type PlayerAvg interface {
     PredictStats(PlayerAvg) PlayerAvg
     ConvertToPer() PlayerAvg
     ConvertToStats() PlayerAvg
+    GetStats() map[string]float32
 }
 
 type NBAAvg struct {
@@ -26,6 +27,18 @@ type NBAAvg struct {
 
 func (n NBAAvg) IsValid() bool {
     return n.NumGames > 0
+}
+
+func (n NBAAvg) GetStats() map[string]float32 {
+    return map[string]float32{
+        "minutes": n.Minutes,
+        "points": n.Points,
+        "rebounds": n.Rebounds,
+        "assists": n.Assists,
+        "usg": n.Usg,
+        "ortg": n.Ortg,
+        "drtg": n.Drtg,
+    }
 }
 
 func (n NBAAvg) AddAvg(a PlayerAvg) PlayerAvg {
