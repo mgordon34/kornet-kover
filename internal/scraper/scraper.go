@@ -221,3 +221,30 @@ func UpdateGames() error{
 
     return nil
 }
+
+func ScrapeTodaysGames() [][]players.Roster {
+    baseUrl := "https://www.basketball-reference.com/leagues/NBA_2025_games-%v.html"
+    c := colly.NewCollector()
+    games := make([][]players.Roster, 5)
+    for i := 0; i < 5; i++ {
+        games[i] = make([]players.Roster, 2)
+    }
+    month := strings.ToLower(time.Now().Month().String())
+
+    c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
+        t.ForEach("td", func(i int, tr *colly.HTMLElement) {
+            // index := strings.Split(tr.ChildAttr("a", "href"), "/")
+            dataStat := tr.Attr("data-stat")
+            if dataStat == "home_team_name" || dataStat == "away_team_name" {
+                link := tr.ChildAttr("a", "href")
+                log.Println(link)
+            }
+        })
+    })
+
+    str := fmt.Sprintf(baseUrl, month)
+    log.Println(str)
+    c.Visit(str)
+
+    return games
+}
