@@ -229,17 +229,32 @@ func ScrapeTodaysGames() [][]players.Roster {
     for i := 0; i < 5; i++ {
         games[i] = make([]players.Roster, 2)
     }
-    month := strings.ToLower(time.Now().Month().String())
+    now := time.Now()
+    month := strings.ToLower(now.Month().String())
+    dateStr := now.Format("20060102")
+    log.Println(dateStr)
 
+    index := 0
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
-        t.ForEach("td", func(i int, tr *colly.HTMLElement) {
-            // index := strings.Split(tr.ChildAttr("a", "href"), "/")
-            dataStat := tr.Attr("data-stat")
-            if dataStat == "home_team_name" || dataStat == "away_team_name" {
-                link := tr.ChildAttr("a", "href")
-                log.Println(link)
+        t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            dataStat := tr.ChildAttr("th", "csk")
+            if dataStat != "" && dataStat[:8] == dateStr{
+                var homeIndex, awayIndex string
+                tr.ForEach("td", func(i int, td *colly.HTMLElement) {
+                    dataStat := td.Attr("data-stat")
+                    if dataStat == "home_team_name" {
+                        homeIndex = strings.Split(td.ChildAttr("a", "href"), "/")[2]
+                    } else if dataStat == "visitor_team_name" {
+                        awayIndex = strings.Split(td.ChildAttr("a", "href"), "/")[2]
+                    }
+                })
+
+                log.Printf("%v vs %v", homeIndex, awayIndex)
+                index++
             }
         })
+        // t.ForEach("td", func(i int, tr *colly.HTMLElement) {
+        // })
     })
 
     str := fmt.Sprintf(baseUrl, month)
