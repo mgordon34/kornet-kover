@@ -239,17 +239,19 @@ func ScrapeTodaysGames() [][]players.Roster {
         t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
             dataStat := tr.ChildAttr("th", "csk")
             if dataStat != "" && dataStat[:8] == dateStr{
-                var homeIndex, awayIndex string
+                var homeRoster, awayRoster players.Roster
                 tr.ForEach("td", func(i int, td *colly.HTMLElement) {
                     dataStat := td.Attr("data-stat")
                     if dataStat == "home_team_name" {
-                        homeIndex = strings.Split(td.ChildAttr("a", "href"), "/")[2]
+                        homeIndex := strings.Split(td.ChildAttr("a", "href"), "/")[2]
+                        homeRoster = getRosterForTeam(homeIndex)
                     } else if dataStat == "visitor_team_name" {
-                        awayIndex = strings.Split(td.ChildAttr("a", "href"), "/")[2]
+                        awayIndex := strings.Split(td.ChildAttr("a", "href"), "/")[2]
+                        awayRoster = getRosterForTeam(awayIndex)
                     }
                 })
 
-                log.Printf("%v vs %v", homeIndex, awayIndex)
+                log.Printf("%v vs %v", homeRoster, awayRoster)
                 index++
             }
         })
@@ -262,4 +264,10 @@ func ScrapeTodaysGames() [][]players.Roster {
     c.Visit(str)
 
     return games
+}
+
+func getRosterForTeam(teamIndex string) players.Roster {
+    var roster = players.Roster{}
+
+    return roster
 }
