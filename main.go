@@ -24,11 +24,11 @@ func runUpdateGames() {
 }
 
 func runSportsbookGetGames() {
-    startDate, err := time.Parse("2006-01-02", "2024-10-22")
+    startDate, err := time.Parse("2006-01-02", "2024-11-20")
     if err != nil {
         log.Fatal("Error parsing time: ", err)
     }
-    endDate, err := time.Parse("2006-01-02", "2024-11-17")
+    endDate, err := time.Parse("2006-01-02", "2024-11-26")
     if err != nil {
         log.Fatal("Error parsing time: ", err)
     }
@@ -74,17 +74,19 @@ func runGetPlayerPip() {
 }
 
 func runAnalysis() {
-    awayRoster := players.Roster{Starters: []string{"daniedy01", "johnsja05", "wallake01", "risacza01", "capelca01"}}
-    homeRoster := players.Roster{Starters: []string{"whitede01", "tatumja01", "brownja02", "holidjr01", "horfoal01"}}
+    games := scraper.ScrapeTodaysGames()
 
-    results := analysis.RunAnalysisOnGame(homeRoster, awayRoster)
+    for _, game := range games {
+        results := analysis.RunAnalysisOnGame(game[0], game[1])
 
-    for _, outcome := range results {
-        log.Printf("[%v]: Base Stats: %v", outcome.PlayerIndex, outcome.BaseStats)
-        log.Printf("[%v]: Predicted Stats: %v", outcome.PlayerIndex, outcome.Prediction)
+        for _, outcome := range results {
+            log.Printf("[%v]: Base Stats: %v", outcome.PlayerIndex, outcome.BaseStats)
+            log.Printf("[%v]: Predicted Stats: %v", outcome.PlayerIndex, outcome.Prediction)
 
-        for stat, value := range outcome.Outliers {
-            log.Printf("[%v]: Outlier %v: %v", outcome.PlayerIndex, stat, value)
+            for stat, value := range outcome.Outliers {
+                log.Printf("[%v]: Outlier %v: %v", outcome.PlayerIndex, stat, value)
+            }
         }
     }
+
 }

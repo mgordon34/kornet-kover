@@ -225,7 +225,7 @@ func UpdateGames() error{
 func ScrapeTodaysGames() [][]players.Roster {
     baseUrl := "https://www.basketball-reference.com/leagues/NBA_2025_games-%v.html"
     c := colly.NewCollector()
-    games := make([][]players.Roster, 5)
+    var games [][]players.Roster
     now := time.Now()
     month := strings.ToLower(now.Month().String())
     dateStr := now.Format("20060102")
@@ -241,11 +241,9 @@ func ScrapeTodaysGames() [][]players.Roster {
                     dataStat := td.Attr("data-stat")
                     if dataStat == "home_team_name" {
                         homeIndex := strings.Split(td.ChildAttr("a", "href"), "/")[2]
-                        time.Sleep(4 * time.Second)
                         homeRoster = getRosterForTeam(homeIndex, missingPlayers)
                     } else if dataStat == "visitor_team_name" {
                         awayIndex := strings.Split(td.ChildAttr("a", "href"), "/")[2]
-                        time.Sleep(4 * time.Second)
                         awayRoster = getRosterForTeam(awayIndex, missingPlayers)
                     }
                 })
