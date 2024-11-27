@@ -226,15 +226,12 @@ func ScrapeTodaysGames() [][]players.Roster {
     baseUrl := "https://www.basketball-reference.com/leagues/NBA_2025_games-%v.html"
     c := colly.NewCollector()
     games := make([][]players.Roster, 5)
-    for i := 0; i < 5; i++ {
-        games[i] = make([]players.Roster, 2)
-    }
     now := time.Now()
     month := strings.ToLower(now.Month().String())
     dateStr := now.Format("20060102")
-    log.Println(dateStr)
 
-    index := 0
+    missingPlayers := GetMissingPlayers()
+
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
         t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
             dataStat := tr.ChildAttr("th", "csk")
@@ -244,30 +241,84 @@ func ScrapeTodaysGames() [][]players.Roster {
                     dataStat := td.Attr("data-stat")
                     if dataStat == "home_team_name" {
                         homeIndex := strings.Split(td.ChildAttr("a", "href"), "/")[2]
-                        homeRoster = getRosterForTeam(homeIndex)
+                        time.Sleep(4 * time.Second)
+                        homeRoster = getRosterForTeam(homeIndex, missingPlayers)
                     } else if dataStat == "visitor_team_name" {
                         awayIndex := strings.Split(td.ChildAttr("a", "href"), "/")[2]
-                        awayRoster = getRosterForTeam(awayIndex)
+                        time.Sleep(4 * time.Second)
+                        awayRoster = getRosterForTeam(awayIndex, missingPlayers)
                     }
                 })
-
-                log.Printf("%v vs %v", homeRoster, awayRoster)
-                index++
+                games = append(games, []players.Roster{homeRoster, awayRoster})
             }
         })
-        // t.ForEach("td", func(i int, tr *colly.HTMLElement) {
-        // })
     })
 
     str := fmt.Sprintf(baseUrl, month)
-    log.Println(str)
     c.Visit(str)
 
     return games
 }
 
-func getRosterForTeam(teamIndex string) players.Roster {
+func getRosterForTeam(teamIndex string, missingPlayers map[string]string) players.Roster {
     var roster = players.Roster{}
+    url := fmt.Sprintf("https://www.basketball-reference.com/teams/%v/2025.html", teamIndex)
+    c := colly.NewCollector()
+    log.Println("Visiting team page for ", teamIndex)
+
+    index := 0
+    c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
+        id := t.Attr("id")
+        if id != "per_game_stats" {
+            return
+        }
+
+        t.ForEach("td", func(i int, td *colly.HTMLElement) {
+            dataStat := td.Attr("data-stat")
+            if dataStat == "name_display" && td.Attr("data-append-csv") != ""{
+                playerIndex := td.Attr("data-append-csv")
+
+                if _, ok := missingPlayers[playerIndex]; ok {
+                    log.Printf("%v is out for today", playerIndex)
+                    roster.Out = append(roster.Out, playerIndex)
+                } else if index < 5 {
+                    roster.Starters = append(roster.Starters, playerIndex)
+                    index++
+                } else {
+                    roster.Bench = append(roster.Bench, playerIndex)
+                    index++
+                }
+            }
+        })
+    })
+    c.Visit(url)
 
     return roster
+}
+
+func GetMissingPlayers() map[string]string {
+    players := make(map[string]string)
+    c := colly.NewCollector()
+
+    c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
+        t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            var pIndex string
+            dataStat := tr.ChildAttr("th", "data-stat")
+            if dataStat == "player" {
+                pIndex = tr.ChildAttr("th", "data-append-csv")
+            }
+            tr.ForEach("td", func(i int, td *colly.HTMLElement) {
+                dataStat := td.Attr("data-stat")
+                if dataStat == "note" {
+                    reason := strings.ToLower(td.Text)
+                    if strings.Contains(reason, "out") || strings.Contains(reason, "doubtful") || strings.Contains(reason, "questionable"){
+                        players[pIndex] = reason
+                    }
+                }
+            })
+        })
+    })
+
+    c.Visit("https://www.basketball-reference.com/friv/injuries.fcgi")
+    return players
 }
