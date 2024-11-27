@@ -111,9 +111,6 @@ func (n NBAAvg) ConvertToStats() PlayerAvg {
 }
 
 func (n NBAAvg) PredictStats(pipFactor PlayerAvg) PlayerAvg {
-    if !pipFactor.IsValid() {
-        return n
-    }
     nbaPip := pipFactor.(NBAAvg)
     predictedMinutes := (n.Minutes + nbaPip.Minutes * 100) 
 
