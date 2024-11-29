@@ -112,7 +112,7 @@ func (n NBAAvg) ConvertToStats() PlayerAvg {
 
 func (n NBAAvg) PredictStats(pipFactor PlayerAvg) PlayerAvg {
     nbaPip := pipFactor.(NBAAvg)
-    predictedMinutes := (n.Minutes + nbaPip.Minutes * 100) 
+    predictedMinutes := n.Minutes + n.Minutes * nbaPip.Minutes
 
     return NBAAvg{
         NumGames: nbaPip.NumGames,
