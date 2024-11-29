@@ -164,7 +164,7 @@ func GetPlayerStats(player string, startDate time.Time, endDate time.Time) (Play
     sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
             avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
                 left join games on games.id = nba_player_games.game
-                where nba_player_games.player_index = ($1) and games.date between ($2) and ($3)`
+                where nba_player_games.player_index = ($1) and nba_player_games.minutes > 10 and games.date between ($2) and ($3)`
 
     rows, err := db.Query(context.Background(), sql, player, startDate, endDate)
     if err != nil {
@@ -207,7 +207,7 @@ func GetPlayerStatsWithPlayer(player string, defender string, relationship Relat
     sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
             avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
                 left join games gg on gg.id = nba_player_games.game
-                where nba_player_games.player_index = ($1) and gg.date between ($3) and ($4)`
+                where nba_player_games.player_index = ($1) and nba_player_games.minutes > 10 and gg.date between ($3) and ($4)`
     opponent_filter := `
         AND (
             SELECT COUNT(*) FROM games ga
