@@ -24,7 +24,6 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster) []Analys
         controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
         var totalPip players.PlayerAvg
         for _, defender := range opponents.Starters {
-            log.Printf("%v defended by %v", player, defender)
             affectedMap := players.GetPlayerPerWithPlayerByYear(player, defender, players.Opponent, startDate, endDate)
             pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
 
