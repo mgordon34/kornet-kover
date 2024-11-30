@@ -46,6 +46,21 @@ func requestPropOdds(endpoint string, addlArgs []string) (response string, err e
     return buf.String(), err
 }
 
+func UpdateLines() error {
+    lastLine, err := odds.GetLastLine()
+    log.Printf("Last line: %v", lastLine)
+    if err != nil {
+        log.Println(err)
+        return err
+    }
+
+    startDate := lastLine.Timestamp
+    endDate := time.Now()
+    GetGames(startDate, endDate)
+
+    return nil
+}
+
 func GetGames(startDate time.Time, endDate time.Time) {
     for d := startDate; d.After(endDate) == false; d = d.AddDate(0, 0, 1) {
         log.Printf("Scraping games for date: %v", d)

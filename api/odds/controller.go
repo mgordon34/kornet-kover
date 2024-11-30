@@ -2,6 +2,8 @@ package odds
 
 import (
 	"context"
+    "errors"
+    "fmt"
 	"log"
 	"time"
 
@@ -97,6 +99,23 @@ func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
 type PlayerOdds struct {
     Over    PlayerLine
     Under   PlayerLine
+}
+
+func GetLastLine() (PlayerLine, error) {
+    db := storage.GetDB()
+
+    sql := `
+	SELECT sport, player_index, timestamp, stat, side, line, odds from player_lines
+    ORDER BY timestamp DESC
+    LIMIT 1`
+
+    row, _ := db.Query(context.Background(), sql)
+    pLine, err := pgx.CollectOneRow(row, pgx.RowToStructByName[PlayerLine])
+    if err != nil {
+        return PlayerLine{}, errors.New(fmt.Sprintf("Error getting last game: %v", err))
+    }
+
+    return pLine, nil
 }
 
 func GetPlayerOddsForDate(date time.Time) (map[string]PlayerOdds, error) {
