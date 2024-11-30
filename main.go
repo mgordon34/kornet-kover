@@ -16,19 +16,27 @@ func main() {
     storage.InitTables()
     log.Println("Initialized DB")
 
+    runUpdateGames()
+    runUpdateLines()
     runAnalysis()
 }
 
 func runUpdateGames() {
+    log.Println("Updating games...")
     scraper.UpdateGames()
 }
 
+func runUpdateLines() {
+    log.Println("Updating lines...")
+    sportsbook.UpdateLines()
+}
+
 func runSportsbookGetGames() {
-    startDate, err := time.Parse("2006-01-02", "2024-11-20")
+    startDate, err := time.Parse("2006-01-02", "2024-11-26")
     if err != nil {
         log.Fatal("Error parsing time: ", err)
     }
-    endDate, err := time.Parse("2006-01-02", "2024-11-26")
+    endDate, err := time.Parse("2006-01-02", "2024-11-27")
     if err != nil {
         log.Fatal("Error parsing time: ", err)
     }
@@ -74,10 +82,17 @@ func runGetPlayerPip() {
 }
 
 func runAnalysis() {
+    log.Println("Running analysis...")
     games := scraper.ScrapeTodaysGames()
+    // var games [][]players.Roster
+    // homeRoster := players.Roster{Starters: []string{"wiggian01", "greendr01", "podzibr01", "hieldbu01", "jackstr02"}}
+    // awayRoster := players.Roster{Starters: []string{"gilgesh01", "willija06", "harteis01", "dortlu01", "wallaca01"}}
+    // game := []players.Roster{homeRoster, awayRoster}
+    // games = append(games, game)
 
     for _, game := range games {
         results := analysis.RunAnalysisOnGame(game[0], game[1])
+        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0])...)
 
         for _, outcome := range results {
             log.Printf("[%v]: Base Stats: %v", outcome.PlayerIndex, outcome.BaseStats)
