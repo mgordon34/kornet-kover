@@ -60,6 +60,18 @@ func runGetPlayerOdds() {
     }
 }
 
+func runGetPlayerOddsForToday() map[string]odds.PlayerOdds {
+    t := time.Now()
+    today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+
+    pOdds, err := odds.GetPlayerOddsForDate(today)
+    if err  != nil {
+        log.Fatal("Error getting player odds", err)
+    }
+
+    return pOdds
+}
+
 func runGetPlayerPip() {
     startDate, err := time.Parse("2006-01-02", "2018-10-13")
     if err != nil {
