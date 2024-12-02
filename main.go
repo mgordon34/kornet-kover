@@ -16,9 +16,11 @@ func main() {
     storage.InitTables()
     log.Println("Initialized DB")
 
-    runUpdateGames()
-    runUpdateLines()
-    runAnalysis()
+    // runUpdateGames()
+    // runUpdateLines()
+    // runAnalysis()
+
+    runPickProps()
 }
 
 func runUpdateGames() {
@@ -51,7 +53,7 @@ func runGetPlayerOdds() {
         log.Fatal("Error parsing time: ", err)
     }
 
-    oddsMap, err := odds.GetPlayerOddsForDate(startDate)
+    oddsMap, err := odds.GetPlayerOddsForDate(startDate, []string{"points", "rebounds", "assists"})
     if err  != nil {
         log.Fatal("Error getting player odds", err)
     }
@@ -60,11 +62,11 @@ func runGetPlayerOdds() {
     }
 }
 
-func runGetPlayerOddsForToday() map[string]odds.PlayerOdds {
+func runGetPlayerOddsForToday() map[string]map[string]odds.PlayerOdds {
     t := time.Now()
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 
-    pOdds, err := odds.GetPlayerOddsForDate(today)
+    pOdds, err := odds.GetPlayerOddsForDate(today, []string{"points", "rebounds", "assists"})
     if err  != nil {
         log.Fatal("Error getting player odds", err)
     }
@@ -116,4 +118,32 @@ func runAnalysis() {
         }
     }
 
+}
+
+func runPickProps() {
+    t := time.Now()
+    today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+
+    // Gather player Odds map for upcoming games
+    oddsMap, err := odds.GetPlayerOddsForDate(today, []string{"points, rebounds, assists"})
+    if err  != nil {
+        log.Fatal("Error getting player odds", err)
+    }
+    // Gather roster for today's games
+    games := scraper.ScrapeTodaysGames()
+
+    // Run analysis on each game
+    var results []analysis.Analysis
+    for _, game := range games {
+        log.Printf("Running analysis on %v vs %v", game[0], game[1])
+        results = append(results, analysis.RunAnalysisOnGame(game[0], game[1])...)
+        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0])...)
+    }
+
+    picker := analysis.PropSelector{}
+    picks, err := picker.PickProps(oddsMap, results)
+    if err  != nil {
+        log.Fatal("Error getting picking props", err)
+    }
+    log.Println(picks)
 }
