@@ -118,8 +118,9 @@ func GetLastLine() (PlayerLine, error) {
     return pLine, nil
 }
 
-func GetPlayerOddsForDate(date time.Time) (map[string]PlayerOdds, error) {
-    oddsMap := make(map[string]PlayerOdds)
+func GetPlayerOddsForDate(date time.Time, stats []string) (map[string]map[string]PlayerOdds, error) {
+    oddsMap := make(map[string]map[string]PlayerOdds)
+
     lines, err := GetPlayerLinesForDate(date)
     if err != nil {
         return oddsMap, err
@@ -131,16 +132,20 @@ func GetPlayerOddsForDate(date time.Time) (map[string]PlayerOdds, error) {
     return oddsMap, nil
 }
 
-func addLineToOddsMap(oddsMap map[string]PlayerOdds, line PlayerLine) {
+func addLineToOddsMap(oddsMap map[string]map[string]PlayerOdds, line PlayerLine) {
+    log.Printf("Adding %v for %v: %v", line.Stat, line.PlayerIndex, line)
     if _, ok := oddsMap[line.PlayerIndex]; !ok {
-        oddsMap[line.PlayerIndex] = PlayerOdds{}
+        oddsMap[line.PlayerIndex] = make(map[string]PlayerOdds)
+    }
+    if _, ok := oddsMap[line.PlayerIndex][line.Stat]; !ok {
+        oddsMap[line.PlayerIndex][line.Stat] = PlayerOdds{}
     }
 
-    pOdds := oddsMap[line.PlayerIndex]
+    pOdds := oddsMap[line.PlayerIndex][line.Stat]
     if line.Side == "Over" {
         pOdds.Over = line
     } else {
         pOdds.Under = line
     }
-    oddsMap[line.PlayerIndex] = pOdds
+    oddsMap[line.PlayerIndex][line.Stat] = pOdds
 }
