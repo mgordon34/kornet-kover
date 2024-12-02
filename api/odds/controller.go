@@ -76,8 +76,8 @@ func AddPlayerLines(playerLines []PlayerLine) {
 }
 
 func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
-    startDate := date.Add(time.Hour * 7)
-    endDate := startDate.AddDate(0, 0, 1)
+    startDate := date.AddDate(0, 0, -1)
+    endDate := date.AddDate(0, 0, 1)
 
     db := storage.GetDB()
     sql := `SELECT pl.sport, pl.player_index, pl.timestamp, pl.stat, pl.side, pl.line, pl.odds FROM player_lines pl INNER JOIN
@@ -125,7 +125,6 @@ func GetPlayerOddsForDate(date time.Time) (map[string]PlayerOdds, error) {
         return oddsMap, err
     }
     for _, line := range lines {
-        log.Println(line)
         addLineToOddsMap(oddsMap, line)
     }
 
