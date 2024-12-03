@@ -21,10 +21,13 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster) []Analys
     log.Println("running analysis")
 
     for _, player := range roster.Starters {
+        log.Printf("-------------------%v---------------------", player)
         controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
         var totalPip players.PlayerAvg
         for _, defender := range opponents.Starters {
+            log.Printf("Running analysis on %v", defender)
             affectedMap := players.GetPlayerPerWithPlayerByYear(player, defender, players.Opponent, startDate, endDate)
+            log.Printf("Getting Pipfactor on %v", defender)
             pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
 
             if totalPip == nil {
@@ -64,4 +67,9 @@ func GetOutliers(baseStats players.PlayerAvg, predictedStats players.PlayerAvg) 
     }
 
     return outliers
+}
+
+func (a Analysis) HasOutlier(stat string) bool {
+    _, ok := a.Outliers[stat]
+    return ok
 }

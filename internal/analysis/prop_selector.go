@@ -92,6 +92,9 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
     threshold, ok := p.Thresholds[pick.Stat]; if !ok {
         return false
     }
+    if p.RequireOutlier && !pick.HasOutlier(pick.Stat) {
+        return false
+    }
     return math.Abs(diff) > float64(threshold)
 }
 

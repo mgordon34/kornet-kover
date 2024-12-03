@@ -131,7 +131,7 @@ func runPickProps() {
     }
     // Gather roster for today's games
     games := scraper.ScrapeTodaysGames()
-    games = games[:1]
+    // games = games[:1]
 
     // Run analysis on each game
     var results []analysis.Analysis
@@ -148,16 +148,16 @@ func runPickProps() {
             "assists": .5,
         },
         TresholdType: analysis.Raw,
-        RequireOutlier: false,
-        MaxOver: 5,
-        MaxUnder: 5,
-        TotalMax: 10,
+        RequireOutlier: true,
+        MaxOver: 10,
+        MaxUnder: 10,
+        TotalMax: 20,
     }
     picks, err := picker.PickProps(oddsMap, results)
     if err  != nil {
         log.Fatal("Error getting picking props", err)
     }
     for _, pick := range picks {
-        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.PropOdd.Over.Line, pick.Diff)
+        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff)
     }
 }
