@@ -133,7 +133,6 @@ func GetPlayerOddsForDate(date time.Time, stats []string) (map[string]map[string
 }
 
 func addLineToOddsMap(oddsMap map[string]map[string]PlayerOdds, line PlayerLine) {
-    log.Printf("Adding %v for %v: %v", line.Stat, line.PlayerIndex, line)
     if _, ok := oddsMap[line.PlayerIndex]; !ok {
         oddsMap[line.PlayerIndex] = make(map[string]PlayerOdds)
     }
