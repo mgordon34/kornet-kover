@@ -72,7 +72,7 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
             }
         }
 
-        if overCount > p.MaxOver || underCount > p.MaxUnder || overCount + underCount > p.TotalMax {
+        if overCount >= p.MaxOver || underCount >= p.MaxUnder || overCount + underCount >= p.TotalMax {
             break
         }
     }
