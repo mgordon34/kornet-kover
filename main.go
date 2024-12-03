@@ -32,11 +32,11 @@ func runUpdateLines() {
 }
 
 func runSportsbookGetGames() {
-    startDate, err := time.Parse("2006-01-02", "2024-11-26")
+    startDate, err := time.Parse("2006-01-02", "2024-12-02")
     if err != nil {
         log.Fatal("Error parsing time: ", err)
     }
-    endDate, err := time.Parse("2006-01-02", "2024-11-27")
+    endDate, err := time.Parse("2006-01-02", "2024-12-03")
     if err != nil {
         log.Fatal("Error parsing time: ", err)
     }

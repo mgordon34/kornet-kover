@@ -2,9 +2,10 @@ package odds
 
 import (
 	"context"
-    "errors"
-    "fmt"
+	"errors"
+	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -81,8 +82,8 @@ func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
 
     db := storage.GetDB()
     sql := `SELECT pl.sport, pl.player_index, pl.timestamp, pl.stat, pl.side, pl.line, pl.odds FROM player_lines pl INNER JOIN
-                (select player_index, stat, side, max(timestamp) as latest from player_lines where timestamp between ($1) and ($2) group by player_index, stat, side) mpl 
-                on pl.timestamp = mpl.latest and pl.player_index = mpl.player_index and pl.stat = mpl.stat and pl.side = mpl.side;`
+                (select player_index, stat, side, line, max(timestamp) as latest from player_lines where timestamp between ($1) and ($2) group by player_index, stat, side, line) mpl 
+                on pl.timestamp = mpl.latest and pl.player_index = mpl.player_index and pl.stat = mpl.stat and pl.side = mpl.side and pl.line = mpl.line;`
 
     rows, err := db.Query(context.Background(), sql, startDate, endDate)
     if err != nil {
@@ -141,10 +142,20 @@ func addLineToOddsMap(oddsMap map[string]map[string]PlayerOdds, line PlayerLine)
     }
 
     pOdds := oddsMap[line.PlayerIndex][line.Stat]
-    if line.Side == "Over" {
+    if line.Side == "Over" && isLineCloser(pOdds.Over, line) {
         pOdds.Over = line
-    } else {
+    } else if isLineCloser(pOdds.Under, line) {
         pOdds.Under = line
     }
     oddsMap[line.PlayerIndex][line.Stat] = pOdds
+}
+
+func isLineCloser(curLine PlayerLine, newLine PlayerLine) bool {
+    if curLine.Odds == 0 {
+        return true
+    }
+    curOdds := math.Abs(math.Abs(float64(curLine.Odds)))
+    newOdds := math.Abs(math.Abs(float64(newLine.Odds)))
+
+    return newOdds < curOdds
 }
