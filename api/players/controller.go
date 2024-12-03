@@ -74,20 +74,24 @@ func GetPlayer(index string) (Player, error) {
     return player, nil
 }
 
-func PlayerNameToIndex(playerName string) (string, error) {
+func PlayerNameToIndex(nameMap map[string]string, playerName string) (string, error) {
+    playerName = strings.ReplaceAll(playerName, ".", "")
+    index, ok := nameMap[playerName]; if ok {
+        return index, nil
+    }
+
     db := storage.GetDB()
     sql := `SELECT index FROM players WHERE UPPER(name) LIKE UPPER($1);`
-    playerName = strings.ReplaceAll(playerName, ".", "")
     if playerName == "Alexandre Sarr" {
         playerName = "Alex Sarr"
     }
 
-    var index string
     row := db.QueryRow(context.Background(), sql, playerName)
     if err := row.Scan(&index); err != nil {
         log.Printf("Error finding player index for %s", playerName)
         return "", err
     }
+    nameMap[playerName] = index
     return index, nil
 }
 
