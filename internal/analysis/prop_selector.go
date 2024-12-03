@@ -21,7 +21,7 @@ type PropPick struct {
     Side            string
     Diff            float32
     PDiff           float32
-    PropOdd         odds.PlayerOdds
+    odds.PlayerOdds
     Analysis
 }
 
@@ -54,7 +54,7 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
                 Side: side,
                 Diff: diff,
                 PDiff: pDiff,
-                PropOdd: props[analysis.PlayerIndex][stat],
+                PlayerOdds: props[analysis.PlayerIndex][stat],
                 Analysis: analysis,
             }
             picks = append(picks, pick)
