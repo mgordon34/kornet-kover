@@ -131,6 +131,7 @@ func runPickProps() {
     }
     // Gather roster for today's games
     games := scraper.ScrapeTodaysGames()
+    games = games[:1]
 
     // Run analysis on each game
     var results []analysis.Analysis
