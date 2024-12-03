@@ -141,10 +141,23 @@ func runPickProps() {
         results = append(results, analysis.RunAnalysisOnGame(game[1], game[0])...)
     }
 
-    picker := analysis.PropSelector{}
+    picker := analysis.PropSelector{
+        Thresholds: map[string]float32{
+            "points": 2,
+            "rebounds": .5,
+            "assists": .5,
+        },
+        TresholdType: analysis.Raw,
+        RequireOutlier: false,
+        MaxOver: 5,
+        MaxUnder: 5,
+        TotalMax: 10,
+    }
     picks, err := picker.PickProps(oddsMap, results)
     if err  != nil {
         log.Fatal("Error getting picking props", err)
     }
-    log.Println(picks)
+    for _, pick := range picks {
+        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.PropOdd.Over.Line, pick.Diff)
+    }
 }
