@@ -16,10 +16,8 @@ func main() {
     storage.InitTables()
     log.Println("Initialized DB")
 
-    // runUpdateGames()
-    // runUpdateLines()
-    // runAnalysis()
-
+    runUpdateGames()
+    runUpdateLines()
     runPickProps()
 }
 
