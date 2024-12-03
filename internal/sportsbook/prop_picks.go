@@ -140,6 +140,7 @@ type OddsResponse struct {
 
 func GetLinesForMarket(game Game, market string, stat string, apiGetter APIGetter) []odds.PlayerLine {
     var lines []odds.PlayerLine
+    nameMap := make(map[string]string)
 
     res, err := apiGetter(fmt.Sprintf("/beta/odds/%s/%s", game.ID, market), nil)
     if err != nil {
@@ -151,36 +152,35 @@ func GetLinesForMarket(game Game, market string, stat string, apiGetter APIGette
         panic(err)
     }
     for _, bookie := range oddsResponse.Sportsbooks {
-        if bookie.BookieKey != "pinnacle" {
-            continue
-        }
-        for _, outcome := range bookie.Market.Outcomes {
-            nameSplit := strings.Split(outcome.Name, " ")
-            playerName := strings.Join(nameSplit[:len(nameSplit) - 2], " ")
-            side := nameSplit[len(nameSplit) - 2]
-            playerIndex, err := players.PlayerNameToIndex(playerName)
-            if err != nil {
-                continue
-            }
-            timestamp, err := time.Parse("2006-01-02T15:04:05", outcome.Timestamp)
-            if err != nil {
-                log.Fatalf("Error parsing timestamp: %v", err)
-            }
+        if bookie.BookieKey == "fanduel" {
+            for _, outcome := range bookie.Market.Outcomes {
+                nameSplit := strings.Split(outcome.Name, " ")
+                playerName := strings.Join(nameSplit[:len(nameSplit) - 2], " ")
+                side := nameSplit[len(nameSplit) - 2]
+                playerIndex, err := players.PlayerNameToIndex(nameMap, playerName)
+                if err != nil {
+                    log.Printf("Error finding player name: %s", playerName)
+                    continue
+                }
+                timestamp, err := time.Parse("2006-01-02T15:04:05", outcome.Timestamp)
+                if err != nil {
+                    log.Fatalf("Error parsing timestamp: %v", err)
+                }
+                pl := odds.PlayerLine{
+                    Sport: "nba",
+                    PlayerIndex: playerIndex,
+                    Timestamp: timestamp,
+                    Stat: stat,
+                    Side: side,
+                    Line: outcome.Handicap,
+                    Odds: outcome.Odds,
+                }
 
-            pl := odds.PlayerLine{
-                Sport: "nba",
-                PlayerIndex: playerIndex,
-                Timestamp: timestamp,
-                Stat: stat,
-                Side: side,
-                Line: outcome.Handicap,
-                Odds: outcome.Odds,
-            }
-
-            // Only add lines with timestamps before game start + 20 minutes
-            if timestamp.Before(game.Timestamp.Add(time.Minute * 20)){
-                log.Println(pl)
-                lines = append(lines, pl)
+                // Only add lines with timestamps before game start + 20 minutes
+                if timestamp.Before(game.Timestamp.Add(time.Minute * 20)){
+                    log.Println(pl)
+                    lines = append(lines, pl)
+                }
             }
         }
     }
