@@ -3,8 +3,10 @@ package analysis
 import (
 	"log"
 	"math"
+    "sort"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
+	"github.com/mgordon34/kornet-kover/api/players"
 )
 
 type PropSelector struct {
@@ -58,10 +60,13 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
                 Analysis: analysis,
             }
             picks = append(picks, pick)
-            log.Printf("%v: %s prediction %.2f vs line %.2f. Diff: %.2f PDiff %.2f%%", analysis.PlayerIndex, stat, prediction, line.Over.Line, pick.Diff, pick.PDiff*100)
+            log.Printf("%v[%v]: %s prediction %.2f vs line %.2f. Diff: %.2f PDiff %.2f%%", analysis.PlayerIndex, analysis.Prediction.(players.NBAAvg).NumGames, stat, prediction, line.Over.Line, pick.Diff, pick.PDiff*100)
         }
     }
     var overCount, underCount int
+    sort.Slice(picks, func(i, j int) bool {
+        return picks[i].PDiff > picks[j].PDiff
+    })
     for _, pick := range picks {
         if p.isPickElligible(pick) {
             selectedPicks = append(selectedPicks, pick)
