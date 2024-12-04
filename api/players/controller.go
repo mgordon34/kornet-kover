@@ -190,6 +190,38 @@ const (
     Opponent
 )
 
+func GetPlayersForGame(gameId int, homeIndex string) (map[string][]Player, error) {
+    playerMap := make(map[string][]Player)
+    db := storage.GetDB()
+    sql := `SELECT pl.index, pl.name, pg.team_index FROM players pl
+                 LEFT JOIN nba_player_games pg ON pg.player_index=pl.index
+                 LEFT JOIN games gg ON gg.id=pg.game
+                 WHERE gg.id=($1)
+                 ORDER BY pg.minutes DESC`
+    rows, err := db.Query(context.Background(), sql, gameId)
+    if err != nil {
+        log.Fatal("Error querying for player lines: ", err)
+    }
+    defer rows.Close()
+    for rows.Next() {
+        var player Player
+        var teamIndex string
+        err = rows.Scan(&player.Index, &player.Name, &teamIndex)
+        if err != nil {
+            log.Fatal("Error converting rows to playerLines: ", err)
+        }
+        log.Printf("Player %v: on team %s", player, teamIndex)
+
+        if teamIndex == homeIndex {
+            playerMap["home"] = append(playerMap["home"], player)
+        } else {
+            playerMap["away"] = append(playerMap["away"], player)
+        }
+    }
+
+    return playerMap, nil
+}
+
 func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
     playerStats := make(map[int]PlayerAvg)
 
