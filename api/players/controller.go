@@ -210,7 +210,6 @@ func GetPlayersForGame(gameId int, homeIndex string) (map[string][]Player, error
         if err != nil {
             log.Fatal("Error converting rows to playerLines: ", err)
         }
-        log.Printf("Player %v: on team %s", player, teamIndex)
 
         if teamIndex == homeIndex {
             playerMap["home"] = append(playerMap["home"], player)
