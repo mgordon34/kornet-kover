@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mgordon34/kornet-kover/api/games"
+	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/analysis"
 )
 
@@ -29,5 +30,13 @@ func (b Backtester) backtestDate(date time.Time) {
     }
     for _, game := range todayGames {
         log.Printf("Game %v: %v vs. %v", game.Id, game.HomeIndex, game.AwayIndex)
+        playerMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex)
+        if err != nil {
+            log.Fatal("Error getting players for game: ", err)
+        }
+        homeRoster := playerMap["home"][:5]
+        awayRoster := playerMap["away"][:5]
+        log.Printf("%s: %v", game.HomeIndex, homeRoster)
+        log.Printf("%s: %v", game.AwayIndex, awayRoster)
     }
 }
