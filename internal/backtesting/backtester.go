@@ -28,15 +28,29 @@ func (b Backtester) backtestDate(date time.Time) {
     if err != nil {
         log.Fatal("Error getting games for date: ", err)
     }
+    var results []analysis.Analysis
     for _, game := range todayGames {
         log.Printf("Game %v: %v vs. %v", game.Id, game.HomeIndex, game.AwayIndex)
         playerMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex)
         if err != nil {
             log.Fatal("Error getting players for game: ", err)
         }
-        homeRoster := playerMap["home"][:5]
-        awayRoster := playerMap["away"][:5]
-        log.Printf("%s: %v", game.HomeIndex, homeRoster)
-        log.Printf("%s: %v", game.AwayIndex, awayRoster)
+        homeRoster := players.Roster{
+            Starters: convertPlayerstoIndex(playerMap["home"][:5]),
+        }
+        awayRoster := players.Roster{
+            Starters: convertPlayerstoIndex(playerMap["away"][:5]),
+        }
+        results = append(results, analysis.RunAnalysisOnGame(homeRoster, awayRoster)...)
+        results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster)...)
     }
+}
+
+func convertPlayerstoIndex(players []players.Player) []string {
+    var indexes []string
+    for _, player := range players {
+        indexes = append(indexes, player.Index)
+    }
+
+    return indexes
 }
