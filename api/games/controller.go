@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mgordon34/kornet-kover/internal/storage"
@@ -43,4 +44,21 @@ func GetLastGame() (Game, error) {
     }
 
     return game, nil
+}
+
+func GetGamesForDate(date time.Time) ([]Game, error) {
+    db := storage.GetDB()
+
+    sql := `
+	SELECT * from games
+    WHERE date = ($1)
+    ORDER BY date ASC`
+
+    row, _ := db.Query(context.Background(), sql, date)
+    games, err := pgx.CollectRows(row, pgx.RowToStructByName[Game])
+    if err != nil {
+        return games, errors.New(fmt.Sprintf("Error getting last game: %v", err))
+    }
+
+    return games, nil
 }
