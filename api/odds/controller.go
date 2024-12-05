@@ -77,6 +77,7 @@ func AddPlayerLines(playerLines []PlayerLine) {
 }
 
 func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
+    date = date.UTC()
     startDate := date.AddDate(0, 0, -1)
     endDate := date.AddDate(0, 0, 1)
 

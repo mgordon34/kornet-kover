@@ -164,8 +164,9 @@ func runPickProps() {
 }
 
 func runBacktest() {
-    startDate, _ := time.Parse("2006-01-02", "2018-10-17")
-    endDate, _ := time.Parse("2006-01-02", "2018-10-17")
+    loc, _ := time.LoadLocation("America/New_York")
+    startDate, _ := time.ParseInLocation("2006-01-02", "2024-10-23", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2024-10-23", loc)
     picker := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 2,
