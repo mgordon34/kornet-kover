@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mgordon34/kornet-kover/api/games"
+	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/analysis"
 )
@@ -22,12 +23,19 @@ func (b Backtester) RunBacktest() {
 }
 
 func (b Backtester) backtestDate(date time.Time) {
-    date = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.UTC().Location())
+    date = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
     log.Printf("Running for date %v", date)
+
     todayGames, err := games.GetGamesForDate(date)
     if err != nil {
         log.Fatal("Error getting games for date: ", err)
     }
+
+    todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists"})
+    if err != nil {
+        log.Fatal("Error getting historical odds: ", err)
+    }
+
     var results []analysis.Analysis
     for _, game := range todayGames {
         log.Printf("Game %v: %v vs. %v", game.Id, game.HomeIndex, game.AwayIndex)
@@ -44,6 +52,16 @@ func (b Backtester) backtestDate(date time.Time) {
         results = append(results, analysis.RunAnalysisOnGame(homeRoster, awayRoster)...)
         results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster)...)
     }
+
+
+    for index, odds := range todaysOdds["points"] {
+        log.Printf("%v odds: %v", index, odds)
+    }
+
+    // for _, strategy := range b.Strategies {
+    //     log.Println("Running results against strategy...")
+    //     strategy.PickProps(todaysOdds, results)
+    // }
 
     for _, result := range results {
         log.Printf(result.PlayerIndex)
