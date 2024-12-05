@@ -44,6 +44,10 @@ func (b Backtester) backtestDate(date time.Time) {
         results = append(results, analysis.RunAnalysisOnGame(homeRoster, awayRoster)...)
         results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster)...)
     }
+
+    for _, result := range results {
+        log.Printf(result.PlayerIndex)
+    }
 }
 
 func convertPlayerstoIndex(players []players.Player) []string {
