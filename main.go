@@ -7,6 +7,7 @@ import (
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/analysis"
+	"github.com/mgordon34/kornet-kover/internal/backtesting"
 	"github.com/mgordon34/kornet-kover/internal/scraper"
 	"github.com/mgordon34/kornet-kover/internal/sportsbook"
 	"github.com/mgordon34/kornet-kover/internal/storage"
@@ -16,9 +17,11 @@ func main() {
     storage.InitTables()
     log.Println("Initialized DB")
 
-    runUpdateGames()
-    runUpdateLines()
-    runPickProps()
+    // runUpdateGames()
+    // runUpdateLines()
+    // runPickProps()
+
+    runBacktest()
 }
 
 func runUpdateGames() {
@@ -158,4 +161,27 @@ func runPickProps() {
     for _, pick := range picks {
         log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff)
     }
+}
+
+func runBacktest() {
+    startDate, _ := time.Parse("2006-01-02", "2018-10-17")
+    endDate, _ := time.Parse("2006-01-02", "2018-10-17")
+    picker := analysis.PropSelector{
+        Thresholds: map[string]float32{
+            "points": 2,
+            "rebounds": .5,
+            "assists": .5,
+        },
+        TresholdType: analysis.Raw,
+        RequireOutlier: true,
+        MaxOver: 10,
+        MaxUnder: 10,
+        TotalMax: 20,
+    }
+    b := backtesting.Backtester{
+        StartDate: startDate,
+        EndDate: endDate,
+        Strategies: []analysis.PropSelector{picker},
+    }
+    b.RunBacktest()
 }
