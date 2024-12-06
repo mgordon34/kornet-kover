@@ -17,8 +17,8 @@ func main() {
     storage.InitTables()
     log.Println("Initialized DB")
 
-    // runUpdateGames()
-    // runUpdateLines()
+    runUpdateGames()
+    runUpdateLines()
     // runPickProps()
 
     runBacktest()
@@ -31,13 +31,14 @@ func runUpdateGames() {
 
 func runUpdateLines() {
     log.Println("Updating lines...")
-    sportsbook.UpdateLines()
+    getter := sportsbook.OddsAPI{}
+    getter.UpdateLines()
 }
 
 func runSportsbookGetGames() {
     getter := sportsbook.OddsAPI{}
     loc, _ := time.LoadLocation("America/New_York")
-    startDate, _ := time.ParseInLocation("2006-01-02", "2023-11-27", loc)
+    startDate, _ := time.ParseInLocation("2006-01-02", "2024-01-25", loc)
     endDate, _ := time.ParseInLocation("2006-01-02", "2024-10-24", loc)
     log.Printf("Finding games from %v to %v", startDate, endDate)
 
