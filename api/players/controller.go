@@ -76,6 +76,11 @@ func GetPlayer(index string) (Player, error) {
 
 func PlayerNameToIndex(nameMap map[string]string, playerName string) (string, error) {
     playerName = strings.ReplaceAll(playerName, ".", "")
+    if playerName == "Herb Jones" {
+        return "joneshe01", nil
+    } else if playerName == "Moe Wagner" {
+        return "wagnemo01", nil
+    }
     index, ok := nameMap[playerName]; if ok {
         return index, nil
     }
