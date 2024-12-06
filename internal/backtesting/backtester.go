@@ -37,8 +37,9 @@ func (b Backtester) backtestDate(date time.Time) {
     }
 
     var results []analysis.Analysis
+    todayGames = []games.Game{todayGames[0]}
     for _, game := range todayGames {
-        log.Printf("Game %v: %v vs. %v", game.Id, game.HomeIndex, game.AwayIndex)
+        log.Printf("Analyzing %v vs. %v", game.HomeIndex, game.AwayIndex)
         playerMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex)
         if err != nil {
             log.Fatal("Error getting players for game: ", err)
@@ -53,18 +54,18 @@ func (b Backtester) backtestDate(date time.Time) {
         results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster)...)
     }
 
-
     for index, odds := range todaysOdds["points"] {
         log.Printf("%v odds: %v", index, odds)
     }
 
-    // for _, strategy := range b.Strategies {
-    //     log.Println("Running results against strategy...")
-    //     strategy.PickProps(todaysOdds, results)
-    // }
+    var picks []analysis.PropPick
+    for _, strategy := range b.Strategies {
+        log.Println("Running results against strategy...")
+        picks, _ = strategy.PickProps(todaysOdds, results)
+    }
 
-    for _, result := range results {
-        log.Printf(result.PlayerIndex)
+    for _, pick := range picks {
+        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff)
     }
 }
 

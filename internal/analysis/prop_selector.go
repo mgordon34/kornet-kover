@@ -6,7 +6,6 @@ import (
     "sort"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
-	"github.com/mgordon34/kornet-kover/api/players"
 )
 
 type PropSelector struct {
@@ -39,7 +38,6 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
     for _, analysis := range analyses {
         log.Printf("Running analysis on %v", analysis.PlayerIndex)
 
-        log.Println("---------------------------------------")
         for stat, prediction := range analysis.Prediction.GetStats() {
             line, ok := props[analysis.PlayerIndex][stat]; if !ok {
                 continue
@@ -56,11 +54,10 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
                 Side: side,
                 Diff: diff,
                 PDiff: pDiff,
-                PlayerOdds: props[analysis.PlayerIndex][stat],
+                PlayerOdds: line,
                 Analysis: analysis,
             }
             picks = append(picks, pick)
-            log.Printf("%v[%v]: %s prediction %.2f vs line %.2f. Diff: %.2f PDiff %.2f%%", analysis.PlayerIndex, analysis.Prediction.(players.NBAAvg).NumGames, stat, prediction, line.Over.Line, pick.Diff, pick.PDiff*100)
         }
     }
     var overCount, underCount int
@@ -97,7 +94,7 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
     threshold, ok := p.Thresholds[pick.Stat]; if !ok {
         return false
     }
-    if p.RequireOutlier && !pick.HasOutlier(pick.Stat) {
+    if p.RequireOutlier && !pick.HasOutlier(pick.Stat, pick.Side) {
         return false
     }
     return math.Abs(diff) > float64(threshold)
