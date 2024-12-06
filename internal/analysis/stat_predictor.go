@@ -1,7 +1,6 @@
 package analysis
 
 import (
-	"log"
 	"time"
 
 	"github.com/mgordon34/kornet-kover/api/players"
@@ -18,7 +17,6 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster) []Analys
     startDate, _ := time.Parse("2006-01-02", "2018-10-01")
     endDate := time.Now()
     var predictedStats []Analysis
-    log.Println("running analysis")
 
     for _, player := range roster.Starters {
         controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
@@ -66,7 +64,12 @@ func GetOutliers(baseStats players.PlayerAvg, predictedStats players.PlayerAvg) 
     return outliers
 }
 
-func (a Analysis) HasOutlier(stat string) bool {
-    _, ok := a.Outliers[stat]
-    return ok
+func (a Analysis) HasOutlier(stat string, side string) bool {
+    diff, ok := a.Outliers[stat]; if !ok {
+        return false
+    }
+    if (diff > 0 && side == "Over") || (diff < 0 && side == "Under") {
+        return true
+    }
+    return false
 }
