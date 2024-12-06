@@ -46,6 +46,22 @@ func requestOddsAPI(endpoint string, addlArgs []string) (response string, err er
     return buf.String(), err
 }
 
+func (o OddsAPI) UpdateLines() error {
+    lastLine, err := odds.GetLastLine()
+    log.Printf("Last line: %v", lastLine)
+    if err != nil {
+        log.Println(err)
+        return err
+    }
+
+    loc, _ := time.LoadLocation("America/New_York")
+    startDate := lastLine.Timestamp
+    endDate := time.Now().In(loc)
+    o.GetOdds(startDate, endDate)
+
+    return nil
+}
+
 type EventsResponse struct {
 	Timestamp         time.Time `json:"timestamp"`
 	PreviousTimestamp time.Time `json:"previous_timestamp"`
@@ -61,7 +77,7 @@ type EventInfo struct {
     AwayTeam     string    `json:"away_team"`
 }
 
-func (o OddsAPI) GetOddsAPIGamesForDate(date time.Time, apiGetter APIGetter) []EventInfo {
+func (o OddsAPI) GetGamesForDate(date time.Time, apiGetter APIGetter) []EventInfo {
     var games []EventInfo
 
     endpont := "historical/sports/%s/events/"
@@ -115,7 +131,7 @@ type OddResponse struct {
 	} `json:"data"`
 }
 
-func (o OddsAPI) GetOddsAPIOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
+func (o OddsAPI) GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
     log.Printf("Getting odds for %s vs %s", game.HomeTeam, game.AwayTeam)
     var lines []odds.PlayerLine
     nameMap := make(map[string]string)
@@ -172,9 +188,9 @@ func (o OddsAPI) GetOdds(startDate time.Time, endDate time.Time) {
         log.Printf("Getting sportsbook odds for %v...", d)
         var lines []odds.PlayerLine
 
-        games := o.GetOddsAPIGamesForDate(d, requestOddsAPI)
+        games := o.GetGamesForDate(d, requestOddsAPI)
         for _, game := range games {
-            lines = append(lines, o.GetOddsAPIOddsForGame(game, requestOddsAPI)...)
+            lines = append(lines, o.GetOddsForGame(game, requestOddsAPI)...)
         }
 
         odds.AddPlayerLines(lines)
