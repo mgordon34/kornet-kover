@@ -35,17 +35,13 @@ func runUpdateLines() {
 }
 
 func runSportsbookGetGames() {
-    startDate, err := time.Parse("2006-01-02", "2024-12-02")
-    if err != nil {
-        log.Fatal("Error parsing time: ", err)
-    }
-    endDate, err := time.Parse("2006-01-02", "2024-12-03")
-    if err != nil {
-        log.Fatal("Error parsing time: ", err)
-    }
+    getter := sportsbook.OddsAPI{}
+    loc, _ := time.LoadLocation("America/New_York")
+    startDate, _ := time.ParseInLocation("2006-01-02", "2023-11-27", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2024-10-24", loc)
     log.Printf("Finding games from %v to %v", startDate, endDate)
 
-    sportsbook.GetGames(startDate, endDate)
+    getter.GetOdds(startDate, endDate)
 }
 
 func runGetPlayerOdds() {
