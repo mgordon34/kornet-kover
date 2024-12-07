@@ -2,6 +2,7 @@ package backtesting
 
 import (
 	"log"
+	"math"
 	"strconv"
 	"time"
 
@@ -27,6 +28,38 @@ type BacktestResult struct {
 }
 
 func (b BacktestResult) addResult(pick analysis.PropPick, result players.PlayerAvg) {
+    if result == nil {
+        log.Printf("Skipping result for %s, no stats found", pick.PlayerIndex)
+    }
+    actualValue := result.GetStats()[pick.Stat]
+    var odds int
+    var line float32
+    if pick.Side == "Over" {
+        odds = pick.Over.Odds
+        line = pick.Over.Line
+    } else {
+        odds = pick.Under.Odds
+        line = pick.Under.Line
+    }
+
+    if pick.Side == "Over" && actualValue > pick.Over.Line || pick.Side == "Under" && actualValue < pick.Under.Line {
+        b.Wins++
+        b.Profit += calculateProfit(pick.BetSize, odds)
+        log.Printf("Bet is win. line %v vs actual %v. Profits $%.2f", line, actualValue, calculateProfit(pick.BetSize, odds))
+    } else {
+        b.Losses++
+        b.Profit -= pick.BetSize
+        log.Printf("Bet is loss. line %v vs actual %v", line, actualValue)
+    }
+    b.NumBets++
+}
+
+func calculateProfit(betSize float32, odds int) float32 {
+    if odds < 0 {
+        return float32((100 / math.Abs(float64(odds))) * float64(betSize))
+    } else {
+        return (float32(odds) / 100) * betSize
+    }
 }
 
 type Backtester struct {
@@ -90,11 +123,13 @@ func (b Backtester) backtestDate(date time.Time) {
         log.Println("Running results against strategy...")
         log.Printf("BacktestResult games: %v", strategy.NumBets)
         picks, _ = strategy.PickProps(todaysOdds, results)
+
+        for _, pick := range picks {
+            log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff)
+            strategy.BacktestResult.addResult(pick, statMap[pick.PlayerIndex])
+        }
     }
 
-    for _, pick := range picks {
-        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff)
-    }
 }
 
 func convertPlayerstoIndex(players []players.Player) []string {

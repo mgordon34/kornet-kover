@@ -12,6 +12,7 @@ type PropSelector struct {
     Thresholds      map[string]float32
     TresholdType    ThresholdType
     RequireOutlier  bool
+    BetSize         float32
     MaxOver         int
     MaxUnder        int
     TotalMax        int
@@ -22,6 +23,7 @@ type PropPick struct {
     Side            string
     Diff            float32
     PDiff           float32
+    BetSize         float32
     odds.PlayerOdds
     Analysis
 }
@@ -54,6 +56,7 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
                 Side: side,
                 Diff: diff,
                 PDiff: pDiff,
+                BetSize: p.BetSize,
                 PlayerOdds: line,
                 Analysis: analysis,
             }

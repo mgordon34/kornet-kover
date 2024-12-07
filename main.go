@@ -180,7 +180,7 @@ func runBacktest() {
         StartDate: startDate,
         EndDate: endDate,
         Strategies: []backtesting.Strategy{
-            {PropSelector: picker},
+            {PropSelector: picker, BacktestResult: backtesting.BacktestResult{Strategy: &picker}},
         },
     }
     b.RunBacktest()
