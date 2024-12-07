@@ -2,6 +2,7 @@ package players
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -221,6 +222,38 @@ func GetPlayersForGame(gameId int, homeIndex string) (map[string][]Player, error
         } else {
             playerMap["away"] = append(playerMap["away"], player)
         }
+    }
+
+    return playerMap, nil
+}
+
+type PlayerStatInfo struct {
+    PlayerIndex         string   `json:"player_index"`
+    NBAAvg
+}
+func GetPlayerStatsForGames(gameIds []string) (map[string]PlayerAvg, error) {
+    playerMap := make(map[string]PlayerAvg)
+    db := storage.GetDB()
+    sql := `SELECT player_index, 1 as num_games, minutes, points, rebounds, assists, usg, ortg, drtg FROM nba_player_games
+                left join games gg on gg.id = nba_player_games.game
+                where gg.id IN (%s)`
+
+    param := strings.Join(gameIds, ",")
+    sql = fmt.Sprintf(sql, param)
+
+    rows, err := db.Query(context.Background(), sql)
+    if err != nil {
+        log.Fatal("Error querying for player stats: ", err)
+    }
+
+    stats, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlayerStatInfo])
+    if err != nil {
+        return playerMap, err
+    }
+    log.Println(stats)
+
+    for _, stat := range stats {
+        playerMap[stat.PlayerIndex] = stat.NBAAvg
     }
 
     return playerMap, nil
