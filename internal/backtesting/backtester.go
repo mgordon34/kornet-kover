@@ -2,6 +2,7 @@ package backtesting
 
 import (
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/mgordon34/kornet-kover/api/games"
@@ -10,10 +11,28 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/analysis"
 )
 
+type Strategy struct {
+    analysis.PropSelector
+    BacktestResult
+}
+
+type BacktestResult struct {
+    Strategy            *analysis.PropSelector
+    StartDate           time.Time
+    EndDate             time.Time
+    NumBets             int
+    Wins                int
+    Losses              int
+    Profit              float32
+}
+
+func (b BacktestResult) addResult(pick analysis.PropPick, result players.PlayerAvg) {
+}
+
 type Backtester struct {
     StartDate           time.Time
     EndDate             time.Time
-    Strategies          []analysis.PropSelector
+    Strategies          []Strategy
 }
 
 func (b Backtester) RunBacktest() {
@@ -29,6 +48,18 @@ func (b Backtester) backtestDate(date time.Time) {
     todayGames, err := games.GetGamesForDate(date)
     if err != nil {
         log.Fatal("Error getting games for date: ", err)
+    }
+
+    var strs []string
+    for _, game := range todayGames {
+        strs = append(strs, strconv.FormatInt(int64(game.Id), 10))
+    }
+    statMap, err := players.GetPlayerStatsForGames(strs)
+    if err != nil {
+        log.Fatal("Error getting historical stats: ", err)
+    }
+    for player, performance := range statMap {
+        log.Printf("%v: %v", player, performance)
     }
 
     todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists"})
@@ -54,13 +85,10 @@ func (b Backtester) backtestDate(date time.Time) {
         results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster)...)
     }
 
-    for index, odds := range todaysOdds["points"] {
-        log.Printf("%v odds: %v", index, odds)
-    }
-
     var picks []analysis.PropPick
     for _, strategy := range b.Strategies {
         log.Println("Running results against strategy...")
+        log.Printf("BacktestResult games: %v", strategy.NumBets)
         picks, _ = strategy.PickProps(todaysOdds, results)
     }
 
