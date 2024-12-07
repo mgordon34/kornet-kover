@@ -17,8 +17,8 @@ func main() {
     storage.InitTables()
     log.Println("Initialized DB")
 
-    runUpdateGames()
-    runUpdateLines()
+    // runUpdateGames()
+    // runUpdateLines()
     // runPickProps()
 
     runBacktest()
@@ -179,7 +179,9 @@ func runBacktest() {
     b := backtesting.Backtester{
         StartDate: startDate,
         EndDate: endDate,
-        Strategies: []analysis.PropSelector{picker},
+        Strategies: []backtesting.Strategy{
+            {PropSelector: picker},
+        },
     }
     b.RunBacktest()
 }
