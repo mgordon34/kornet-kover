@@ -263,6 +263,7 @@ func getRosterForTeam(teamIndex string, missingPlayers map[string]string) player
     url := fmt.Sprintf("https://www.basketball-reference.com/teams/%v/2025.html", teamIndex)
     c := colly.NewCollector()
     log.Println("Visiting team page for ", teamIndex)
+    time.Sleep(4 * time.Second)
 
     index := 0
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
