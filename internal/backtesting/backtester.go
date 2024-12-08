@@ -54,6 +54,10 @@ func (b BacktestResult) addResult(pick analysis.PropPick, result players.PlayerA
     b.NumBets++
 }
 
+func (b BacktestResult) printResults() {
+    log.Printf("%v Bets with %.2f%% winrate. Profits: $%.2f", b.NumBets, (float32(b.Wins)/float32(b.NumBets))*100, b.Profit)
+}
+
 func calculateProfit(betSize float32, odds int) float32 {
     if odds < 0 {
         return float32((100 / math.Abs(float64(odds))) * float64(betSize))
@@ -87,12 +91,10 @@ func (b Backtester) backtestDate(date time.Time) {
     for _, game := range todayGames {
         strs = append(strs, strconv.FormatInt(int64(game.Id), 10))
     }
+
     statMap, err := players.GetPlayerStatsForGames(strs)
     if err != nil {
         log.Fatal("Error getting historical stats: ", err)
-    }
-    for player, performance := range statMap {
-        log.Printf("%v: %v", player, performance)
     }
 
     todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists"})
@@ -125,11 +127,10 @@ func (b Backtester) backtestDate(date time.Time) {
         picks, _ = strategy.PickProps(todaysOdds, results)
 
         for _, pick := range picks {
-            log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff)
-            strategy.BacktestResult.addResult(pick, statMap[pick.PlayerIndex])
+            log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f Odds: %v/%v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.Over.Odds, pick.Under.Odds)
+            strategy.addResult(pick, statMap[pick.PlayerIndex])
         }
     }
-
 }
 
 func convertPlayerstoIndex(players []players.Player) []string {

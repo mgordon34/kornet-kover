@@ -19,9 +19,9 @@ func main() {
 
     // runUpdateGames()
     // runUpdateLines()
-    // runPickProps()
+    runPickProps()
 
-    runBacktest()
+    // runBacktest()
 }
 
 func runUpdateGames() {
@@ -172,6 +172,7 @@ func runBacktest() {
         },
         TresholdType: analysis.Raw,
         RequireOutlier: true,
+        BetSize: 100,
         MaxOver: 10,
         MaxUnder: 10,
         TotalMax: 20,
