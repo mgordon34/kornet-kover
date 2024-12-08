@@ -81,6 +81,8 @@ func PlayerNameToIndex(nameMap map[string]string, playerName string) (string, er
         return "joneshe01", nil
     } else if playerName == "Moe Wagner" {
         return "wagnemo01", nil
+    } else if playerName == "Nicolas Claxton" {
+        return "claxtni01", nil
     }
     index, ok := nameMap[playerName]; if ok {
         return index, nil
