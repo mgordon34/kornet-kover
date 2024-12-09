@@ -34,8 +34,14 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate 
             }
         }
 
-        prediction := controlMap[utils.DateToNBAYear(endDate)].PredictStats(totalPip)
-        baseStats := controlMap[utils.DateToNBAYear(endDate)].ConvertToStats()
+        currYear := utils.DateToNBAYear(endDate)
+        _, ok := controlMap[currYear]; if !ok {
+            log.Printf("Player %v has no stats for current year. Skipping...", player)
+            continue
+        }
+
+        prediction := controlMap[currYear].PredictStats(totalPip)
+        baseStats := controlMap[currYear].ConvertToStats()
         outliers :=  GetOutliers(baseStats, prediction)
         predictedStats = append(
             predictedStats,
