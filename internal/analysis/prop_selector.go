@@ -1,7 +1,6 @@
 package analysis
 
 import (
-	"log"
 	"math"
     "sort"
 
@@ -38,7 +37,6 @@ const (
 func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, analyses []Analysis) ([]PropPick, error) {
     var picks, selectedPicks []PropPick
     for _, analysis := range analyses {
-        log.Printf("Running analysis on %v", analysis.PlayerIndex)
 
         for stat, prediction := range analysis.Prediction.GetStats() {
             line, ok := props[analysis.PlayerIndex][stat]; if !ok {
