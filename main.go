@@ -19,9 +19,9 @@ func main() {
 
     // runUpdateGames()
     // runUpdateLines()
-    runPickProps()
+    // runPickProps()
 
-    // runBacktest()
+    runBacktest()
 }
 
 func runUpdateGames() {
@@ -181,7 +181,7 @@ func runBacktest() {
         StartDate: startDate,
         EndDate: endDate,
         Strategies: []backtesting.Strategy{
-            {PropSelector: picker, BacktestResult: backtesting.BacktestResult{Strategy: &picker}},
+            {PropSelector: picker, BacktestResult: &backtesting.BacktestResult{}},
         },
     }
     b.RunBacktest()

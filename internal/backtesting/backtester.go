@@ -14,23 +14,24 @@ import (
 
 type Strategy struct {
     analysis.PropSelector
-    BacktestResult
+    *BacktestResult
 }
 
 type BacktestResult struct {
-    Strategy            *analysis.PropSelector
+    Bets                []analysis.PropPick
     StartDate           time.Time
     EndDate             time.Time
-    NumBets             int
     Wins                int
     Losses              int
     Profit              float32
 }
 
-func (b BacktestResult) addResult(pick analysis.PropPick, result players.PlayerAvg) {
+func (b *BacktestResult) addResult(pick analysis.PropPick, result players.PlayerAvg) {
     if result == nil {
         log.Printf("Skipping result for %s, no stats found", pick.PlayerIndex)
+        return
     }
+    b.Bets = append(b.Bets, pick)
     actualValue := result.GetStats()[pick.Stat]
     var odds int
     var line float32
@@ -51,11 +52,12 @@ func (b BacktestResult) addResult(pick analysis.PropPick, result players.PlayerA
         b.Profit -= pick.BetSize
         log.Printf("Bet is loss. line %v vs actual %v", line, actualValue)
     }
-    b.NumBets++
 }
 
 func (b BacktestResult) printResults() {
-    log.Printf("%v Bets with %.2f%% winrate. Profits: $%.2f", b.NumBets, (float32(b.Wins)/float32(b.NumBets))*100, b.Profit)
+    log.Println("------------------------------------------")
+    log.Printf("%v Bets with %.2f%% winrate. Profits: $%.2f", b.Losses + b.Wins, (float32(b.Wins)/float32(b.Losses + b.Wins))*100, b.Profit)
+    log.Println("------------------------------------------")
 }
 
 func calculateProfit(betSize float32, odds int) float32 {
@@ -75,6 +77,10 @@ type Backtester struct {
 func (b Backtester) RunBacktest() {
     for d := b.StartDate; d.After(b.EndDate) == false; d = d.AddDate(0, 0, 1) {
         b.backtestDate(d)
+    }
+
+    for _, strategy := range b.Strategies {
+        strategy.printResults()
     }
 }
 
@@ -103,7 +109,6 @@ func (b Backtester) backtestDate(date time.Time) {
     }
 
     var results []analysis.Analysis
-    todayGames = []games.Game{todayGames[0]}
     for _, game := range todayGames {
         log.Printf("Analyzing %v vs. %v", game.HomeIndex, game.AwayIndex)
         playerMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex)
@@ -122,8 +127,6 @@ func (b Backtester) backtestDate(date time.Time) {
 
     var picks []analysis.PropPick
     for _, strategy := range b.Strategies {
-        log.Println("Running results against strategy...")
-        log.Printf("BacktestResult games: %v", strategy.NumBets)
         picks, _ = strategy.PickProps(todaysOdds, results)
 
         for _, pick := range picks {
