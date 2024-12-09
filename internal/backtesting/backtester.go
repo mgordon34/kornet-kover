@@ -101,7 +101,6 @@ func (b Backtester) backtestDate(date time.Time) {
     for _, game := range todayGames {
         strs = append(strs, strconv.FormatInt(int64(game.Id), 10))
     }
-
     statMap, err := players.GetPlayerStatsForGames(strs)
     if err != nil {
         log.Fatal("Error getting historical stats: ", err)
@@ -110,6 +109,10 @@ func (b Backtester) backtestDate(date time.Time) {
     todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists"})
     if err != nil {
         log.Fatal("Error getting historical odds: ", err)
+    }
+    if len(todaysOdds) == 0 {
+        log.Printf("No player odds for %v", date)
+        return
     }
 
     var results []analysis.Analysis
