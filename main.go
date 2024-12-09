@@ -102,9 +102,12 @@ func runAnalysis() {
     // game := []players.Roster{homeRoster, awayRoster}
     // games = append(games, game)
 
+    loc, _ := time.LoadLocation("America/New_York")
+    t := time.Now()
+    today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
     for _, game := range games {
-        results := analysis.RunAnalysisOnGame(game[0], game[1])
-        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0])...)
+        results := analysis.RunAnalysisOnGame(game[0], game[1], today)
+        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0], today)...)
 
         for _, outcome := range results {
             log.Printf("[%v]: Base Stats: %v", outcome.PlayerIndex, outcome.BaseStats)
@@ -119,8 +122,9 @@ func runAnalysis() {
 }
 
 func runPickProps() {
+    loc, _ := time.LoadLocation("America/New_York")
     t := time.Now()
-    today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+    today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
 
     // Gather player Odds map for upcoming games
     oddsMap, err := odds.GetPlayerOddsForDate(today, []string{"points, rebounds, assists"})
@@ -135,8 +139,8 @@ func runPickProps() {
     var results []analysis.Analysis
     for _, game := range games {
         log.Printf("Running analysis on %v vs %v", game[0], game[1])
-        results = append(results, analysis.RunAnalysisOnGame(game[0], game[1])...)
-        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0])...)
+        results = append(results, analysis.RunAnalysisOnGame(game[0], game[1], today)...)
+        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0], today)...)
     }
 
     picker := analysis.PropSelector{
@@ -163,7 +167,7 @@ func runPickProps() {
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
     startDate, _ := time.ParseInLocation("2006-01-02", "2024-10-23", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2024-10-23", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2024-10-24", loc)
     picker := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 2,

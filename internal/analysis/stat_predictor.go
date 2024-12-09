@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"log"
 	"time"
 
 	"github.com/mgordon34/kornet-kover/api/players"
@@ -13,9 +14,9 @@ type Analysis struct {
     Outliers        map[string]float32
 }
 
-func RunAnalysisOnGame(roster players.Roster, opponents players.Roster) []Analysis {
+func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate time.Time) []Analysis {
     startDate, _ := time.Parse("2006-01-02", "2018-10-01")
-    endDate := time.Now()
+    log.Printf("Running analysis from %v to %v", startDate, endDate)
     var predictedStats []Analysis
 
     for _, player := range roster.Starters {
@@ -46,6 +47,7 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster) []Analys
         )
     }
 
+    log.Println(predictedStats)
     return predictedStats
 }
 

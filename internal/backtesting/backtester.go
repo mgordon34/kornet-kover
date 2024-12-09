@@ -128,8 +128,8 @@ func (b Backtester) backtestDate(date time.Time) {
         awayRoster := players.Roster{
             Starters: convertPlayerstoIndex(playerMap["away"][:5]),
         }
-        results = append(results, analysis.RunAnalysisOnGame(homeRoster, awayRoster)...)
-        results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster)...)
+        results = append(results, analysis.RunAnalysisOnGame(homeRoster, awayRoster, date)...)
+        results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster, date)...)
     }
 
     var picks []analysis.PropPick
