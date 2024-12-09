@@ -252,7 +252,6 @@ func GetPlayerStatsForGames(gameIds []string) (map[string]PlayerAvg, error) {
     if err != nil {
         return playerMap, err
     }
-    log.Println(stats)
 
     for _, stat := range stats {
         playerMap[stat.PlayerIndex] = stat.NBAAvg
