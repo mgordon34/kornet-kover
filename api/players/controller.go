@@ -179,7 +179,7 @@ func GetPlayerStats(player string, startDate time.Time, endDate time.Time) (Play
                 left join games on games.id = nba_player_games.game
                 where nba_player_games.player_index = ($1) and nba_player_games.minutes > 10 and games.date between ($2) and ($3)`
 
-    rows, err := db.Query(context.Background(), sql, player, startDate, endDate)
+    rows, err := db.Query(context.Background(), sql, player, startDate.Format(time.DateOnly), endDate.AddDate(0,0,-1).Format(time.DateOnly))
     if err != nil {
         log.Fatal("Error querying for player stats: ", err)
     }
@@ -271,7 +271,9 @@ func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) m
         }
 
         yearlyStats, _ := GetPlayerStats(player, d, useDate)
-        playerStats[utils.DateToNBAYear(d)] = yearlyStats.ConvertToPer()
+        if yearlyStats.IsValid() {
+            playerStats[utils.DateToNBAYear(d)] = yearlyStats.ConvertToPer()
+        }
     }
 
     return playerStats

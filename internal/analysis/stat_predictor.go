@@ -22,6 +22,13 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate 
 
     for _, player := range roster.Starters {
         controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
+
+        currYear := utils.DateToNBAYear(endDate)
+        _, ok := controlMap[currYear]; if !ok {
+            log.Printf("Player %v has no stats for current year. Skipping...", player)
+            continue
+        }
+
         var totalPip players.PlayerAvg
         for _, defender := range opponents.Starters {
             affectedMap := players.GetPlayerPerWithPlayerByYear(player, defender, players.Opponent, startDate, endDate)
@@ -32,12 +39,6 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate 
             } else {
                 totalPip = totalPip.AddAvg(pipFactor)
             }
-        }
-
-        currYear := utils.DateToNBAYear(endDate)
-        _, ok := controlMap[currYear]; if !ok {
-            log.Printf("Player %v has no stats for current year. Skipping...", player)
-            continue
         }
 
         prediction := controlMap[currYear].PredictStats(totalPip)
