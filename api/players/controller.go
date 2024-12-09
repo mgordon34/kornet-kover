@@ -339,7 +339,7 @@ func GetPlayerPerWithPlayerByYear(player string, defender string, relationship R
 
 func CalculatePIPFactor(controlMap map[int]PlayerAvg, relatedMap map[int]PlayerAvg) PlayerAvg {
     var totals PlayerAvg
-    for year := range controlMap {
+    for year := range relatedMap {
         pChange := relatedMap[year].CompareAvg(controlMap[year])
         if totals == nil {
             totals = pChange
