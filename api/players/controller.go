@@ -331,7 +331,7 @@ func GetPlayerPerWithPlayerByYear(player string, defender string, relationship R
         }
 
         yearlyStats, _ := GetPlayerStatsWithPlayer(player, defender, relationship, d, useDate)
-        playerStats[d.Year()] = yearlyStats.ConvertToPer()
+        playerStats[utils.DateToNBAYear(d)] = yearlyStats.ConvertToPer()
     }
 
     return playerStats
