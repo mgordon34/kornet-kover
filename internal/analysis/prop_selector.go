@@ -11,6 +11,7 @@ type PropSelector struct {
     Thresholds      map[string]float32
     TresholdType    ThresholdType
     RequireOutlier  bool
+    MinOdds         int
     BetSize         float32
     MaxOver         int
     MaxUnder        int
@@ -90,6 +91,16 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
         diff = float64(pick.Diff)
     case Percent:
         diff = float64(pick.PDiff)
+    }
+    var odds int
+    switch pick.Side {
+    case "Over":
+        odds = pick.Over.Odds
+    case "Under":
+        odds = pick.Under.Odds
+    }
+    if odds < p.MinOdds {
+        return false
     }
 
     threshold, ok := p.Thresholds[pick.Stat]; if !ok {

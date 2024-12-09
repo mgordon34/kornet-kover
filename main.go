@@ -151,6 +151,7 @@ func runPickProps() {
         },
         TresholdType: analysis.Raw,
         RequireOutlier: true,
+        MinOdds: -135,
         MaxOver: 10,
         MaxUnder: 10,
         TotalMax: 20,
@@ -166,8 +167,8 @@ func runPickProps() {
 
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
-    startDate, _ := time.ParseInLocation("2006-01-02", "2024-10-23", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2024-10-24", loc)
+    startDate, _ := time.ParseInLocation("2006-01-02", "2023-10-23", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2023-10-24", loc)
     picker := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 2,
@@ -176,6 +177,7 @@ func runBacktest() {
         },
         TresholdType: analysis.Raw,
         RequireOutlier: true,
+        MinOdds: -135,
         BetSize: 100,
         MaxOver: 10,
         MaxUnder: 10,
