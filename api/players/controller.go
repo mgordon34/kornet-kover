@@ -310,7 +310,7 @@ func GetPlayerStatsWithPlayer(player string, defender string, relationship Relat
         sql = sql + opponent_filter
     }
 
-    rows, err := db.Query(context.Background(), sql, player, defender, startDate, endDate)
+    rows, err := db.Query(context.Background(), sql, player, defender, startDate.Format(time.DateOnly), endDate.AddDate(0,0,-1).Format(time.DateOnly))
     if err != nil {
         log.Fatal("Error querying for player stats: ", err)
     }
