@@ -92,6 +92,10 @@ func (b Backtester) backtestDate(date time.Time) {
     if err != nil {
         log.Fatal("Error getting games for date: ", err)
     }
+    if len(todayGames) == 0 {
+        log.Printf("No games for %v", date)
+        return
+    }
 
     var strs []string
     for _, game := range todayGames {
