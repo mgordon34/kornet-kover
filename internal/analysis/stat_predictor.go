@@ -17,7 +17,6 @@ type Analysis struct {
 
 func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate time.Time) []Analysis {
     startDate, _ := time.Parse("2006-01-02", "2018-10-01")
-    log.Printf("Running analysis from %v to %v", startDate.Format(time.DateOnly), endDate.Format(time.DateOnly))
     var predictedStats []Analysis
 
     for _, player := range roster.Starters {
