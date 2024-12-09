@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mgordon34/kornet-kover/api/players"
+	"github.com/mgordon34/kornet-kover/internal/utils"
 )
 
 type Analysis struct {
@@ -33,8 +34,8 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate 
             }
         }
 
-        prediction := controlMap[2024].PredictStats(totalPip)
-        baseStats := controlMap[2024].ConvertToStats()
+        prediction := controlMap[utils.DateToNBAYear(endDate)].PredictStats(totalPip)
+        baseStats := controlMap[utils.DateToNBAYear(endDate)].ConvertToStats()
         outliers :=  GetOutliers(baseStats, prediction)
         predictedStats = append(
             predictedStats,

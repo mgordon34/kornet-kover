@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mgordon34/kornet-kover/internal/storage"
+	"github.com/mgordon34/kornet-kover/internal/utils"
 )
 
 func AddPlayers(players []Player) {
@@ -270,7 +271,7 @@ func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) m
         }
 
         yearlyStats, _ := GetPlayerStats(player, d, useDate)
-        playerStats[d.Year()] = yearlyStats.ConvertToPer()
+        playerStats[utils.DateToNBAYear(d)] = yearlyStats.ConvertToPer()
     }
 
     return playerStats
