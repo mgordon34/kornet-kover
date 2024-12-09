@@ -92,14 +92,19 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
     case Percent:
         diff = float64(pick.PDiff)
     }
-    var odds int
+    var odds int; var line float32
     switch pick.Side {
     case "Over":
         odds = pick.Over.Odds
+        line = pick.Over.Line
     case "Under":
         odds = pick.Under.Odds
+        line = pick.Under.Line
     }
     if odds < p.MinOdds {
+        return false
+    }
+    if line < 2 {
         return false
     }
 
