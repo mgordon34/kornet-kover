@@ -87,7 +87,7 @@ func (b BacktestResult) resultBreakdown() {
                 profit -= bet.BetSize
             }
         }
-        log.Printf("%v: %v winrate and $%.2f profit", key, wins/float32(len(bets)), profit)
+        log.Printf("%v: %v winrate and $%.2f profit", key, wins/float32(len(brackets[key])), profit)
     }
     log.Println("------------------------------------------")
 }
