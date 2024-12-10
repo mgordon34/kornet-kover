@@ -153,9 +153,9 @@ func runPickProps() {
         RequireOutlier: false,
         MinOdds: -135,
         BetSize: 100,
-        MaxOver: 10,
-        MaxUnder: 10,
-        TotalMax: 20,
+        MaxOver: 100,
+        MaxUnder: 0,
+        TotalMax: 100,
     }
     picks, err := picker.PickProps(oddsMap, results)
     if err  != nil {
@@ -168,13 +168,13 @@ func runPickProps() {
 
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
-    startDate, _ := time.ParseInLocation("2006-01-02", "2023-12-01", loc)
-    // startDate, _ := time.ParseInLocation("2006-01-02", "2024-11-01", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2023-12-31", loc)
-    // endDate, _ := time.ParseInLocation("2006-01-02", "2024-11-30", loc)
+    // startDate, _ := time.ParseInLocation("2006-01-02", "2023-11-01", loc)
+    startDate, _ := time.ParseInLocation("2006-01-02", "2024-11-01", loc)
+    // endDate, _ := time.ParseInLocation("2006-01-02", "2023-11-30", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2024-11-30", loc)
     pPicker := analysis.PropSelector{
         Thresholds: map[string]float32{
-            "points": 4,
+            "points": 0,
             "rebounds": 100,
             "assists": 100,
         },
@@ -182,41 +182,41 @@ func runBacktest() {
         RequireOutlier: false,
         MinOdds: -135,
         BetSize: 100,
-        MaxOver: 10,
-        MaxUnder: 10,
-        TotalMax: 20,
+        MaxOver: 1000,
+        MaxUnder: 0,
+        TotalMax: 200,
     }
     rPicker := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 100,
-            "rebounds": 1,
+            "rebounds": 0,
             "assists": 100,
         },
         TresholdType: analysis.Raw,
         RequireOutlier: false,
         MinOdds: -135,
         BetSize: 100,
-        MaxOver: 10,
-        MaxUnder: 10,
-        TotalMax: 20,
+        MaxOver: 1000,
+        MaxUnder: 0,
+        TotalMax: 200,
     }
     aPicker := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 100,
             "rebounds": 100,
-            "assists": 1,
+            "assists": 0,
         },
         TresholdType: analysis.Raw,
         RequireOutlier: false,
         MinOdds: -135,
         BetSize: 100,
-        MaxOver: 10,
-        MaxUnder: 10,
-        TotalMax: 20,
+        MaxOver: 1000,
+        MaxUnder: 0,
+        TotalMax: 200,
     }
     pPickerP := analysis.PropSelector{
         Thresholds: map[string]float32{
-            "points": .3,
+            "points": 0,
             "rebounds": 100,
             "assists": 100,
         },
@@ -224,28 +224,42 @@ func runBacktest() {
         RequireOutlier: false,
         MinOdds: -135,
         BetSize: 100,
-        MaxOver: 10,
-        MaxUnder: 10,
-        TotalMax: 20,
+        MaxOver: 0,
+        MaxUnder: 1000,
+        TotalMax: 2000,
     }
     rPickerP := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 100,
-            "rebounds": .3,
+            "rebounds": 0,
             "assists": 100,
         },
         TresholdType: analysis.Percent,
         RequireOutlier: false,
         MinOdds: -135,
         BetSize: 100,
-        MaxOver: 10,
-        MaxUnder: 10,
-        TotalMax: 20,
+        MaxOver: 0,
+        MaxUnder: 1000,
+        TotalMax: 1000,
     }
     aPickerP := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 100,
             "rebounds": 100,
+            "assists": 0,
+        },
+        TresholdType: analysis.Percent,
+        RequireOutlier: false,
+        MinOdds: -135,
+        BetSize: 100,
+        MaxOver: 0,
+        MaxUnder: 1000,
+        TotalMax: 1000,
+    }
+    fPickerP := analysis.PropSelector{
+        Thresholds: map[string]float32{
+            "points": .3,
+            "rebounds": .3,
             "assists": .3,
         },
         TresholdType: analysis.Percent,
@@ -253,8 +267,8 @@ func runBacktest() {
         MinOdds: -135,
         BetSize: 100,
         MaxOver: 10,
-        MaxUnder: 10,
-        TotalMax: 20,
+        MaxUnder: 0,
+        TotalMax: 100,
     }
     b := backtesting.Backtester{
         StartDate: startDate,
@@ -266,6 +280,7 @@ func runBacktest() {
             {PropSelector: pPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: rPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: aPickerP, BacktestResult: &backtesting.BacktestResult{}},
+            {PropSelector: fPickerP, BacktestResult: &backtesting.BacktestResult{}},
         },
     }
     b.RunBacktest()
