@@ -55,7 +55,7 @@ func (b BacktestResult) printResults() {
 
 func (b BacktestResult) resultBreakdown() {
     log.Println("------------------------------------------")
-    brackets := map[float32][]analysis.PropPick{
+    pBrackets := map[float64][]analysis.PropPick{
         0: []analysis.PropPick{},
         .1: []analysis.PropPick{},
         .2: []analysis.PropPick{},
@@ -68,18 +68,40 @@ func (b BacktestResult) resultBreakdown() {
         .9: []analysis.PropPick{},
         1: []analysis.PropPick{},
     }
-    keys := []float32{0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1}
+    pKeys := []float64{0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1}
+    rBrackets := map[float64][]analysis.PropPick{
+        0: []analysis.PropPick{},
+        .5: []analysis.PropPick{},
+        1: []analysis.PropPick{},
+        1.5: []analysis.PropPick{},
+        2: []analysis.PropPick{},
+        2.5: []analysis.PropPick{},
+        3: []analysis.PropPick{},
+        3.5: []analysis.PropPick{},
+        4: []analysis.PropPick{},
+        4.5: []analysis.PropPick{},
+        5: []analysis.PropPick{},
+        8: []analysis.PropPick{},
+        10: []analysis.PropPick{},
+        15: []analysis.PropPick{},
+    }
+    rKeys := []float64{0,.5,1,1.5,2,2.5,3,3.5,4,4.5,5,8,10,15}
     for _, pick := range b.Bets {
-        for key := range brackets {
-            if pick.PDiff > key {
-                brackets[key] = append(brackets[key], *pick)
+        for key := range pBrackets {
+            if math.Abs(float64(pick.PDiff)) > key {
+                pBrackets[key] = append(pBrackets[key], *pick)
+            }
+        }
+        for key := range rBrackets {
+            if math.Abs(float64(pick.Diff)) > key {
+                rBrackets[key] = append(rBrackets[key], *pick)
             }
         }
     }
 
-    for _, key := range keys {
+    for _, key := range pKeys {
         var wins, profit float32
-        for _, bet := range brackets[key] {
+        for _, bet := range pBrackets[key] {
             if bet.Result == "Win" {
                 wins++
                 profit += calculateProfit(bet.BetSize, bet.GetLine().Odds)
@@ -87,7 +109,20 @@ func (b BacktestResult) resultBreakdown() {
                 profit -= bet.BetSize
             }
         }
-        log.Printf("%v: %v winrate and $%.2f profit", key, wins/float32(len(brackets[key])), profit)
+        log.Printf("%v: %v winrate and $%.2f profit", key, wins/float32(len(pBrackets[key])), profit)
+    }
+    log.Println("------------------------------------------")
+    for _, key := range rKeys {
+        var wins, profit float32
+        for _, bet := range rBrackets[key] {
+            if bet.Result == "Win" {
+                wins++
+                profit += calculateProfit(bet.BetSize, bet.GetLine().Odds)
+            } else {
+                profit -= bet.BetSize
+            }
+        }
+        log.Printf("%v: %v winrate and $%.2f profit", key, wins/float32(len(rBrackets[key])), profit)
     }
     log.Println("------------------------------------------")
 }

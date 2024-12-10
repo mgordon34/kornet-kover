@@ -117,8 +117,8 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
     if line < 2 {
         return false
     }
-    if pick.Diff < 1 {
-	return false
+    if math.Abs(float64(pick.Diff)) < .5 {
+        return false
     }
 
     threshold, ok := p.Thresholds[pick.Stat]; if !ok {
