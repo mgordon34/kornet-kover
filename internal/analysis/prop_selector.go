@@ -30,7 +30,7 @@ type PropPick struct {
     Analysis
 }
 
-func (p PropPick) GetOdds() odds.PlayerLine {
+func (p PropPick) GetLine() odds.PlayerLine {
     if p.Side == "Over" {
         return p.Over
     }

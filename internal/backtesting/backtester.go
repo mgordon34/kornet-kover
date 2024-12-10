@@ -33,24 +33,15 @@ func (b *BacktestResult) addResult(pick analysis.PropPick, result players.Player
     }
     b.Bets = append(b.Bets, pick)
     actualValue := result.GetStats()[pick.Stat]
-    var odds int
-    var line float32
-    if pick.Side == "Over" {
-        odds = pick.Over.Odds
-        line = pick.Over.Line
-    } else {
-        odds = pick.Under.Odds
-        line = pick.Under.Line
-    }
 
     if pick.Side == "Over" && actualValue > pick.Over.Line || pick.Side == "Under" && actualValue < pick.Under.Line {
         b.Wins++
-        b.Profit += calculateProfit(pick.BetSize, odds)
-        log.Printf("Bet is win. line %v vs actual %v. Profits $%.2f", line, actualValue, calculateProfit(pick.BetSize, odds))
+        b.Profit += calculateProfit(pick.BetSize, pick.GetLine().Odds)
+        log.Printf("Bet is win. line %v vs actual %v. Profits $%.2f", pick.GetLine().Line, actualValue, calculateProfit(pick.BetSize, pick.GetLine().Odds))
     } else {
         b.Losses++
         b.Profit -= pick.BetSize
-        log.Printf("Bet is loss. line %v vs actual %v", line, actualValue)
+        log.Printf("Bet is loss. line %v vs actual %v", pick.GetLine().Line, actualValue)
     }
 }
 
