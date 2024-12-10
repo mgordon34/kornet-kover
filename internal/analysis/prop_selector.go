@@ -24,8 +24,18 @@ type PropPick struct {
     Diff            float32
     PDiff           float32
     BetSize         float32
+    Actual          float32
+    Result          string
     odds.PlayerOdds
     Analysis
+}
+
+func (p PropPick) GetOdds() odds.PlayerLine {
+    if p.Side == "Over" {
+        return p.Over
+    }
+
+    return p.Under
 }
 
 type ThresholdType int
