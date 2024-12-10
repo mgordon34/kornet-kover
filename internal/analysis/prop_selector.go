@@ -77,6 +77,9 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
         return picks[i].PDiff > picks[j].PDiff
     })
     for _, pick := range picks {
+        if (pick.Side == "Over" && overCount >= p.MaxOver) || (pick.Side == "Under" && underCount >= p.MaxUnder) {
+            continue
+        }
         if p.isPickElligible(pick) {
             selectedPicks = append(selectedPicks, pick)
             if pick.Side == "Over" {
@@ -84,10 +87,6 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
             } else {
                 underCount++
             }
-        }
-
-        if overCount >= p.MaxOver || underCount >= p.MaxUnder || overCount + underCount >= p.TotalMax {
-            break
         }
     }
 
@@ -102,24 +101,16 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
     case Percent:
         diff = float64(pick.PDiff)
     }
-    var odds int; var line float32
-    switch pick.Side {
-    case "Over":
-        odds = pick.Over.Odds
-        line = pick.Over.Line
-    case "Under":
-        odds = pick.Under.Odds
-        line = pick.Under.Line
-    }
-    if odds < p.MinOdds {
+    if pick.GetLine().Odds < p.MinOdds {
         return false
     }
-    if line < 2 {
-        return false
-    }
-    if math.Abs(float64(pick.Diff)) < .5 {
-        return false
-    }
+    // TODO: Add these back as a strategy flag
+    // if pick.GetLine().Line < 2 {
+    //      return false
+    // }
+    // if math.Abs(float64(pick.Diff)) < 1 {
+    //     return false
+    // }
 
     threshold, ok := p.Thresholds[pick.Stat]; if !ok {
         return false
