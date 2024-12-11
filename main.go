@@ -264,9 +264,9 @@ func runBacktest() {
         },
         TresholdType: analysis.Percent,
         RequireOutlier: false,
-        MinOdds: -135,
+        MinOdds: -125,
         BetSize: 100,
-        MaxOver: 10,
+        MaxOver: 20,
         MaxUnder: 0,
         TotalMax: 100,
     }
