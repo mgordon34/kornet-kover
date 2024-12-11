@@ -35,8 +35,14 @@ func runUpdateLines() {
     getter.UpdateLines()
 }
 
-func runUpdatePIPPredictions() {
+func runGetPIPPredictions() {
     log.Println("Updating PIPPredictions...")
+    date, _ := time.Parse("2006-01-02", "2023-10-30")
+    preds, _ := players.GetPIPPredictionsForDate(date)
+    for _, pred := range preds {
+        log.Println(pred)
+    }
+    log.Println(len(preds))
 }
 
 func runSportsbookGetGames() {
@@ -174,8 +180,8 @@ func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
     // startDate, _ := time.ParseInLocation("2006-01-02", "2023-11-01", loc)
     startDate, _ := time.ParseInLocation("2006-01-02", "2023-10-01", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2023-10-31", loc)
-    // endDate, _ := time.ParseInLocation("2006-01-02", "2024-10-13", loc)
+    // endDate, _ := time.ParseInLocation("2006-01-02", "2023-10-31", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2024-12-11", loc)
     pPicker := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 0,

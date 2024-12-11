@@ -66,7 +66,6 @@ func CreateAndStorePIPPrediction(analyses []Analysis, date time.Time) {
     var pPreds []players.NBAPIPPrediction
     for _, analysis := range analyses {
         pred := analysis.Prediction.(players.NBAAvg)
-        log.Printf("%v: %v games, points: %v", analysis.PlayerIndex, pred.NumGames, pred.Points)
         pPred := players.NBAPIPPrediction{
             PlayerIndex: analysis.PlayerIndex,
             Date: date,

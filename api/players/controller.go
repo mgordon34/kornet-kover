@@ -409,6 +409,26 @@ func AddPIPPrediction(pPreds []NBAPIPPrediction) {
 	}
 }
 
+func GetPIPPredictionsForDate(date time.Time) ([]NBAPIPPrediction, error) {
+    var pipPreds []NBAPIPPrediction
+    db := storage.GetDB()
+    sql := `SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg FROM nba_pip_predictions
+                where date=($1)`
+
+    rows, err := db.Query(context.Background(), sql, date.Format(time.DateOnly))
+    if err != nil {
+        log.Fatal("Error querying for NBAPIPPredictions: ", err)
+    }
+
+    pipPreds, err = pgx.CollectRows(rows, pgx.RowToStructByName[NBAPIPPrediction])
+    if err != nil {
+        return pipPreds, err
+    }
+
+    return pipPreds, nil
+}
+
+
 func CalculatePIPFactor(controlMap map[int]PlayerAvg, relatedMap map[int]PlayerAvg) PlayerAvg {
     var totals PlayerAvg
     for year := range relatedMap {
