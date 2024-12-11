@@ -13,6 +13,7 @@ type PropSelector struct {
     RequireOutlier  bool
     MinOdds         int
     MinLine         float32
+    MinDiff         float32
     BetSize         float32
     MaxOver         int
     MaxUnder        int
@@ -106,12 +107,11 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
         return false
     }
     if p.MinLine != 0 && pick.GetLine().Line < p.MinLine {
-         return false
+        return false
     }
-    // TODO: Add these back as a strategy flag
-    // if math.Abs(float64(pick.Diff)) < 1 {
-    //     return false
-    // }
+    if p.MinDiff != 0 && math.Abs(float64(pick.Diff)) < float64(p.MinDiff) {
+        return false
+    }
 
     threshold, ok := p.Thresholds[pick.Stat]; if !ok {
         return false
