@@ -55,12 +55,10 @@ func (o OddsAPI) UpdateLines() error {
     }
 
     loc, _ := time.LoadLocation("America/New_York")
-    startDate := lastLine.Timestamp
-    today := time.Now().In(loc)
-    if startDate.Format(time.DateOnly) == today.Format(time.DateOnly) {
-        log.Println("Date is the same day: " + today.Format(time.DateOnly))
-        startDate = today
-    }
+    d := lastLine.Timestamp.In(loc)
+    t := time.Now().In(loc)
+    startDate := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
+    today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
     o.GetOdds(startDate, today)
 
     return nil
