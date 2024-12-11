@@ -106,6 +106,21 @@ func InitTables() {
             avg_drtg REAL NOT NULL,
             CONSTRAINT uq_pip_factors UNIQUE(player_index, other_index, relationship)
         )`,
+        `CREATE TABLE IF NOT EXISTS nba_pip_predictions (
+            id SERIAL PRIMARY KEY,
+            player_index VARCHAR(20) REFERENCES players(index),
+            date DATE NOT NULL,
+            version INT NOT NULL,
+            num_games INT NOT NULL,
+            pred_minutes REAL NOT NULL,
+            pred_points REAL NOT NULL,
+            pred_rebounds REAL NOT NULL,
+            pred_assists REAL NOT NULL,
+            pred_usg REAL NOT NULL,
+            pred_ortg REAL NOT NULL,
+            pred_drtg REAL NOT NULL,
+            CONSTRAINT uq_pip_predictions UNIQUE(player_index, date, version)
+        )`,
     }
 
     for _, command := range commands {

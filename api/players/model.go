@@ -1,5 +1,7 @@
 package players
 
+import "time"
+
 type Player struct {
     Index       string    `json:"index"`
     Sport       string    `json:"sport"`
@@ -30,4 +32,18 @@ type PIPFactor struct {
     OtherIndex      string      `json:"other_index"`
     Relationship    string      `json:"relationship"`
     Averages        *NBAAvg
+}
+
+type NBAPIPPrediction struct {
+    PlayerIndex     string      `json:"player_index"`
+    Date            time.Time   `json:"date"`
+    Version         int         `json:"version"`
+    NumGames        int         `json:"num_games"`
+    Minutes         float32     `json:"minutes"`
+    Points          int         `json:"points"`
+    Rebounds        int         `json:"rebounds"`
+    Assists         int         `json:"assists"`
+    Usg             float32     `json:"usg"`
+    Ortg            int         `json:"drtg"`
+    Drtg            int         `json:"ortg"`
 }
