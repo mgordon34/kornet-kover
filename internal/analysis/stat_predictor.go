@@ -15,7 +15,7 @@ type Analysis struct {
     Outliers        map[string]float32
 }
 
-func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate time.Time) []Analysis {
+func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate time.Time, updateDB bool) []Analysis {
     startDate, _ := time.Parse("2006-01-02", "2018-10-01")
     var predictedStats []Analysis
 
@@ -54,7 +54,36 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate 
         )
     }
 
+    if updateDB {
+        CreateAndStorePIPPrediction(predictedStats, endDate)
+    }
+
     return predictedStats
+}
+
+func CreateAndStorePIPPrediction(analyses []Analysis, date time.Time) {
+    log.Printf("Adding %v PIPPredictions to DB", len(analyses))
+    var pPreds []players.NBAPIPPrediction
+    for _, analysis := range analyses {
+        pred := analysis.Prediction.(players.NBAAvg)
+        log.Printf("%v: %v games, points: %v", analysis.PlayerIndex, pred.NumGames, pred.Points)
+        pPred := players.NBAPIPPrediction{
+            PlayerIndex: analysis.PlayerIndex,
+            Date: date,
+            Version: players.CurrNBAPIPPredVersion(),
+            NumGames: pred.NumGames,
+            Minutes: pred.Minutes,
+            Points: int(pred.Points),
+            Rebounds: int(pred.Rebounds),
+            Assists: int(pred.Assists),
+            Usg: pred.Usg,
+            Ortg: int(pred.Ortg),
+            Drtg: int(pred.Drtg),
+        }
+        pPreds = append(pPreds, pPred)
+    }
+
+    players.AddPIPPrediction(pPreds)
 }
 
 func GetOutliers(baseStats players.PlayerAvg, predictedStats players.PlayerAvg) map[string]float32 {

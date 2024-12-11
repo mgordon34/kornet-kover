@@ -339,6 +339,76 @@ func GetPlayerPerWithPlayerByYear(player string, defender string, relationship R
     return playerStats
 }
 
+func AddPIPPrediction(pPreds []NBAPIPPrediction) {
+    db := storage.GetDB()
+	txn, _ := db.Begin(context.Background())
+	_, err := txn.Exec(
+        context.Background(),
+        `CREATE TEMP TABLE pip_prediction_temp
+        ON COMMIT DROP
+        AS SELECT * FROM nba_pip_predictions
+        WITH NO DATA`,
+    )
+	if err != nil {
+		panic(err)
+	}
+    var predsInterface [][]interface{}
+    for _, pPred := range pPreds {
+        predsInterface = append(
+            predsInterface,
+            []interface{}{
+                pPred.PlayerIndex,
+                pPred.Date,
+                pPred.Version,
+                pPred.NumGames,
+                pPred.Minutes,
+                pPred.Points,
+                pPred.Rebounds,
+                pPred.Assists,
+                pPred.Usg,
+                pPred.Ortg,
+                pPred.Drtg,
+            },
+        )
+    }
+
+	_, err = txn.CopyFrom(
+        context.Background(),
+        pgx.Identifier{"pip_prediction_temp"},
+        []string{
+            "player_index",
+            "date",
+            "version",
+            "num_games",
+            "minutes",
+            "points",
+            "rebounds",
+            "assists",
+            "usg",
+            "ortg",
+            "drtg",
+        },
+        pgx.CopyFromRows(predsInterface),
+    )
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = txn.Exec(
+        context.Background(),
+        ` INSERT INTO nba_pip_predictions (player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg)
+        SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg FROM pip_prediction_temp
+        ON CONFLICT DO NOTHING`,
+    )
+	if err != nil {
+		panic(err)
+	}
+
+	if err := txn.Commit(context.Background()); err != nil {
+		panic(err)
+	}
+}
+
 func CalculatePIPFactor(controlMap map[int]PlayerAvg, relatedMap map[int]PlayerAvg) PlayerAvg {
     var totals PlayerAvg
     for year := range relatedMap {

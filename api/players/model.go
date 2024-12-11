@@ -47,3 +47,7 @@ type NBAPIPPrediction struct {
     Ortg            int         `json:"drtg"`
     Drtg            int         `json:"ortg"`
 }
+
+func CurrNBAPIPPredVersion() int {
+    return 1
+}
