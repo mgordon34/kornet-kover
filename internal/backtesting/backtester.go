@@ -109,7 +109,7 @@ func (b BacktestResult) resultBreakdown() {
                 profit -= bet.BetSize
             }
         }
-        log.Printf("%v: %v winrate and $%.2f profit", key, wins/float32(len(pBrackets[key])), profit)
+        log.Printf("%v: %v winrate and $%.2f profit[%v]", key, wins/float32(len(pBrackets[key])), profit, len(pBrackets[key]))
     }
     log.Println("------------------------------------------")
     for _, key := range rKeys {
@@ -122,7 +122,7 @@ func (b BacktestResult) resultBreakdown() {
                 profit -= bet.BetSize
             }
         }
-        log.Printf("%v: %v winrate and $%.2f profit", key, wins/float32(len(rBrackets[key])), profit)
+        log.Printf("%v: %v winrate and $%.2f profit[%v]", key, wins/float32(len(rBrackets[key])), profit, len(rBrackets[key]))
     }
     log.Println("------------------------------------------")
 }
