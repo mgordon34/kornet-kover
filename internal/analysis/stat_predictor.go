@@ -19,6 +19,7 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate 
     startDate, _ := time.Parse("2006-01-02", "2018-10-01")
     var predictedStats []Analysis
 
+    roster.Starters = roster.Starters[:5]
     for _, player := range roster.Starters {
         controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
 
