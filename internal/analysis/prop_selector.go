@@ -2,7 +2,7 @@ package analysis
 
 import (
 	"math"
-    "sort"
+	"sort"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
 )
@@ -10,6 +10,8 @@ import (
 type PropSelector struct {
     Thresholds      map[string]float32
     TresholdType    ThresholdType
+    SortType        SortType
+    SortDir         string
     RequireOutlier  bool
     MinOdds         int
     MinLine         float32
@@ -19,6 +21,20 @@ type PropSelector struct {
     MaxUnder        int
     TotalMax        int
 }
+
+type ThresholdType int
+
+const (
+    Raw ThresholdType = iota
+    Percent
+)
+
+type SortType int
+
+const (
+    Diff ThresholdType = iota
+    PDiff
+)
 
 type PropPick struct {
     Stat            string
@@ -39,13 +55,6 @@ func (p PropPick) GetLine() odds.PlayerLine {
 
     return p.Under
 }
-
-type ThresholdType int
-
-const (
-    Raw ThresholdType = iota
-    Percent
-)
 
 func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, analyses []Analysis) ([]PropPick, error) {
     var picks, selectedPicks []PropPick
@@ -76,7 +85,16 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
     }
     var overCount, underCount int
     sort.Slice(picks, func(i, j int) bool {
-        return picks[i].PDiff > picks[j].PDiff
+        rankings := map[string]int{
+            "points": 3,
+            "rebounds": 2,
+            "assists": 1,
+        }
+        if picks[i].Stat == picks[j].Stat {
+            return math.Abs(float64(picks[i].PDiff)) > math.Abs(float64(picks[j].PDiff))
+        } else {
+            return rankings[picks[i].Stat] > rankings[picks[j].Stat]
+        }
     })
     for _, pick := range picks {
         if (pick.Side == "Over" && overCount >= p.MaxOver) || (pick.Side == "Under" && underCount >= p.MaxUnder) {
