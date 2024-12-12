@@ -1,16 +1,19 @@
 package scraper
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gocolly/colly"
 	"github.com/mgordon34/kornet-kover/api/games"
-	"github.com/mgordon34/kornet-kover/api/teams"
 	"github.com/mgordon34/kornet-kover/api/players"
+	"github.com/mgordon34/kornet-kover/api/teams"
 )
 
 func ScrapeNbaTeams() {
@@ -230,7 +233,7 @@ func ScrapeTodaysGames() [][]players.Roster {
     month := strings.ToLower(now.Month().String())
     dateStr := now.Format("20060102")
 
-    missingPlayers := GetMissingPlayers()
+    missingPlayers := GetInjuredPlayers()
 
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
         t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
@@ -320,4 +323,35 @@ func GetMissingPlayers() map[string]string {
 
     c.Visit("https://www.basketball-reference.com/friv/injuries.fcgi")
     return players
+}
+
+type PlayerResp struct {
+    player string
+}
+
+func GetInjuredPlayers() map[string]string {
+    injuredPlayers := make(map[string]string)
+    var jsonResp []map[string]string
+    r, err := http.Get("https://www.rotowire.com/basketball/tables/injury-report.php?team=ALL&pos=ALL")
+    if err != nil {
+        return injuredPlayers
+    }
+    bodyBytes, err := io.ReadAll(r.Body)
+    if err != nil {
+        log.Fatal(err)
+    }
+    json.Unmarshal(bodyBytes, &jsonResp)
+
+    for _, player := range jsonResp {
+        if strings.Split(player["status"], " ")[0] == "Out" {
+            index, err := players.PlayerNameToIndex(make(map[string]string), player["player"])
+            if err != nil {
+                log.Printf("Error finding index for player %v", player["player"])
+                continue
+            }
+            injuredPlayers[index] = player["status"]
+        }
+    }
+
+    return injuredPlayers
 }
