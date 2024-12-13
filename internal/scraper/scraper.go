@@ -283,7 +283,7 @@ func getRosterForTeam(teamIndex string, missingPlayers map[string]string) player
                 if _, ok := missingPlayers[playerIndex]; ok {
                     log.Printf("%v is out for today", playerIndex)
                     roster.Out = append(roster.Out, playerIndex)
-                } else if index < 5 {
+                } else if index < 8 {
                     roster.Starters = append(roster.Starters, playerIndex)
                     index++
                 } else {
