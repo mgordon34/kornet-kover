@@ -83,19 +83,10 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
             picks = append(picks, pick)
         }
     }
+
+    p.sortPicks(picks)
+
     var overCount, underCount int
-    sort.Slice(picks, func(i, j int) bool {
-        rankings := map[string]int{
-            "points": 3,
-            "rebounds": 2,
-            "assists": 1,
-        }
-        if picks[i].Stat == picks[j].Stat {
-            return math.Abs(float64(picks[i].PDiff)) > math.Abs(float64(picks[j].PDiff))
-        } else {
-            return rankings[picks[i].Stat] > rankings[picks[j].Stat]
-        }
-    })
     for _, pick := range picks {
         if (pick.Side == "Over" && overCount >= p.MaxOver) || (pick.Side == "Under" && underCount >= p.MaxUnder) {
             continue
@@ -111,6 +102,21 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
     }
 
     return selectedPicks, nil
+}
+
+func (p PropSelector) sortPicks(picks []PropPick) {
+    sort.Slice(picks, func(i, j int) bool {
+        rankings := map[string]int{
+            "points": 3,
+            "rebounds": 2,
+            "assists": 1,
+        }
+        if picks[i].Stat == picks[j].Stat {
+            return math.Abs(float64(picks[i].PDiff)) > math.Abs(float64(picks[j].PDiff))
+        } else {
+            return rankings[picks[i].Stat] > rankings[picks[j].Stat]
+        }
+    })
 }
 
 func (p PropSelector) isPickElligible(pick PropPick) bool {
