@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+    "github.com/gin-gonic/gin"
+
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/analysis"
@@ -21,12 +23,23 @@ func main() {
     // runUpdateLines()
     // runPickProps()
 
-    runBacktest()
+    // runBacktest()
+
+    r := gin.Default()
+
+    r.GET("/games", testAPI)
+    r.GET("/update-games", scraper.GetUpdateGames)
+
+    r.Run(":8654")
 }
 
 func runUpdateGames() {
     log.Println("Updating games...")
     scraper.UpdateGames()
+}
+
+func testAPI(c *gin.Context) {
+    c.JSON(200, "Testing")
 }
 
 func runUpdateLines() {
@@ -179,9 +192,9 @@ func runPickProps() {
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
     // startDate, _ := time.ParseInLocation("2006-01-02", "2023-11-01", loc)
-    startDate, _ := time.ParseInLocation("2006-01-02", "2023-10-01", loc)
+    startDate, _ := time.ParseInLocation("2006-01-02", "2024-12-12", loc)
     // endDate, _ := time.ParseInLocation("2006-01-02", "2023-10-31", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2024-12-11", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2024-12-12", loc)
     pPicker := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 0,
@@ -189,7 +202,7 @@ func runBacktest() {
             "assists": 100,
         },
         TresholdType: analysis.Raw,
-        RequireOutlier: false,
+        RequireOutlier: true,
         MinOdds: -135,
         BetSize: 100,
         MaxOver: 1000,
@@ -203,7 +216,7 @@ func runBacktest() {
             "assists": 100,
         },
         TresholdType: analysis.Raw,
-        RequireOutlier: false,
+        RequireOutlier: true,
         MinOdds: -135,
         BetSize: 100,
         MaxOver: 1000,
@@ -217,7 +230,7 @@ func runBacktest() {
             "assists": 0,
         },
         TresholdType: analysis.Raw,
-        RequireOutlier: false,
+        RequireOutlier: true,
         MinOdds: -135,
         BetSize: 100,
         MaxOver: 1000,
@@ -266,6 +279,62 @@ func runBacktest() {
         MaxUnder: 1000,
         TotalMax: 1000,
     }
+    fpPickerP := analysis.PropSelector{
+        Thresholds: map[string]float32{
+            "points": .3,
+            "rebounds": 100,
+            "assists": 100,
+        },
+        TresholdType: analysis.Percent,
+        RequireOutlier: false,
+        MinOdds: -125,
+        BetSize: 100,
+        MaxOver: 5,
+        MaxUnder: 0,
+        TotalMax: 100,
+    }
+    frPickerP := analysis.PropSelector{
+        Thresholds: map[string]float32{
+            "points": 100,
+            "rebounds": .3,
+            "assists": 100,
+        },
+        TresholdType: analysis.Percent,
+        RequireOutlier: false,
+        MinOdds: -125,
+        BetSize: 100,
+        MaxOver: 5,
+        MaxUnder: 0,
+        TotalMax: 100,
+    }
+    faPickerP := analysis.PropSelector{
+        Thresholds: map[string]float32{
+            "points": 100,
+            "rebounds": .3,
+            "assists": 100,
+        },
+        TresholdType: analysis.Percent,
+        RequireOutlier: false,
+        MinOdds: -125,
+        BetSize: 100,
+        MaxOver: 5,
+        MaxUnder: 0,
+        TotalMax: 100,
+    }
+    fsPickerP := analysis.PropSelector{
+        Thresholds: map[string]float32{
+            "points": .3,
+            "rebounds": .3,
+            "assists": .3,
+        },
+        TresholdType: analysis.Percent,
+        RequireOutlier: true,
+        MinOdds: -125,
+        BetSize: 100,
+        MaxOver: 5,
+        MaxUnder: 0,
+        TotalMax: 100,
+    }
     fPickerP := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": .3,
@@ -276,7 +345,7 @@ func runBacktest() {
         RequireOutlier: false,
         MinOdds: -125,
         BetSize: 100,
-        MaxOver: 20,
+        MaxOver: 5,
         MaxUnder: 0,
         TotalMax: 100,
     }
@@ -290,6 +359,10 @@ func runBacktest() {
             {PropSelector: pPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: rPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: aPickerP, BacktestResult: &backtesting.BacktestResult{}},
+            {PropSelector: fpPickerP, BacktestResult: &backtesting.BacktestResult{}},
+            {PropSelector: frPickerP, BacktestResult: &backtesting.BacktestResult{}},
+            {PropSelector: faPickerP, BacktestResult: &backtesting.BacktestResult{}},
+            {PropSelector: fsPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: fPickerP, BacktestResult: &backtesting.BacktestResult{}},
         },
     }

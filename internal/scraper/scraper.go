@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gocolly/colly"
 	"github.com/mgordon34/kornet-kover/api/games"
 	"github.com/mgordon34/kornet-kover/api/players"
@@ -206,6 +207,14 @@ func fixPlayerStats(gameId int, pMap map[string]players.PlayerGame) []players.Pl
     }
 
     return pSlice
+}
+
+func GetUpdateGames(c *gin.Context) {
+    err := UpdateGames()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, err)
+    }
+    c.JSON(http.StatusOK, "Done")
 }
 
 // UpdateGames will add any new game and corresponding stats to the database
