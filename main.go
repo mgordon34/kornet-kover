@@ -25,11 +25,13 @@ func main() {
 
     // runBacktest()
 
+    runUpdateLines()
     r := gin.Default()
 
     r.GET("/games", testAPI)
     r.GET("/update-games", scraper.GetUpdateGames)
     r.GET("/update-lines", sportsbook.GetUpdateLines)
+    r.GET("/pick-props", analysis.GetPickProps)
 
     r.Run(":8654")
 }
