@@ -134,6 +134,7 @@ type OddResponse struct {
 					Price       int `json:"price"`
 					Point       float32 `json:"point"`
 				} `json:"outcomes"`
+                Link        string `json:"link"`
 			} `json:"markets"`
 		} `json:"bookmakers"`
 	} `json:"data"`
@@ -148,9 +149,9 @@ func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
     addlArgs := []string {
         "date=" + game.CommenceTime.UTC().Format("2006-01-02T15:04:05Z"),
         "bookmakers=" + "williamhill_us",
-        // "regions=" + "us",
         "markets=" + "player_points,player_rebounds,player_assists",
         "oddsFormat=" + "american",
+        "includeLinks=" + "true",
     }
     res, err := requestOddsAPI(fmt.Sprintf(endpont, "basketball_nba", game.ID), addlArgs)
     if err != nil {
@@ -183,6 +184,7 @@ func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
                 Side: line.Name,
                 Line: line.Point,
                 Odds: line.Price,
+                Link: market.Link,
             }
             lines = append(lines, line)
         }

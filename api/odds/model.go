@@ -10,4 +10,5 @@ type PlayerLine struct {
     Side            string    `json:"side"`
     Line            float32   `json:"line"`
     Odds            int       `json:"odds"`
+    Link            string    `json:"link"`
 }
