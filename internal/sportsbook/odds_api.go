@@ -10,12 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
 )
-
-type OddsAPI struct {
-}
 
 var odds_markets = map[string]string{
     "player_points": "points",
@@ -46,7 +44,15 @@ func requestOddsAPI(endpoint string, addlArgs []string) (response string, err er
     return buf.String(), err
 }
 
-func (o OddsAPI) UpdateLines() error {
+func GetUpdateLines(c *gin.Context) {
+    err := UpdateLines()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, err)
+    }
+    c.JSON(http.StatusOK, "Done")
+}
+
+func UpdateLines() error {
     lastLine, err := odds.GetLastLine()
     log.Printf("Last line: %v", lastLine)
     if err != nil {
@@ -59,7 +65,7 @@ func (o OddsAPI) UpdateLines() error {
     t := time.Now().In(loc)
     startDate := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-    o.GetOdds(startDate, today)
+    GetOdds(startDate, today)
 
     return nil
 }
@@ -79,7 +85,7 @@ type EventInfo struct {
     AwayTeam     string    `json:"away_team"`
 }
 
-func (o OddsAPI) GetGamesForDate(date time.Time, apiGetter APIGetter) []EventInfo {
+func GetGamesForDate(date time.Time, apiGetter APIGetter) []EventInfo {
     var games []EventInfo
 
     endpont := "historical/sports/%s/events/"
@@ -133,7 +139,7 @@ type OddResponse struct {
 	} `json:"data"`
 }
 
-func (o OddsAPI) GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
+func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
     log.Printf("Getting odds for %s vs %s", game.HomeTeam, game.AwayTeam)
     var lines []odds.PlayerLine
     nameMap := make(map[string]string)
@@ -185,14 +191,14 @@ func (o OddsAPI) GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.Play
     return lines
 }
 
-func (o OddsAPI) GetOdds(startDate time.Time, endDate time.Time) {
+func GetOdds(startDate time.Time, endDate time.Time) {
     for d := startDate; d.After(endDate) == false; d = d.AddDate(0, 0, 1) {
         log.Printf("Getting sportsbook odds for %v...", d)
         var lines []odds.PlayerLine
 
-        games := o.GetGamesForDate(d, requestOddsAPI)
+        games := GetGamesForDate(d, requestOddsAPI)
         for _, game := range games {
-            lines = append(lines, o.GetOddsForGame(game, requestOddsAPI)...)
+            lines = append(lines, GetOddsForGame(game, requestOddsAPI)...)
         }
 
         odds.AddPlayerLines(lines)

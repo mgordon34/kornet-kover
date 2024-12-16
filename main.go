@@ -29,6 +29,7 @@ func main() {
 
     r.GET("/games", testAPI)
     r.GET("/update-games", scraper.GetUpdateGames)
+    r.GET("/update-lines", sportsbook.GetUpdateLines)
 
     r.Run(":8654")
 }
@@ -44,8 +45,7 @@ func testAPI(c *gin.Context) {
 
 func runUpdateLines() {
     log.Println("Updating lines...")
-    getter := sportsbook.OddsAPI{}
-    getter.UpdateLines()
+    sportsbook.UpdateLines()
 }
 
 func runGetPIPPredictions() {
@@ -59,13 +59,12 @@ func runGetPIPPredictions() {
 }
 
 func runSportsbookGetGames() {
-    getter := sportsbook.OddsAPI{}
     loc, _ := time.LoadLocation("America/New_York")
     startDate, _ := time.ParseInLocation("2006-01-02", "2024-01-25", loc)
     endDate, _ := time.ParseInLocation("2006-01-02", "2024-10-24", loc)
     log.Printf("Finding games from %v to %v", startDate, endDate)
 
-    getter.GetOdds(startDate, endDate)
+    sportsbook.GetOdds(startDate, endDate)
 }
 
 func runGetPlayerOdds() {

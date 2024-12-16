@@ -46,7 +46,7 @@ func requestPropOdds(endpoint string, addlArgs []string) (response string, err e
     return buf.String(), err
 }
 
-func UpdateLines() error {
+func PPUpdateLines() error {
     lastLine, err := odds.GetLastLine()
     log.Printf("Last line: %v", lastLine)
     if err != nil {
@@ -66,7 +66,7 @@ func GetGames(startDate time.Time, endDate time.Time) {
         log.Printf("Scraping games for date: %v", d)
 
         var lines []odds.PlayerLine
-        games := GetGamesForDate(d, requestPropOdds)
+        games := PPGetGamesForDate(d, requestPropOdds)
         for _, game := range games {
             for stat, market := range markets {
                 log.Printf("Getting odds for %s for game %s", stat, game.ID)
@@ -96,7 +96,7 @@ type Game struct {
     Timestamp time.Time
 }
 
-func GetGamesForDate(date time.Time, apiGetter APIGetter) []Game {
+func PPGetGamesForDate(date time.Time, apiGetter APIGetter) []Game {
     var games []Game
 
     dateArg := "date=" + fmt.Sprintf("%d-%d-%d", date.Year(), date.Month(), date.Day())
