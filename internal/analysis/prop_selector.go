@@ -190,8 +190,8 @@ func runPickProps() ([]PropPick, error) {
     var results []Analysis
     for _, game := range games {
         log.Printf("Running analysis on %v vs %v", game[0], game[1])
-        results = append(results, RunAnalysisOnGame(game[0], game[1], today, false, true)...)
-        results = append(results, RunAnalysisOnGame(game[1], game[0], today, false, true)...)
+        results = append(results, RunAnalysisOnGame(game[0], game[1], today, true, true)...)
+        results = append(results, RunAnalysisOnGame(game[1], game[0], today, true, true)...)
     }
 
     picker := PropSelector{
