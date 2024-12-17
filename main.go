@@ -25,7 +25,7 @@ func main() {
     // runUpdateLines()
     // runPickProps()
 
-    runBacktest()
+    // runBacktest()
 
     r := gin.Default()
 
