@@ -141,51 +141,6 @@ func runAnalysis() {
 
 }
 
-func runPickProps() {
-    loc, _ := time.LoadLocation("America/New_York")
-    t := time.Now()
-    today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
-
-    // Gather player Odds map for upcoming games
-    oddsMap, err := odds.GetPlayerOddsForDate(today, []string{"points, rebounds, assists"})
-    if err  != nil {
-        log.Fatal("Error getting player odds", err)
-    }
-    // Gather roster for today's games
-    games := scraper.ScrapeTodaysGames()
-    // games = games[:1]
-
-    // Run analysis on each game
-    var results []analysis.Analysis
-    for _, game := range games {
-        log.Printf("Running analysis on %v vs %v", game[0], game[1])
-        results = append(results, analysis.RunAnalysisOnGame(game[0], game[1], today, true)...)
-        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0], today, true)...)
-    }
-
-    picker := analysis.PropSelector{
-        Thresholds: map[string]float32{
-            "points": .3,
-            "rebounds": .3,
-            "assists": .3,
-        },
-        TresholdType: analysis.Percent,
-        RequireOutlier: false,
-        MinOdds: -135,
-        BetSize: 100,
-        MaxOver: 100,
-        MaxUnder: 0,
-        TotalMax: 100,
-    }
-    picks, err := picker.PickProps(oddsMap, results)
-    if err  != nil {
-        log.Fatal("Error getting picking props", err)
-    }
-    for _, pick := range picks {
-        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff)
-    }
-}
-
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
     // startDate, _ := time.ParseInLocation("2006-01-02", "2023-11-01", loc)
