@@ -13,12 +13,12 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/backtesting"
 	"github.com/mgordon34/kornet-kover/internal/scraper"
 	"github.com/mgordon34/kornet-kover/internal/sportsbook"
-	// "github.com/mgordon34/kornet-kover/internal/storage"
+	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
 func main() {
     fmt.Println("Starting server")
-    // storage.InitTables()
+    storage.InitTables()
     log.Println("Initialized DB")
 
     // runUpdateGames()
