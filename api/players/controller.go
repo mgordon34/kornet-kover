@@ -461,3 +461,21 @@ func CalculatePIPFactor(controlMap map[int]PlayerAvg, relatedMap map[int]PlayerA
 
     return totals
 }
+
+func GetOrCreatePrediction(playerIndex string, date time.Time) PlayerAvg {
+    pipPred, err := GetPlayerPIPPrediction(playerIndex, date) 
+    if err != nil {
+        log.Println("Failed to find PIPPrediction: ", err)
+    }
+
+    nbaAvg := NBAAvg{
+        NumGames: pipPred.NumGames,
+        Minutes: pipPred.Minutes,
+        Points: float32(pipPred.Points),
+        Rebounds: float32(pipPred.Rebounds),
+        Usg: pipPred.Usg,
+        Ortg: float32(pipPred.Ortg),
+        Drtg: float32(pipPred.Drtg),
+    }
+    return nbaAvg
+}
