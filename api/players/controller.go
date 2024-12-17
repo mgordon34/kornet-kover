@@ -430,6 +430,23 @@ func GetPIPPredictionsForDate(date time.Time) ([]NBAPIPPrediction, error) {
     return pipPreds, nil
 }
 
+func GetPlayerPIPPrediction(playerIndex string, date time.Time) (NBAPIPPrediction, error) {
+    db := storage.GetDB()
+    sql := `SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg FROM nba_pip_predictions
+                where date=($1) and player_index=($2)`
+
+    rows, err := db.Query(context.Background(), sql, date.Format(time.DateOnly), playerIndex)
+    if err != nil {
+        return NBAPIPPrediction{}, err
+    }
+
+    pipPred, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[NBAPIPPrediction])
+    if err != nil {
+        return NBAPIPPrediction{}, err
+    }
+
+    return pipPred, nil
+}
 
 func CalculatePIPFactor(controlMap map[int]PlayerAvg, relatedMap map[int]PlayerAvg) PlayerAvg {
     var totals PlayerAvg
