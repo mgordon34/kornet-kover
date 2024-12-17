@@ -398,7 +398,9 @@ func AddPIPPrediction(pPreds []NBAPIPPrediction) {
         context.Background(),
         ` INSERT INTO nba_pip_predictions (player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg)
         SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg FROM pip_prediction_temp
-        ON CONFLICT DO NOTHING`,
+        ON CONFLICT (player_index, date, version) DO UPDATE
+        SET num_games=excluded.num_games, minutes=excluded.minutes, points=excluded.points, rebounds=excluded.rebounds,
+        assists=excluded.assists, usg=excluded.usg, ortg=excluded.ortg, drtg=excluded.drtg`,
     )
 	if err != nil {
 		panic(err)
