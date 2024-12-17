@@ -1,10 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
@@ -12,37 +13,32 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/backtesting"
 	"github.com/mgordon34/kornet-kover/internal/scraper"
 	"github.com/mgordon34/kornet-kover/internal/sportsbook"
-	"github.com/mgordon34/kornet-kover/internal/storage"
+	// "github.com/mgordon34/kornet-kover/internal/storage"
 )
 
 func main() {
-    storage.InitTables()
+    fmt.Println("Starting server")
+    // storage.InitTables()
     log.Println("Initialized DB")
 
     // runUpdateGames()
     // runUpdateLines()
     // runPickProps()
 
-    // runBacktest()
+    runBacktest()
 
-    runUpdateLines()
     r := gin.Default()
 
-    r.GET("/games", testAPI)
     r.GET("/update-games", scraper.GetUpdateGames)
     r.GET("/update-lines", sportsbook.GetUpdateLines)
     r.GET("/pick-props", analysis.GetPickProps)
 
-    r.Run(":8654")
+    r.Run(":8080")
 }
 
 func runUpdateGames() {
     log.Println("Updating games...")
     scraper.UpdateGames()
-}
-
-func testAPI(c *gin.Context) {
-    c.JSON(200, "Testing")
 }
 
 func runUpdateLines() {
@@ -193,9 +189,9 @@ func runPickProps() {
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
     // startDate, _ := time.ParseInLocation("2006-01-02", "2023-11-01", loc)
-    startDate, _ := time.ParseInLocation("2006-01-02", "2024-12-12", loc)
+    startDate, _ := time.ParseInLocation("2006-01-02", "2024-11-01", loc)
     // endDate, _ := time.ParseInLocation("2006-01-02", "2023-10-31", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2024-12-12", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2024-11-30", loc)
     pPicker := analysis.PropSelector{
         Thresholds: map[string]float32{
             "points": 0,
