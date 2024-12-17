@@ -126,8 +126,8 @@ func runAnalysis() {
     t := time.Now()
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
     for _, game := range games {
-        results := analysis.RunAnalysisOnGame(game[0], game[1], today, true)
-        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0], today, true)...)
+        results := analysis.RunAnalysisOnGame(game[0], game[1], today, true, true)
+        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0], today, true, true)...)
 
         for _, outcome := range results {
             log.Printf("[%v]: Base Stats: %v", outcome.PlayerIndex, outcome.BaseStats)
