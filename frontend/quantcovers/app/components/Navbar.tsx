@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 const Navbar = () => {
   return (
-    <nav className="bg-background border-b border-border/40 text-white px-8 py-2 flex justify-between items-center">
+    <nav className="border-b border-border/40 text-white px-8 py-2 flex justify-between items-center">
       {/* Left Section */}
       <div className="flex space-x-8">
         <Link href="/" className="text-lg font-semibold hover:text-gray-400">
