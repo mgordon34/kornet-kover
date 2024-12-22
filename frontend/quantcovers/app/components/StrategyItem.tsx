@@ -8,7 +8,7 @@ interface StrategyItemProps {
 const StrategyItem: React.FC<StrategyItemProps> = ({ strategy }) => {
   return (
     <li>
-      <p className="text-1xl">{strategy.id} {strategy.name}</p> {/* Render the strategy name */}
+      <p className="border-b border-border/40 text-1xl p-2">{strategy.id} {strategy.name}</p> {/* Render the strategy name */}
       {/* Add more strategy details here if necessary */}
     </li>
   );

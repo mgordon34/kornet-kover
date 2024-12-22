@@ -15,7 +15,7 @@ const Strategies = async () => {
   const strategies = await getStrategies();
 
   return (
-    <div>
+    <div className="items-center justify-items-center p-8">
       {/* Use the StrategyList component to display the strategies */}
       <StrategyList strategies={strategies} />
     </div>
