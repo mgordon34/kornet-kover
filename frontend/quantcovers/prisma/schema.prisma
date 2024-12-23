@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model games {
+  id                            Int                @id @default(autoincrement())
+  sport                         String             @db.VarChar(255)
+  home_index                    String?            @db.VarChar(255)
+  away_index                    String?            @db.VarChar(255)
+  home_score                    Int
+  away_score                    Int
+  date                          DateTime           @db.Date
+  teams_games_away_indexToteams teams?             @relation("games_away_indexToteams", fields: [away_index], references: [index], onDelete: NoAction, onUpdate: NoAction)
+  teams_games_home_indexToteams teams?             @relation("games_home_indexToteams", fields: [home_index], references: [index], onDelete: NoAction, onUpdate: NoAction)
+  nba_player_games              nba_player_games[]
+
+  @@unique([date, sport, home_index], map: "uq_games")
+}
+
+model nba_pip_factors {
+  id                                            Int      @id @default(autoincrement())
+  player_index                                  String?  @db.VarChar(20)
+  other_index                                   String?  @db.VarChar(20)
+  relationship                                  String?  @db.VarChar(50)
+  num_games                                     Int?
+  avg_minutes                                   Float    @db.Real
+  avg_points                                    Float    @db.Real
+  avg_rebounds                                  Float    @db.Real
+  avg_assists                                   Float    @db.Real
+  avg_usg                                       Float    @db.Real
+  avg_ortg                                      Float    @db.Real
+  avg_drtg                                      Float    @db.Real
+  players_nba_pip_factors_other_indexToplayers  players? @relation("nba_pip_factors_other_indexToplayers", fields: [other_index], references: [index], onDelete: NoAction, onUpdate: NoAction)
+  players_nba_pip_factors_player_indexToplayers players? @relation("nba_pip_factors_player_indexToplayers", fields: [player_index], references: [index], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([player_index, other_index, relationship], map: "uq_pip_factors")
+}
+
+model nba_pip_predictions {
+  id           Int      @id @default(autoincrement())
+  player_index String?  @db.VarChar(20)
+  date         DateTime @db.Date
+  version      Int
+  num_games    Int
+  minutes      Float    @db.Real
+  points       Float    @db.Real
+  rebounds     Float    @db.Real
+  assists      Float    @db.Real
+  usg          Float    @db.Real
+  ortg         Float    @db.Real
+  drtg         Float    @db.Real
+  players      players? @relation(fields: [player_index], references: [index], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([player_index, date, version], map: "uq_pip_predictions")
+}
+
+model nba_player_games {
+  id           Int      @id @default(autoincrement())
+  player_index String?  @db.VarChar(20)
+  game         Int?
+  team_index   String?  @db.VarChar(255)
+  minutes      Float    @db.Real
+  points       Int
+  rebounds     Int
+  assists      Int
+  usg          Float    @db.Real
+  ortg         Int
+  drtg         Int
+  games        games?   @relation(fields: [game], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  players      players? @relation(fields: [player_index], references: [index], onDelete: NoAction, onUpdate: NoAction)
+  teams        teams?   @relation(fields: [team_index], references: [index], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([player_index, game], map: "uq_player_games")
+}
+
+model player_lines {
+  id           Int      @id @default(autoincrement())
+  sport        String   @db.VarChar(255)
+  player_index String?  @db.VarChar(20)
+  timestamp    DateTime @db.Timestamp(6)
+  stat         String?  @db.VarChar(50)
+  side         String?  @db.VarChar(50)
+  line         Float    @db.Real
+  odds         Int
+  link         String?  @db.VarChar(255)
+  players      players? @relation(fields: [player_index], references: [index], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([sport, player_index, timestamp, stat, side], map: "uq_prop_index")
+}
+
+model players {
+  id                                                    Int                   @id @default(autoincrement())
+  index                                                 String?               @unique @db.VarChar(20)
+  sport                                                 String                @db.VarChar(255)
+  name                                                  String?               @db.VarChar(255)
+  nba_pip_factors_nba_pip_factors_other_indexToplayers  nba_pip_factors[]     @relation("nba_pip_factors_other_indexToplayers")
+  nba_pip_factors_nba_pip_factors_player_indexToplayers nba_pip_factors[]     @relation("nba_pip_factors_player_indexToplayers")
+  nba_pip_predictions                                   nba_pip_predictions[]
+  nba_player_games                                      nba_player_games[]
+  player_lines                                          player_lines[]
+
+  @@unique([index, sport], map: "uq_players")
+}
+
+model teams {
+  index                         String             @id @db.VarChar(255)
+  name                          String             @db.VarChar(255)
+  games_games_away_indexToteams games[]            @relation("games_away_indexToteams")
+  games_games_home_indexToteams games[]            @relation("games_home_indexToteams")
+  nba_player_games              nba_player_games[]
+}
+
+model strategies {
+  id               Int                @id @default(autoincrement())
+  user_id          Int?
+  name             String             @db.VarChar(255)
+  users            users?             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  strategy_filters strategy_filters[]
+}
+
+model strategy_filters {
+  id         Int         @id @default(autoincrement())
+  stategy_id Int?
+  function   String      @db.VarChar(255)
+  comparator String      @db.VarChar(255)
+  threshold  String      @db.VarChar(255)
+  strategies strategies? @relation(fields: [stategy_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+  id         Int          @id @default(autoincrement())
+  name       String       @db.VarChar(50)
+  email      String       @db.VarChar(255)
+  password   String       @db.VarChar(255)
+  strategies strategies[]
+}
