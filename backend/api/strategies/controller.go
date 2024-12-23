@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -45,18 +46,14 @@ func getStrategies(userId int) ([]Strategy, error) {
     return strats, nil
 }
 
-type StrategiesRequestBody struct {
-    UserId int `json:"user_id"`
-}
 func GetStrategies(c *gin.Context) {
-    var requestBody StrategiesRequestBody
-    if err := c.BindJSON(&requestBody) ;err != nil {
-        log.Println(err)
+    id, err := strconv.Atoi(c.Query("user_id"))
+    if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
-    log.Println(requestBody.UserId)
+    log.Println(id)
 
-    strats, err := getStrategies(requestBody.UserId)
+    strats, err := getStrategies(id)
     if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
