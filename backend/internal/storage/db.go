@@ -122,6 +122,24 @@ func InitTables() {
             drtg REAL NOT NULL,
             CONSTRAINT uq_pip_predictions UNIQUE(player_index, date, version)
         )`,
+        `CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(50) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            password VARCHAR(255) NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS strategies (
+            id SERIAL PRIMARY KEY,
+            user_id INT REFERENCES users(id),
+            name VARCHAR(255) NOT NULL
+        )`,
+        `CREATE TABLE IF NOT EXISTS strategy_filters (
+            id SERIAL PRIMARY KEY,
+            stategy_id INT REFERENCES strategies(id),
+            function VARCHAR(255) NOT NULL,
+            comparator VARCHAR(255) NOT NULL,
+            threshold VARCHAR(255) NOT NULL
+        )`,
     }
 
     for _, command := range commands {
