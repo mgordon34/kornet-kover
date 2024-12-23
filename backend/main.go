@@ -9,6 +9,7 @@ import (
 
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
+	"github.com/mgordon34/kornet-kover/api/strategies"
 	"github.com/mgordon34/kornet-kover/internal/analysis"
 	"github.com/mgordon34/kornet-kover/internal/backtesting"
 	"github.com/mgordon34/kornet-kover/internal/scraper"
@@ -32,6 +33,8 @@ func main() {
     r.GET("/update-games", scraper.GetUpdateGames)
     r.GET("/update-lines", sportsbook.GetUpdateLines)
     r.GET("/pick-props", analysis.GetPickProps)
+
+    r.GET("/strategies", strategies.GetStrategies)
 
     r.Run(":8080")
 }
