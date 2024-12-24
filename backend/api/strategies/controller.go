@@ -13,7 +13,7 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
-func AddStrategy(strat Strategy) (int, error) {
+func addStrategy(strat Strategy) (int, error) {
     db := storage.GetDB()
 
     sqlStmt := `
@@ -40,10 +40,26 @@ func getStrategies(userId int) ([]Strategy, error) {
     row, _ := db.Query(context.Background(), sql, userId)
     strats, err := pgx.CollectRows(row, pgx.RowToStructByName[Strategy])
     if err != nil {
-        return strats, errors.New(fmt.Sprintf("Error getting last game: %v", err))
+        return strats, errors.New(fmt.Sprintf("Error getting strategies for user %d: %v", userId, err))
     }
 
     return strats, nil
+}
+
+func getStrategy(stratId int) (Strategy, error) {
+    db := storage.GetDB()
+
+    sql := `
+    SELECT * from strategies
+    WHERE id = ($1)`
+
+    row, _ := db.Query(context.Background(), sql, stratId)
+    strat, err := pgx.CollectExactlyOneRow(row, pgx.RowToStructByName[Strategy])
+    if err != nil {
+        return strat, errors.New(fmt.Sprintf("Error getting strategy %d: %v", stratId, err))
+    }
+
+    return strat, nil
 }
 
 func GetStrategies(c *gin.Context) {
