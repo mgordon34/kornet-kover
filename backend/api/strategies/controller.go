@@ -46,6 +46,20 @@ func getStrategies(userId int) ([]Strategy, error) {
     return strats, nil
 }
 
+func GetStrategies(c *gin.Context) {
+    id, err := strconv.Atoi(c.Query("user_id"))
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, err)
+    }
+    log.Println(id)
+
+    strats, err := getStrategies(id)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, err)
+    }
+    c.JSON(http.StatusOK, strats)
+}
+
 func getStrategy(stratId int) (Strategy, error) {
     db := storage.GetDB()
 
@@ -62,16 +76,16 @@ func getStrategy(stratId int) (Strategy, error) {
     return strat, nil
 }
 
-func GetStrategies(c *gin.Context) {
-    id, err := strconv.Atoi(c.Query("user_id"))
+func GetStrategy(c *gin.Context) {
+    stratId, err := strconv.Atoi(c.Param("strat"))
     if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
-    log.Println(id)
+    log.Println(stratId)
 
-    strats, err := getStrategies(id)
+    strat, err := getStrategy(stratId)
     if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
-    c.JSON(http.StatusOK, strats)
+    c.JSON(http.StatusOK, strat)
 }
