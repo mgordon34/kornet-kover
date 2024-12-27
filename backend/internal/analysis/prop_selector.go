@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mgordon34/kornet-kover/api/odds"
+	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/scraper"
 )
 
@@ -18,6 +19,7 @@ type PropSelector struct {
     SortType        SortType
     SortDir         string
     RequireOutlier  bool
+    MinGames        int
     MinOdds         int
     MinLine         float32
     MinDiff         float32
@@ -142,6 +144,10 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
         return false
     }
 
+    nbaPred := pick.Prediction.(players.NBAAvg)
+    if p.MinGames != 0 && nbaPred.NumGames < p.MinGames {
+        return false
+    }
     threshold, ok := p.Thresholds[pick.Stat]; if !ok {
         return false
     }
@@ -202,6 +208,7 @@ func runPickProps() ([]PropPick, error) {
         },
         TresholdType: Percent,
         RequireOutlier: false,
+        MinGames: 10,
         MinOdds: -135,
         BetSize: 100,
         MaxOver: 100,
