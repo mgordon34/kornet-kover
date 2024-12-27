@@ -40,12 +40,12 @@ type NBAPIPPrediction struct {
     Version         int         `json:"version"`
     NumGames        int         `json:"num_games"`
     Minutes         float32     `json:"minutes"`
-    Points          int         `json:"points"`
-    Rebounds        int         `json:"rebounds"`
-    Assists         int         `json:"assists"`
+    Points          float32     `json:"points"`
+    Rebounds        float32     `json:"rebounds"`
+    Assists         float32     `json:"assists"`
     Usg             float32     `json:"usg"`
-    Ortg            int         `json:"drtg"`
-    Drtg            int         `json:"ortg"`
+    Ortg            float32     `json:"drtg"`
+    Drtg            float32     `json:"ortg"`
 }
 
 func CurrNBAPIPPredVersion() int {

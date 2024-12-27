@@ -33,12 +33,12 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate 
         prediction := players.NBAAvg{
             NumGames: pipPred.NumGames,
             Minutes: pipPred.Minutes,
-            Points: float32(pipPred.Points),
-            Rebounds: float32(pipPred.Rebounds),
-            Assists: float32(pipPred.Assists),
+            Points: pipPred.Points,
+            Rebounds: pipPred.Rebounds,
+            Assists: pipPred.Assists,
             Usg: pipPred.Usg,
-            Ortg: float32(pipPred.Ortg),
-            Drtg: float32(pipPred.Drtg),
+            Ortg: pipPred.Ortg,
+            Drtg: pipPred.Drtg,
         }
 
         baseStats := controlMap[currYear].ConvertToStats()
@@ -98,12 +98,12 @@ func CreatePIPPrediction(playerIndex string, opponents players.Roster, relations
         Version: players.CurrNBAPIPPredVersion(),
         NumGames: pred.NumGames,
         Minutes: pred.Minutes,
-        Points: int(pred.Points),
-        Rebounds: int(pred.Rebounds),
-        Assists: int(pred.Assists),
+        Points: pred.Points,
+        Rebounds: pred.Rebounds,
+        Assists: pred.Assists,
         Usg: pred.Usg,
-        Ortg: int(pred.Ortg),
-        Drtg: int(pred.Drtg),
+        Ortg: pred.Ortg,
+        Drtg: pred.Drtg,
     }
 
     return prediction
@@ -120,12 +120,12 @@ func CreateAndStorePIPPrediction(analyses []Analysis, date time.Time) {
             Version: players.CurrNBAPIPPredVersion(),
             NumGames: pred.NumGames,
             Minutes: pred.Minutes,
-            Points: int(pred.Points),
-            Rebounds: int(pred.Rebounds),
-            Assists: int(pred.Assists),
+            Points: pred.Points,
+            Rebounds: pred.Rebounds,
+            Assists: pred.Assists,
             Usg: pred.Usg,
-            Ortg: int(pred.Ortg),
-            Drtg: int(pred.Drtg),
+            Ortg: pred.Ortg,
+            Drtg: pred.Drtg,
         }
         pPreds = append(pPreds, pPred)
     }
