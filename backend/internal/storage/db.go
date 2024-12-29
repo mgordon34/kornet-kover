@@ -140,6 +140,16 @@ func InitTables() {
             comparator VARCHAR(255) NOT NULL,
             threshold VARCHAR(255) NOT NULL
         )`,
+        `CREATE TABLE IF NOT EXISTS prop_picks (
+            id SERIAL PRIMARY KEY,
+            user_id INT REFERENCES users(id),
+            player_index VARCHAR(20) REFERENCES players(index),
+            side VARCHAR(255) NOT NULL,
+            line REAL NOT NULL,
+            stat VARCHAR(255) NOT NULL,
+            valid BOOLEAN NOT NULL,
+            CONSTRAINT uq_prop_picks UNIQUE(user_id, player_index, side, line, stat)
+        )`,
     }
 
     for _, command := range commands {
