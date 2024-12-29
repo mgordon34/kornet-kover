@@ -220,7 +220,7 @@ func runPickProps() ([]PropPick, error) {
         return picks, err
     }
     for _, pick := range picks {
-        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff)
+        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. PDiff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.PDiff)
     }
 
     return picks, nil
