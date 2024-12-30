@@ -146,7 +146,7 @@ func InitTables() {
             line_id INT REFERENCES player_lines(id),
             valid BOOLEAN NOT NULL,
             date DATE NOT NULL,
-            CONSTRAINT uq_prop_picks UNIQUE(user_id, line_id, date)
+            CONSTRAINT uq_prop_picks UNIQUE(strat_id, line_id, date)
         )`,
     }
 

@@ -132,7 +132,7 @@ func (p PropSelector) convertToPicksModel(pPicks []PropPick, date time.Time) []p
     var models []picks.PropPick
     for _, pick := range pPicks {
         models = append(models, picks.PropPick{
-            UserId: 1,
+            StratId: 1,
             LineId: pick.LineId,
             Valid: true,
             Date: date,
