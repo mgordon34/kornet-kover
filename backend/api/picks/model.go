@@ -1,11 +1,11 @@
 package picks
 
+import "time"
+
 type PropPick struct {
     Id              int         `json:"id"`
     UserId          int         `json:"user_id"`
-    PlayerIndex     string      `json:"player_index"`
-    Side            string      `json:"side"`
-    Line            float32     `json:"line"`
-    Stat            string      `json:"stat"`
+    LineId          int         `json:"line_id"`
     Valid           bool        `json:"valid"`
+    Date            time.Time   `json:"date"`
 }

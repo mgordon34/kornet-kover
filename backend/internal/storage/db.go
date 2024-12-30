@@ -143,12 +143,10 @@ func InitTables() {
         `CREATE TABLE IF NOT EXISTS prop_picks (
             id SERIAL PRIMARY KEY,
             user_id INT REFERENCES users(id),
-            player_index VARCHAR(20) REFERENCES players(index),
-            side VARCHAR(255) NOT NULL,
-            line REAL NOT NULL,
-            stat VARCHAR(255) NOT NULL,
+            line_id INT REFERENCES player_lines(id),
             valid BOOLEAN NOT NULL,
-            CONSTRAINT uq_prop_picks UNIQUE(user_id, player_index, side, line, stat)
+            date DATE NOT NULL,
+            CONSTRAINT uq_prop_picks UNIQUE(user_id, line_id, date)
         )`,
     }
 
