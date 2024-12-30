@@ -142,7 +142,7 @@ func InitTables() {
         )`,
         `CREATE TABLE IF NOT EXISTS prop_picks (
             id SERIAL PRIMARY KEY,
-            user_id INT REFERENCES users(id),
+            strat_id INT REFERENCES strategies(id),
             line_id INT REFERENCES player_lines(id),
             valid BOOLEAN NOT NULL,
             date DATE NOT NULL,

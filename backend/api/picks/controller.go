@@ -18,12 +18,12 @@ func addPropPick(pick PropPick) (int, error) {
     db := storage.GetDB()
 
     sqlStmt := `
-	INSERT INTO prop_picks (user_id, line_id, valid, date)
+	INSERT INTO prop_picks (strat_id, line_id, valid, date)
 	VALUES ($1, $2)
 	ON CONFLICT DO NOTHING
     RETURNING ID`
     var resId int
-    err := db.QueryRow(context.Background(), sqlStmt, pick.UserId, pick.LineId, pick.Valid, pick.Date).Scan(&resId)
+    err := db.QueryRow(context.Background(), sqlStmt, pick.StratId, pick.LineId, pick.Valid, pick.Date).Scan(&resId)
 	if err != nil {
         return 0, err
 	}
@@ -49,7 +49,7 @@ func AddPropPicks(picks []PropPick) error {
     var picksInterface [][]interface{}
     for _, pick := range picks {
         picksInterface = append(picksInterface, []interface{}{
-            pick.UserId,
+            pick.StratId,
             pick.LineId,
             pick.Valid,
             pick.Date,
@@ -60,7 +60,7 @@ func AddPropPicks(picks []PropPick) error {
         context.Background(),
         pgx.Identifier{"prop_picks_temp"},
         []string{
-            "user_id",
+            "strat_id",
             "line_id",
             "valid",
             "date",
@@ -74,9 +74,9 @@ func AddPropPicks(picks []PropPick) error {
 
 	_, err = txn.Exec(
         context.Background(),
-        `INSERT INTO prop_picks (user_id, line_id, valid, date)
-        SELECT user_id, line_id, valid, date FROM prop_picks_temp
-        ON CONFLICT (user_id, line_id, date) DO UPDATE
+        `INSERT INTO prop_picks (strat_id, line_id, valid, date)
+        SELECT strat_id, line_id, valid, date FROM prop_picks_temp
+        ON CONFLICT (strat_id, line_id, date) DO UPDATE
         SET valid=excluded.valid`,
     )
 	if err != nil {
@@ -91,24 +91,24 @@ func AddPropPicks(picks []PropPick) error {
     return nil
 }
 
-func getPropPicks(userId int, date time.Time) ([]PropPick, error) {
+func getPropPicks(stratId int, date time.Time) ([]PropPick, error) {
     db := storage.GetDB()
 
     sql := `
     SELECT * from prop_picks
-    WHERE user_id=($1) and date=($2)`
+    WHERE strat_id=($1) and date=($2)`
 
-    row, _ := db.Query(context.Background(), sql, userId, date)
+    row, _ := db.Query(context.Background(), sql, stratId, date)
     strats, err := pgx.CollectRows(row, pgx.RowToStructByName[PropPick])
     if err != nil {
-        return strats, errors.New(fmt.Sprintf("Error getting prop picks for user %d on %v: %v", userId, date, err))
+        return strats, errors.New(fmt.Sprintf("Error getting prop picks for strat %d on %v: %v", stratId, date, err))
     }
 
     return strats, nil
 }
 
 func GetPropPicks(c *gin.Context) {
-    id, err := strconv.Atoi(c.Query("user_id"))
+    id, err := strconv.Atoi(c.Query("strat_id"))
     if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
