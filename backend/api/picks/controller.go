@@ -154,3 +154,14 @@ func GetPropPick(c *gin.Context) {
     }
     c.JSON(http.StatusOK, strat)
 }
+
+func MarkOldPicksInvalid(stratId int, date time.Time) {
+    db := storage.GetDB()
+
+    sql := `
+    UPDATE prop_picks
+    SET valid=false
+    WHERE strat_id=($1) AND date=($2)`
+
+    db.QueryRow(context.Background(), sql, stratId, date)
+}

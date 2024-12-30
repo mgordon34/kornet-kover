@@ -119,6 +119,7 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
 
     if savePicks {
         models := p.convertToPicksModel(selectedPicks, date)
+        picks.MarkOldPicksInvalid(1, date)
         err := picks.AddPropPicks(models)
         if err != nil {
             return selectedPicks, errors.New(fmt.Sprintf("Error getting saving picks: %v", err))
