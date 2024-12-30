@@ -44,6 +44,8 @@ const (
 )
 
 type PropPick struct {
+    UserId          int
+    LineId          int
     Stat            string
     Side            string
     Diff            float32
@@ -73,12 +75,16 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
             }
             diff, pDiff := GetOddsDiff(props[analysis.PlayerIndex][stat], prediction)
             var side string
+            var lineId int
             if diff > 0 {
                 side = "Over"
+                lineId = line.Over.Id
             } else {
                 side = "Under"
+                lineId = line.Under.Id
             }
             pick := PropPick{
+                LineId: lineId,
                 Stat: stat,
                 Side: side,
                 Diff: diff,
@@ -220,7 +226,7 @@ func runPickProps() ([]PropPick, error) {
         return picks, err
     }
     for _, pick := range picks {
-        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. PDiff: %.2f", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.PDiff)
+        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. PDiff: %.2f, ID: %v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.PDiff, pick.LineId)
     }
 
     return picks, nil
