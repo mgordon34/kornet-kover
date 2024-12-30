@@ -96,7 +96,7 @@ func getPropPicks(userId int, date time.Time) ([]PropPick, error) {
     SELECT * from prop_picks
     WHERE user_id=($1) and date=($2)`
 
-    row, _ := db.Query(context.Background(), sql, userId)
+    row, _ := db.Query(context.Background(), sql, userId, date)
     strats, err := pgx.CollectRows(row, pgx.RowToStructByName[PropPick])
     if err != nil {
         return strats, errors.New(fmt.Sprintf("Error getting prop picks for user %d on %v: %v", userId, date, err))
@@ -110,13 +110,14 @@ func GetPropPicks(c *gin.Context) {
     if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
-    date, _ := time.Parse("2006-01-02",c.Query("date"))
+    date, err := time.Parse("2006-01-02",c.Query("date"))
     if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
 
     strats, err := getPropPicks(id, date)
     if err != nil {
+        log.Println("Error in GetPropPicks:", err)
         c.JSON(http.StatusInternalServerError, err)
     }
     c.JSON(http.StatusOK, strats)

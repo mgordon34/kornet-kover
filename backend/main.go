@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
+	"github.com/mgordon34/kornet-kover/api/picks"
 	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/api/strategies"
 	"github.com/mgordon34/kornet-kover/internal/analysis"
@@ -35,6 +36,7 @@ func main() {
     r.GET("/pick-props", analysis.GetPickProps)
 
     r.GET("/strategies", strategies.GetStrategies)
+    r.GET("/prop-picks", picks.GetPropPicks)
 
     r.Run(":8080")
 }
