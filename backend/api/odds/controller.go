@@ -109,7 +109,7 @@ func GetLastLine() (PlayerLine, error) {
     db := storage.GetDB()
 
     sql := `
-	SELECT sport, player_index, timestamp, stat, side, line, odds, link from player_lines
+	SELECT id, sport, player_index, timestamp, stat, side, line, odds, link from player_lines
     ORDER BY timestamp DESC
     LIMIT 1`
 
