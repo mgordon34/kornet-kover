@@ -202,7 +202,7 @@ func (b Backtester) backtestDate(date time.Time) {
 
     var picks []analysis.PropPick
     for _, strategy := range b.Strategies {
-        picks, _ = strategy.PickProps(todaysOdds, results)
+        picks, _ = strategy.PickProps(todaysOdds, results, date, false)
 
         for _, pick := range picks {
             log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f Odds: %v/%v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.Over.Odds, pick.Under.Odds)

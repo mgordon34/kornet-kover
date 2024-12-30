@@ -1,6 +1,8 @@
 package analysis
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -9,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mgordon34/kornet-kover/api/odds"
+	"github.com/mgordon34/kornet-kover/api/picks"
 	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/scraper"
 )
@@ -65,8 +68,8 @@ func (p PropPick) GetLine() odds.PlayerLine {
     return p.Under
 }
 
-func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, analyses []Analysis) ([]PropPick, error) {
-    var picks, selectedPicks []PropPick
+func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, analyses []Analysis, date time.Time, savePicks bool) ([]PropPick, error) {
+    var pPicks, selectedPicks []PropPick
     for _, analysis := range analyses {
 
         for stat, prediction := range analysis.Prediction.GetStats() {
@@ -93,14 +96,14 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
                 PlayerOdds: line,
                 Analysis: analysis,
             }
-            picks = append(picks, pick)
+            pPicks = append(pPicks, pick)
         }
     }
 
-    p.sortPicks(picks)
+    p.sortPicks(pPicks)
 
     var overCount, underCount int
-    for _, pick := range picks {
+    for _, pick := range pPicks {
         if (pick.Side == "Over" && overCount >= p.MaxOver) || (pick.Side == "Under" && underCount >= p.MaxUnder) {
             continue
         }
@@ -114,7 +117,29 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
         }
     }
 
+    if savePicks {
+        models := p.convertToPicksModel(selectedPicks, date)
+        err := picks.AddPropPicks(models)
+        if err != nil {
+            return selectedPicks, errors.New(fmt.Sprintf("Error getting saving picks: %v", err))
+        }
+    }
+
     return selectedPicks, nil
+}
+
+func (p PropSelector) convertToPicksModel(pPicks []PropPick, date time.Time) []picks.PropPick {
+    var models []picks.PropPick
+    for _, pick := range pPicks {
+        models = append(models, picks.PropPick{
+            UserId: 1,
+            LineId: pick.LineId,
+            Valid: true,
+            Date: date,
+        })
+    }
+
+    return models
 }
 
 func (p PropSelector) sortPicks(picks []PropPick) {
@@ -221,7 +246,7 @@ func runPickProps() ([]PropPick, error) {
         MaxUnder: 0,
         TotalMax: 100,
     }
-    picks, err = picker.PickProps(oddsMap, results)
+    picks, err = picker.PickProps(oddsMap, results, today, true)
     if err  != nil {
         return picks, err
     }

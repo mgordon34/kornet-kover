@@ -31,7 +31,7 @@ func addPropPick(pick PropPick) (int, error) {
     return resId, nil
 }
 
-func addPropPicks(picks []PropPick) {
+func AddPropPicks(picks []PropPick) error {
     log.Printf("Adding %d prop picks", len(picks))
     db := storage.GetDB()
 	txn, _ := db.Begin(context.Background())
@@ -43,7 +43,7 @@ func addPropPicks(picks []PropPick) {
         WITH NO DATA`,
     )
 	if err != nil {
-        log.Fatal(err)
+       return err
 	}
 
     var picksInterface [][]interface{}
@@ -68,7 +68,7 @@ func addPropPicks(picks []PropPick) {
         pgx.CopyFromRows(picksInterface),
     )
 	if err != nil {
-        log.Fatal(err)
+        return err
 	}
 
 
@@ -80,13 +80,15 @@ func addPropPicks(picks []PropPick) {
         SET valid=excluded.valid`,
     )
 	if err != nil {
-        log.Fatal(err)
+        return err
 	}
 
 	if err := txn.Commit(context.Background()); err != nil {
-        log.Fatal(err)
+        return err
 	}
     log.Println("success adding prop_picks")
+
+    return nil
 }
 
 func getPropPicks(userId int, date time.Time) ([]PropPick, error) {
