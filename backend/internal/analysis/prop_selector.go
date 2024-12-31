@@ -240,7 +240,7 @@ func runPickProps() ([]PropPick, error) {
         },
         TresholdType: Percent,
         RequireOutlier: false,
-        MinGames: 10,
+        MinGames: 0,
         MinOdds: -135,
         BetSize: 100,
         MaxOver: 100,

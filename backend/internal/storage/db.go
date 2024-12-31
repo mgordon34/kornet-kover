@@ -83,7 +83,7 @@ func InitTables() {
         `CREATE TABLE IF NOT EXISTS player_lines (
             id SERIAL PRIMARY KEY,
             sport VARCHAR(255) NOT NULL,
-            player_index VARCHAR(20) REFERENCES players(index),
+            player_index VARCHAR(20) REFERENCES players(index) UNIQUE,
             timestamp timestamp NOT NULL,
             stat VARCHAR(50),
             side VARCHAR(50),
@@ -147,6 +147,14 @@ func InitTables() {
             valid BOOLEAN NOT NULL,
             date DATE NOT NULL,
             CONSTRAINT uq_prop_picks UNIQUE(strat_id, line_id, date)
+        )`,
+        `CREATE TABLE IF NOT EXISTS active_rosters (
+            id SERIAL PRIMARY KEY,
+            sport VARCHAR(20) NOT NULL,
+            player_index VARCHAR(20) REFERENCES players(index),
+            team_index VARCHAR(20) REFERENCES teams(index),
+            status VARCHAR(255) NOT NULL,
+            avg_minutes REAL NOT NULL
         )`,
     }
 
