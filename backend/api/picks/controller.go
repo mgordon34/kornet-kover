@@ -117,12 +117,12 @@ func GetPropPicks(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, err)
     }
 
-    strats, err := getPropPicks(id, date)
+    picks, err := getPropPicks(id, date)
     if err != nil {
         log.Println("Error in GetPropPicks:", err)
         c.JSON(http.StatusInternalServerError, err)
     }
-    c.JSON(http.StatusOK, strats)
+    c.JSON(http.StatusOK, picks)
 }
 
 func getPropPick(stratId int) (PropPick, error) {
