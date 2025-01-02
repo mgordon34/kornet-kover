@@ -91,20 +91,36 @@ func AddPropPicks(picks []PropPick) error {
     return nil
 }
 
-func getPropPicks(stratId int, date time.Time) ([]PropPick, error) {
+type PropPickFormatted struct {
+    Id              int         `db:"id"`
+    UserId          int         `db:"user_id"`
+    StratId         int         `db:"strat_id"`
+    PlayerName      string      `db:"name"`
+    Side            string      `db:"side"`
+    Line            float32     `db:"line"`
+    Stat            string      `db:"stat"`
+    Odds            int         `db:"odds"`
+    Date            time.Time   `db:"date"`
+}
+func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
     db := storage.GetDB()
 
     sql := `
-    SELECT * from prop_picks
-    WHERE strat_id=($1) and date=($2)`
+    SELECT pp.id, u.id as user_id, pp.strat_id, p.name, pl.side, pl.line, 
+    pl.stat, pl.odds, pp.date from prop_picks pp
+    LEFT JOIN player_lines pl on pl.id = pp.line_id
+    LEFT JOIN players p on p.index = pl.player_index
+    LEFT JOIN strategies s on s.id = pp.strat_id
+    LEFT JOIN users u on u.id = s.user_id
+    WHERE u.id=($1) and pp.date=($2)`
 
-    row, _ := db.Query(context.Background(), sql, stratId, date)
-    strats, err := pgx.CollectRows(row, pgx.RowToStructByName[PropPick])
+    row, _ := db.Query(context.Background(), sql, userId, date)
+    picks, err := pgx.CollectRows(row, pgx.RowToStructByName[PropPickFormatted])
     if err != nil {
-        return strats, errors.New(fmt.Sprintf("Error getting prop picks for strat %d on %v: %v", stratId, date, err))
+        return picks, errors.New(fmt.Sprintf("Error getting prop picks for strat %d on %v: %v", userId, date, err))
     }
 
-    return strats, nil
+    return picks, nil
 }
 
 func GetPropPicks(c *gin.Context) {
