@@ -155,6 +155,7 @@ func InitTables() {
             team_index VARCHAR(20) REFERENCES teams(index),
             status VARCHAR(255) NOT NULL,
             avg_minutes REAL NOT NULL
+            CONSTRAINT uq_active_rosters UNIQUE(sport, player_index)
         )`,
     }
 
