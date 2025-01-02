@@ -100,16 +100,21 @@ type PropPickFormatted struct {
     Line            float32     `json:"line"`
     Stat            string      `json:"stat"`
     Odds            int         `json:"odds"`
+    Points          float32     `json:"points"`
+    Rebounds        float32     `json:"rebounds"`
+    Assists         float32     `json:"assists"`
+    Minutes         float32     `json:"minutes"`
     Date            time.Time   `json:"date"`
 }
 func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
     db := storage.GetDB()
 
     sql := `
-    SELECT pp.id, u.id as user_id, pp.strat_id, p.name, pl.side, pl.line, 
-    pl.stat, pl.odds, pp.date from prop_picks pp
+    SELECT pp.id, u.id as user_id, pp.strat_id, p.name, pl.side, pl.line, pl.stat, pl.odds, 
+    npp.points, npp.rebounds, npp.assists, npp.minutes, pp.date from prop_picks pp
     LEFT JOIN player_lines pl on pl.id = pp.line_id
     LEFT JOIN players p on p.index = pl.player_index
+    LEFT JOIN nba_pip_predictions npp on npp.player_index = pl.player_index and npp.date = pp.date
     LEFT JOIN strategies s on s.id = pp.strat_id
     LEFT JOIN users u on u.id = s.user_id
     WHERE u.id=($1) and pp.date=($2)`
