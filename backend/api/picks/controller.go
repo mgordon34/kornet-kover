@@ -92,15 +92,15 @@ func AddPropPicks(picks []PropPick) error {
 }
 
 type PropPickFormatted struct {
-    Id              int         `db:"id"`
-    UserId          int         `db:"user_id"`
-    StratId         int         `db:"strat_id"`
-    PlayerName      string      `db:"name"`
-    Side            string      `db:"side"`
-    Line            float32     `db:"line"`
-    Stat            string      `db:"stat"`
-    Odds            int         `db:"odds"`
-    Date            time.Time   `db:"date"`
+    Id              int         `json:"id"`
+    UserId          int         `json:"user_id"`
+    StratId         int         `json:"strat_id"`
+    Name            string      `json:"name"`
+    Side            string      `json:"side"`
+    Line            float32     `json:"line"`
+    Stat            string      `json:"stat"`
+    Odds            int         `json:"odds"`
+    Date            time.Time   `json:"date"`
 }
 func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
     db := storage.GetDB()
