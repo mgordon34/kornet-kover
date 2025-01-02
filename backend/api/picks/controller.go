@@ -117,7 +117,7 @@ func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
     LEFT JOIN nba_pip_predictions npp on npp.player_index = pl.player_index and npp.date = pp.date
     LEFT JOIN strategies s on s.id = pp.strat_id
     LEFT JOIN users u on u.id = s.user_id
-    WHERE u.id=($1) and pp.date=($2)`
+    WHERE pp.valid=true and u.id=($1) and pp.date=($2)`
 
     row, _ := db.Query(context.Background(), sql, userId, date)
     picks, err := pgx.CollectRows(row, pgx.RowToStructByName[PropPickFormatted])
