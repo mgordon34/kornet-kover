@@ -203,6 +203,7 @@ func GetOddsDiff(pOdds odds.PlayerOdds, prediction float32) (float32, float32) {
 func GetPickProps(c *gin.Context) {
     picks, err := runPickProps()
     if err != nil {
+        log.Printf("500 for picks-props: %s", err)
         c.JSON(http.StatusInternalServerError, err)
     }
     c.JSON(http.StatusOK, picks)
@@ -253,6 +254,31 @@ func runPickProps() ([]PropPick, error) {
     }
     for _, pick := range picks {
         log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. PDiff: %.2f, ID: %v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.PDiff, pick.LineId)
+    }
+
+    log.Println("=========================================================================")
+
+    apicker := PropSelector{
+        Thresholds: map[string]float32{
+            "points": 2,
+            "rebounds": 2,
+            "assists": 2,
+        },
+        TresholdType: Raw,
+        RequireOutlier: false,
+        MinGames: 0,
+        MinOdds: -135,
+        BetSize: 100,
+        MaxOver: 100,
+        MaxUnder: 0,
+        TotalMax: 100,
+    }
+    apicks, err := apicker.PickProps(oddsMap, results, today, false)
+    if err  != nil {
+        return picks, err
+    }
+    for _, pick := range apicks {
+        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, ID: %v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.LineId)
     }
 
     return picks, nil
