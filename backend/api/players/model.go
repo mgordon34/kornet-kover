@@ -48,6 +48,15 @@ type NBAPIPPrediction struct {
     Drtg            float32     `json:"ortg"`
 }
 
+type PlayerRoster struct {
+    Index           int         `json:"id"`
+    Sport           string      `json:"sport"`
+    PlayerIndex     string      `json:"player_index"`
+    TeamIndex       string      `json:"team_index"`
+    Status          string      `json:"status"`
+    AvgMins         float32     `json:"avg_minutes"`
+}
+
 func CurrNBAPIPPredVersion() int {
     return 1
 }
