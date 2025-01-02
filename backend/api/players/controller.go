@@ -509,7 +509,7 @@ func UpdateRosters(rosterSlots []PlayerRoster) error {
 
 	_, err = txn.CopyFrom(
         context.Background(),
-        pgx.Identifier{"pip_prediction_temp"},
+        pgx.Identifier{"active_rosters_temp"},
         []string{
             "sport",
             "player_index",
@@ -526,7 +526,7 @@ func UpdateRosters(rosterSlots []PlayerRoster) error {
 	_, err = txn.Exec(
         context.Background(),
         `INSERT INTO active_rosters (sport, player_index, team_index, status, avg_minutes)
-        SELECT sport, player_index, team_index, status, avg_minutes, FROM active_rosters_temp
+        SELECT sport, player_index, team_index, status, avg_minutes FROM active_rosters_temp
         ON CONFLICT (sport, player_index) DO UPDATE
         SET team_index=excluded.team_index, status=excluded.status, avg_minutes=excluded.avg_minutes`,
     )
