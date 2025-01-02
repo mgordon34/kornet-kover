@@ -479,3 +479,64 @@ func GetOrCreatePrediction(playerIndex string, date time.Time) PlayerAvg {
     }
     return nbaAvg
 }
+
+func UpdateRosters(rosterSlots []PlayerRoster) error {
+    db := storage.GetDB()
+	txn, _ := db.Begin(context.Background())
+	_, err := txn.Exec(
+        context.Background(),
+        `CREATE TEMP TABLE active_rosters_temp
+        ON COMMIT DROP
+        AS SELECT * FROM active_rosters
+        WITH NO DATA`,
+    )
+	if err != nil {
+		return err
+	}
+    var rosterInterface [][]interface{}
+    for _, rSlot := range rosterSlots {
+        rosterInterface = append(
+            rosterInterface,
+            []interface{}{
+                rSlot.Sport,
+                rSlot.PlayerIndex,
+                rSlot.TeamIndex,
+                rSlot.Status,
+                rSlot.AvgMins,
+            },
+        )
+    }
+
+	_, err = txn.CopyFrom(
+        context.Background(),
+        pgx.Identifier{"pip_prediction_temp"},
+        []string{
+            "sport",
+            "player_index",
+            "team_index",
+            "status",
+            "avg_minutes",
+        },
+        pgx.CopyFromRows(rosterInterface),
+    )
+	if err != nil {
+		return err
+	}
+
+	_, err = txn.Exec(
+        context.Background(),
+        `INSERT INTO active_rosters (sport, player_index, team_index, status, avg_minutes)
+        SELECT sport, player_index, team_index, status, avg_minutes, FROM active_rosters_temp
+        ON CONFLICT (sport, player_index) DO UPDATE
+        SET team_index=excluded.team_index, status=excluded.status, avg_minutes=excluded.avg_minutes`,
+    )
+	if err != nil {
+		return err
+	}
+
+	if err := txn.Commit(context.Background()); err != nil {
+		return err
+	}
+
+    return  nil
+}

@@ -49,7 +49,7 @@ type NBAPIPPrediction struct {
 }
 
 type PlayerRoster struct {
-    Index           int         `json:"id"`
+    Id              int         `json:"id"`
     Sport           string      `json:"sport"`
     PlayerIndex     string      `json:"player_index"`
     TeamIndex       string      `json:"team_index"`
