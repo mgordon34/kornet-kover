@@ -2,6 +2,7 @@ package teams
 
 import (
 	"context"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mgordon34/kornet-kover/internal/storage"
@@ -49,4 +50,22 @@ func AddTeams(teams []Team) {
 	if err := txn.Commit(context.Background()); err != nil {
 		panic(err)
 	}
+}
+
+func GetTeams() ([]Team, error) {
+    var teams []Team
+    db := storage.GetDB()
+    sql := `SELECT index, name FROM teams`
+
+    rows, err := db.Query(context.Background(), sql)
+    if err != nil {
+        log.Fatal("Error querying for NBAPIPPredictions: ", err)
+    }
+
+    teams, err = pgx.CollectRows(rows, pgx.RowToStructByName[Team])
+    if err != nil {
+        return teams, err
+    }
+
+    return teams, nil
 }
