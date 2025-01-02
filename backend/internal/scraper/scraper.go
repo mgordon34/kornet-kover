@@ -234,6 +234,78 @@ func UpdateGames() error{
     return nil
 }
 
+func UpdateActiveRosters() {
+    var activeRoster []players.PlayerRoster
+    injuredPlayers := GetInjuredPlayers()
+    tList, err := teams.GetTeams()
+    if err != nil {
+        log.Fatal("Error getting teams: ", err)
+    }
+    for _, team := range tList {
+        activeRoster = append(activeRoster, scrapePlayersForTeam(team.Index, injuredPlayers)...)
+    }
+
+    err = players.UpdateRosters(activeRoster)
+    if err != nil {
+        log.Fatal("Error getting teams: ", err)
+    }
+}
+
+func scrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
+    var roster []players.PlayerRoster
+
+    url := fmt.Sprintf("https://www.basketball-reference.com/teams/%v/2025.html", teamIndex)
+    c := colly.NewCollector()
+    log.Println("Visiting team page for ", teamIndex)
+    time.Sleep(4 * time.Second)
+
+    c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
+        id := t.Attr("id")
+        if id != "per_game_stats" {
+            return
+        }
+        t.ForEach("tbody", func(i int, tb *colly.HTMLElement) {
+            tb.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+                var playerIndex string
+                var avgMins float32
+
+                tr.ForEach("td", func(i int, td *colly.HTMLElement) {
+                    dataStat := td.Attr("data-stat")
+
+                    if dataStat == "name_display" && td.Attr("data-append-csv") != ""{
+                        playerIndex = td.Attr("data-append-csv")
+                    } else if dataStat == "mp_per_g" {
+                        mins, _ := strconv.ParseFloat(td.Text, 64)
+                        avgMins = float32(mins)
+                    }
+
+                })
+
+                var status string
+                if _, ok := injuredPlayers[playerIndex]; ok {
+                    log.Printf("%v is out for today", playerIndex)
+                    status = "Out"
+                }  else {
+                    status = "Available"
+                }
+
+                roster = append(roster, players.PlayerRoster{
+                    Sport: "nba",
+                    PlayerIndex: playerIndex,
+                    TeamIndex: teamIndex,
+                    Status: status,
+                    AvgMins: avgMins,
+                })
+            })
+        })
+
+    })
+    c.Visit(url)
+
+    log.Println(roster)
+    return roster
+}
+
 func ScrapeTodaysGames() [][]players.Roster {
     baseUrl := "https://www.basketball-reference.com/leagues/NBA_2025_games-%v.html"
     c := colly.NewCollector()
