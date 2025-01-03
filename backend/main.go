@@ -121,7 +121,7 @@ func runGetPlayerPip() {
 
 func runAnalysis() {
     log.Println("Running analysis...")
-    games := scraper.ScrapeTodaysGames()
+    games := scraper.ScrapeTodaysRosters()
     // var games [][]players.Roster
     // homeRoster := players.Roster{Starters: []string{"wiggian01", "greendr01", "podzibr01", "hieldbu01", "jackstr02"}}
     // awayRoster := players.Roster{Starters: []string{"gilgesh01", "willija06", "harteis01", "dortlu01", "wallaca01"}}

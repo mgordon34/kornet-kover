@@ -16,6 +16,8 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/scraper"
 )
 
+const useNewPlayerGather = true
+
 type PropSelector struct {
     Thresholds      map[string]float32
     TresholdType    ThresholdType
@@ -221,16 +223,25 @@ func runPickProps() ([]PropPick, error) {
     if err  != nil {
         return picks, err
     }
-    // Gather roster for today's games
-    games := scraper.ScrapeTodaysGames()
-    // games = games[:1]
 
-    // Run analysis on each game
     var results []Analysis
-    for _, game := range games {
-        log.Printf("Running analysis on %v vs %v", game[0], game[1])
-        results = append(results, RunAnalysisOnGame(game[0], game[1], today, true, true)...)
-        results = append(results, RunAnalysisOnGame(game[1], game[0], today, true, true)...)
+    if useNewPlayerGather {
+        // Gather roster for today's games
+        games := scraper.ScrapeTodaysRosters()
+        // games = games[:1]
+
+        // Run analysis on each game
+        for _, game := range games {
+            log.Printf("Running analysis on %v vs %v", game[0], game[1])
+            results = append(results, RunAnalysisOnGame(game[0], game[1], today, true, true)...)
+            results = append(results, RunAnalysisOnGame(game[1], game[0], today, true, true)...)
+        }
+    } else {
+        rosterMap, err := players.GetActiveRosters()
+        if err != nil {
+            return picks, err
+        }
+        log.Println(rosterMap)
     }
 
     picker := PropSelector{

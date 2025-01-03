@@ -354,7 +354,7 @@ func getPlayersByTime(teamIndex string, rosterPlayers []string, injuredPlayers m
     return roster
 }
 
-func ScrapeTodaysGames() [][]players.Roster {
+func ScrapeTodaysRosters() [][]players.Roster {
     baseUrl := "https://www.basketball-reference.com/leagues/NBA_2025_games-%v.html"
     c := colly.NewCollector()
     var games [][]players.Roster
@@ -380,6 +380,39 @@ func ScrapeTodaysGames() [][]players.Roster {
                     }
                 })
                 games = append(games, []players.Roster{homeRoster, awayRoster})
+            }
+        })
+    })
+
+    str := fmt.Sprintf(baseUrl, month)
+    c.Visit(str)
+
+    return games
+}
+
+func ScrapeTodaysGames() [][]string {
+    baseUrl := "https://www.basketball-reference.com/leagues/NBA_2025_games-%v.html"
+    c := colly.NewCollector()
+    var games [][]string
+
+    now := time.Now()
+    month := strings.ToLower(now.Month().String())
+    dateStr := now.Format("20060102")
+
+    c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
+        t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            dataStat := tr.ChildAttr("th", "csk")
+            if dataStat != "" && dataStat[:8] == dateStr{
+                var matchup []string
+                tr.ForEach("td", func(i int, td *colly.HTMLElement) {
+                    dataStat := td.Attr("data-stat")
+                    if dataStat == "home_team_name" {
+                        matchup = append(matchup, strings.Split(td.ChildAttr("a", "href"), "/")[2])
+                    } else if dataStat == "visitor_team_name" {
+                        matchup = append(matchup, strings.Split(td.ChildAttr("a", "href"), "/")[2])
+                    }
+                })
+                games = append(games, matchup)
             }
         })
     })
