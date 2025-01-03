@@ -248,12 +248,12 @@ func runPickProps() ([]PropPick, error) {
         MaxUnder: 0,
         TotalMax: 100,
     }
-    picks, err = picker.PickProps(oddsMap, results, today, true)
+    picks, err = picker.PickProps(oddsMap, results, today, false)
     if err  != nil {
         return picks, err
     }
     for _, pick := range picks {
-        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. PDiff: %.2f, ID: %v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.PDiff, pick.LineId)
+        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, PDiff: %.2f, ID: %v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.PDiff, pick.LineId)
     }
 
     log.Println("=========================================================================")
@@ -261,8 +261,8 @@ func runPickProps() ([]PropPick, error) {
     apicker := PropSelector{
         Thresholds: map[string]float32{
             "points": 2,
-            "rebounds": 2,
-            "assists": 2,
+            "rebounds": 1.5,
+            "assists": 1.5,
         },
         TresholdType: Raw,
         RequireOutlier: false,
