@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -259,50 +260,86 @@ func scrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []
     log.Println("Visiting team page for ", teamIndex)
     time.Sleep(4 * time.Second)
 
+    var rosterPlayers []string
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
         id := t.Attr("id")
-        if id != "per_game_stats" {
-            return
+        if id == "roster" {
+            rosterPlayers = getPlayersOnRoster(t)
+        } else if id == "per_game_stats" {
+            roster = getPlayersByTime(teamIndex, rosterPlayers, injuredPlayers, t)
         }
-        t.ForEach("tbody", func(i int, tb *colly.HTMLElement) {
-            tb.ForEach("tr", func(i int, tr *colly.HTMLElement) {
-                var playerIndex string
-                var avgMins float32
-
-                tr.ForEach("td", func(i int, td *colly.HTMLElement) {
-                    dataStat := td.Attr("data-stat")
-
-                    if dataStat == "name_display" && td.Attr("data-append-csv") != ""{
-                        playerIndex = td.Attr("data-append-csv")
-                    } else if dataStat == "mp_per_g" {
-                        mins, _ := strconv.ParseFloat(td.Text, 64)
-                        avgMins = float32(mins)
-                    }
-
-                })
-
-                var status string
-                if _, ok := injuredPlayers[playerIndex]; ok {
-                    log.Printf("%v is out for today", playerIndex)
-                    status = "Out"
-                }  else {
-                    status = "Available"
-                }
-
-                roster = append(roster, players.PlayerRoster{
-                    Sport: "nba",
-                    PlayerIndex: playerIndex,
-                    TeamIndex: teamIndex,
-                    Status: status,
-                    AvgMins: avgMins,
-                })
-            })
-        })
 
     })
     c.Visit(url)
 
-    log.Println(roster)
+    return roster
+}
+
+func getPlayersOnRoster(t *colly.HTMLElement) []string {
+    var rosterPlayers []string
+
+    t.ForEach("tbody", func(i int, tb *colly.HTMLElement) {
+        tb.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            tr.ForEach("td", func(i int, td *colly.HTMLElement) {
+                dataStat := td.Attr("data-stat")
+
+                if dataStat == "player" {
+                    firstSplit := strings.Split(td.ChildAttr("a", "href"), "/")[3]
+                    playerIndex := strings.Split(firstSplit, ".")[0]
+                    rosterPlayers = append(rosterPlayers, playerIndex)
+                } 
+            })
+
+        })
+    })
+
+    return rosterPlayers
+}
+
+func getPlayersByTime(teamIndex string, rosterPlayers []string, injuredPlayers map[string]string, t *colly.HTMLElement) []players.PlayerRoster {
+    var roster []players.PlayerRoster
+
+    t.ForEach("tbody", func(i int, tb *colly.HTMLElement) {
+        tb.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            var playerIndex string
+            var avgMins float32
+
+            tr.ForEach("td", func(i int, td *colly.HTMLElement) {
+                dataStat := td.Attr("data-stat")
+
+                if dataStat == "name_display" && td.Attr("data-append-csv") != ""{
+                    playerIndex = td.Attr("data-append-csv")
+                } else if dataStat == "mp_per_g" {
+                    mins, _ := strconv.ParseFloat(td.Text, 64)
+                    avgMins = float32(mins)
+                }
+
+            })
+
+            // Remove players that are no longer listed on active roster
+            if !slices.Contains(rosterPlayers, playerIndex){
+                log.Printf("%v is no longer on the roster", playerIndex)
+                return
+            }
+
+            var status string
+            if _, ok := injuredPlayers[playerIndex]; ok {
+                log.Printf("%v is out for today", playerIndex)
+                status = "Out"
+            } else {
+                status = "Available"
+            }
+
+            roster = append(roster, players.PlayerRoster{
+                Sport: "nba",
+                PlayerIndex: playerIndex,
+                TeamIndex: teamIndex,
+                Status: status,
+                AvgMins: avgMins,
+            })
+        })
+    })
+
     return roster
 }
 
