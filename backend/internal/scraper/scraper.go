@@ -218,6 +218,14 @@ func GetUpdateGames(c *gin.Context) {
     c.JSON(http.StatusOK, "Done")
 }
 
+func GetUpdateActiveRosters(c *gin.Context) {
+    err := UpdateActiveRosters()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, err)
+    }
+    c.JSON(http.StatusOK, "Done")
+}
+
 // UpdateGames will add any new game and corresponding stats to the database
 // This is done by utilizing GetLastGame to determine the date window to perform game scraping
 // Returns the number of new games added or error
@@ -235,21 +243,24 @@ func UpdateGames() error{
     return nil
 }
 
-func UpdateActiveRosters() {
+func UpdateActiveRosters() error {
     var activeRoster []players.PlayerRoster
     injuredPlayers := GetInjuredPlayers()
     tList, err := teams.GetTeams()
     if err != nil {
-        log.Fatal("Error getting teams: ", err)
+        return err
     }
+
     for _, team := range tList {
         activeRoster = append(activeRoster, scrapePlayersForTeam(team.Index, injuredPlayers)...)
     }
 
     err = players.UpdateRosters(activeRoster)
     if err != nil {
-        log.Fatal("Error getting teams: ", err)
+        return err
     }
+
+    return nil
 }
 
 func scrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {

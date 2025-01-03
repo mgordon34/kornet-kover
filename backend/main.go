@@ -32,6 +32,7 @@ func main() {
     r := gin.Default()
 
     r.GET("/update-games", scraper.GetUpdateGames)
+    r.GET("/update-players", scraper.GetUpdateActiveRosters)
     r.GET("/update-lines", sportsbook.GetUpdateLines)
     r.GET("/pick-props", analysis.GetPickProps)
 
