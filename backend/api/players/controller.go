@@ -481,7 +481,10 @@ func GetOrCreatePrediction(playerIndex string, date time.Time) PlayerAvg {
 }
 
 func UpdateRosters(rosterSlots []PlayerRoster) error {
+    t := time.Now()
+    today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
     db := storage.GetDB()
+
 	txn, _ := db.Begin(context.Background())
 	_, err := txn.Exec(
         context.Background(),
@@ -503,6 +506,7 @@ func UpdateRosters(rosterSlots []PlayerRoster) error {
                 rSlot.TeamIndex,
                 rSlot.Status,
                 rSlot.AvgMins,
+                today,
             },
         )
     }
@@ -516,6 +520,7 @@ func UpdateRosters(rosterSlots []PlayerRoster) error {
             "team_index",
             "status",
             "avg_minutes",
+            "last_updated",
         },
         pgx.CopyFromRows(rosterInterface),
     )
@@ -525,10 +530,11 @@ func UpdateRosters(rosterSlots []PlayerRoster) error {
 
 	_, err = txn.Exec(
         context.Background(),
-        `INSERT INTO active_rosters (sport, player_index, team_index, status, avg_minutes)
-        SELECT sport, player_index, team_index, status, avg_minutes FROM active_rosters_temp
+        `INSERT INTO active_rosters (sport, player_index, team_index, status, avg_minutes, last_updated)
+        SELECT sport, player_index, team_index, status, avg_minutes, last_updated FROM active_rosters_temp
         ON CONFLICT (sport, player_index) DO UPDATE
-        SET team_index=excluded.team_index, status=excluded.status, avg_minutes=excluded.avg_minutes`,
+        SET team_index=excluded.team_index, status=excluded.status, avg_minutes=excluded.avg_minutes, 
+        last_updated=excluded.last_updated`,
     )
 	if err != nil {
 		return err
@@ -540,3 +546,5 @@ func UpdateRosters(rosterSlots []PlayerRoster) error {
 
     return  nil
 }
+
+// func GetActiveRosters() map[string][]PlayerRoster
