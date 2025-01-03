@@ -54,7 +54,7 @@ type PlayerRoster struct {
     PlayerIndex     string      `json:"player_index"`
     TeamIndex       string      `json:"team_index"`
     Status          string      `json:"status"`
-    AvgMins         float32     `json:"avg_minutes"`
+    AvgMins         float32     `json:"avg_minutes" db:"avg_minutes"`
 }
 
 func CurrNBAPIPPredVersion() int {

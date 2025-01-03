@@ -2,6 +2,7 @@ package players
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -547,4 +548,29 @@ func UpdateRosters(rosterSlots []PlayerRoster) error {
     return  nil
 }
 
-// func GetActiveRosters() map[string][]PlayerRoster
+func GetActiveRosters() (map[string][]PlayerRoster, error) {
+    rosterMap := make(map[string][]PlayerRoster)
+    db := storage.GetDB()
+    sql := `SELECT id, sport, player_index, team_index, status, avg_minutes FROM active_rosters
+            ORDER BY avg_minutes DESC`
+
+    rows, err := db.Query(context.Background(), sql)
+    if err != nil {
+        msg := fmt.Sprintf("Error querying for active roster: ", err)
+        log.Println(msg)
+        return rosterMap, errors.New(msg)
+    }
+
+    playerRosters, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlayerRoster])
+    if err != nil {
+        msg := fmt.Sprintf("Error scanning active_roster query: ", err)
+        log.Println(msg)
+        return rosterMap, errors.New(msg)
+    }
+
+    for _, player := range playerRosters {
+        rosterMap[player.TeamIndex] = append(rosterMap[player.TeamIndex], player)
+    }
+
+    return rosterMap, nil
+}
