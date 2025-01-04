@@ -15,12 +15,11 @@ type Analysis struct {
     Outliers        map[string]float32
 }
 
-func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate time.Time, forceUpdate bool, storePIP bool) []Analysis {
+func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.PlayerRoster, endDate time.Time, forceUpdate bool, storePIP bool) []Analysis {
     startDate, _ := time.Parse("2006-01-02", "2018-10-01")
     var predictedStats []Analysis
 
-    roster.Starters = roster.Starters[:5]
-    for _, player := range roster.Starters {
+    for _, player := range prunePlayers(roster) {
         controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
 
         currYear := utils.DateToNBAYear(endDate)
@@ -29,7 +28,7 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate 
             continue
         }
 
-        pipPred := GetOrCreatePrediction(player, opponents, players.Opponent, controlMap, startDate, endDate, forceUpdate)
+        pipPred := GetOrCreatePrediction(player, prunePlayers(opponents), players.Opponent, controlMap, startDate, endDate, forceUpdate)
         prediction := players.NBAAvg{
             NumGames: pipPred.NumGames,
             Minutes: pipPred.Minutes,
@@ -61,7 +60,19 @@ func RunAnalysisOnGame(roster players.Roster, opponents players.Roster, endDate 
     return predictedStats
 }
 
-func GetOrCreatePrediction(playerIndex string, opponents players.Roster, relationship players.Relationship, controlMap map[int]players.PlayerAvg, startDate time.Time, endDate time.Time, forceUpdate bool) players.NBAPIPPrediction {
+func prunePlayers(roster []players.PlayerRoster) []string {
+    var activePlayers []string
+
+    for _, player := range roster {
+        if player.Status == "Available" && player.AvgMins > 20 {
+            activePlayers = append(activePlayers, player.PlayerIndex)
+        }
+    }
+
+    return activePlayers
+}
+
+func GetOrCreatePrediction(playerIndex string, opponents []string, relationship players.Relationship, controlMap map[int]players.PlayerAvg, startDate time.Time, endDate time.Time, forceUpdate bool) players.NBAPIPPrediction {
     if forceUpdate {
         log.Println("Force creating new PIPPrediction...")
         return CreatePIPPrediction(playerIndex, opponents, relationship, controlMap, startDate, endDate)
@@ -76,11 +87,11 @@ func GetOrCreatePrediction(playerIndex string, opponents players.Roster, relatio
     return pipPred
 }
 
-func CreatePIPPrediction(playerIndex string, opponents players.Roster, relationship players.Relationship, controlMap map[int]players.PlayerAvg, startDate time.Time, endDate time.Time) players.NBAPIPPrediction {
+func CreatePIPPrediction(playerIndex string, opponents []string, relationship players.Relationship, controlMap map[int]players.PlayerAvg, startDate time.Time, endDate time.Time) players.NBAPIPPrediction {
     var totalPip players.PlayerAvg
     currYear := utils.DateToNBAYear(endDate)
 
-    for _, defender := range opponents.Starters {
+    for _, defender := range opponents {
         affectedMap := players.GetPlayerPerWithPlayerByYear(playerIndex, defender, players.Opponent, startDate, endDate)
         pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
 

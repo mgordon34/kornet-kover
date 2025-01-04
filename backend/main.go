@@ -119,34 +119,6 @@ func runGetPlayerPip() {
     log.Println(prediction)
 }
 
-func runAnalysis() {
-    log.Println("Running analysis...")
-    games := scraper.ScrapeTodaysRosters()
-    // var games [][]players.Roster
-    // homeRoster := players.Roster{Starters: []string{"wiggian01", "greendr01", "podzibr01", "hieldbu01", "jackstr02"}}
-    // awayRoster := players.Roster{Starters: []string{"gilgesh01", "willija06", "harteis01", "dortlu01", "wallaca01"}}
-    // game := []players.Roster{homeRoster, awayRoster}
-    // games = append(games, game)
-
-    loc, _ := time.LoadLocation("America/New_York")
-    t := time.Now()
-    today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
-    for _, game := range games {
-        results := analysis.RunAnalysisOnGame(game[0], game[1], today, true, true)
-        results = append(results, analysis.RunAnalysisOnGame(game[1], game[0], today, true, true)...)
-
-        for _, outcome := range results {
-            log.Printf("[%v]: Base Stats: %v", outcome.PlayerIndex, outcome.BaseStats)
-            log.Printf("[%v]: Predicted Stats: %v", outcome.PlayerIndex, outcome.Prediction)
-
-            for stat, value := range outcome.Outliers {
-                log.Printf("[%v]: Outlier %v: %v", outcome.PlayerIndex, stat, value)
-            }
-        }
-    }
-
-}
-
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
     // startDate, _ := time.ParseInLocation("2006-01-02", "2023-11-01", loc)

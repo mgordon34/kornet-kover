@@ -190,12 +190,10 @@ func (b Backtester) backtestDate(date time.Time) {
         if err != nil {
             log.Fatal("Error getting players for game: ", err)
         }
-        homeRoster := players.Roster{
-            Starters: convertPlayerstoIndex(playerMap["home"][:8]),
-        }
-        awayRoster := players.Roster{
-            Starters: convertPlayerstoIndex(playerMap["away"][:8]),
-        }
+        // TODO: make this more intelligent by getting player's avg minutes for this point in the season
+        homeRoster := convertPlayerMaptoPlayerRosters(playerMap["home"][:8])
+        awayRoster := convertPlayerMaptoPlayerRosters(playerMap["away"][:8])
+
         results = append(results, analysis.RunAnalysisOnGame(homeRoster, awayRoster, date, false, false)...)
         results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster, date, false, false)...)
     }
@@ -209,6 +207,19 @@ func (b Backtester) backtestDate(date time.Time) {
             strategy.addResult(pick, statMap[pick.PlayerIndex])
         }
     }
+}
+
+func convertPlayerMaptoPlayerRosters(p []players.Player) []players.PlayerRoster {
+    var playerRosters []players.PlayerRoster
+    for _, player := range p {
+        playerRosters = append(playerRosters, players.PlayerRoster{
+            PlayerIndex: player.Index,
+            Status: "Available",
+            AvgMins: 21,
+        })
+    }
+
+    return playerRosters
 }
 
 func convertPlayerstoIndex(players []players.Player) []string {
