@@ -221,7 +221,9 @@ func GetUpdateGames(c *gin.Context) {
 func GetUpdateActiveRosters(c *gin.Context) {
     err := UpdateActiveRosters()
     if err != nil {
-        c.JSON(http.StatusInternalServerError, err)
+        msg := fmt.Sprint("Error updating active rosters: ", err)
+        log.Println(msg)
+        c.JSON(http.StatusInternalServerError, msg)
     }
     c.JSON(http.StatusOK, "Done")
 }
