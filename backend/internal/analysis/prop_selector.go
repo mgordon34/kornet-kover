@@ -238,7 +238,7 @@ func runPickProps() ([]PropPick, error) {
         Thresholds: map[string]float32{
             "points": .3,
             "rebounds": .3,
-            "assists": .3,
+            "assists": 10,
         },
         TresholdType: Percent,
         RequireOutlier: false,
@@ -249,7 +249,7 @@ func runPickProps() ([]PropPick, error) {
         MaxUnder: 0,
         TotalMax: 100,
     }
-    picks, err = picker.PickProps(oddsMap, results, today, false)
+    picks, err = picker.PickProps(oddsMap, results, today, true)
     if err  != nil {
         return picks, err
     }
