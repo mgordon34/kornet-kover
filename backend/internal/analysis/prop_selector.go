@@ -17,6 +17,7 @@ import (
 )
 
 type PropSelector struct {
+    StratId         int
     Thresholds      map[string]float32
     TresholdType    ThresholdType
     SortType        SortType
@@ -133,7 +134,7 @@ func (p PropSelector) convertToPicksModel(pPicks []PropPick, date time.Time) []p
     var models []picks.PropPick
     for _, pick := range pPicks {
         models = append(models, picks.PropPick{
-            StratId: 1,
+            StratId: p.StratId,
             LineId: pick.LineId,
             Valid: true,
             Date: date,
@@ -235,6 +236,7 @@ func runPickProps() ([]PropPick, error) {
     }
 
     picker := PropSelector{
+        StratId: 1,
         Thresholds: map[string]float32{
             "points": .3,
             "rebounds": .3,
@@ -260,6 +262,7 @@ func runPickProps() ([]PropPick, error) {
     log.Println("=========================================================================")
 
     apicker := PropSelector{
+        StratId: 2,
         Thresholds: map[string]float32{
             "points": 2,
             "rebounds": 1.5,
@@ -274,7 +277,7 @@ func runPickProps() ([]PropPick, error) {
         MaxUnder: 0,
         TotalMax: 100,
     }
-    apicks, err := apicker.PickProps(oddsMap, results, today, false)
+    apicks, err := apicker.PickProps(oddsMap, results, today, true)
     if err  != nil {
         return picks, err
     }
