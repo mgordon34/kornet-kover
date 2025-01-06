@@ -9,7 +9,7 @@ interface PickListProps {
 const PickList: React.FC<PickListProps> = ({ picks }) => {
     return (
         <div>
-            <h1 className='text-3xl font-semibold'>Your Strategies</h1>
+            <h1 className='text-3xl font-semibold'>Your Picks</h1>
             <ul>
                 {picks.map((pick) => (
                     <PropPickItem key={pick.id} pick={pick} />

@@ -19,7 +19,6 @@ const Portfolio = async () => {
 
   return (
     <div className="items-center justify-items-center p-8">
-      {/* Use the StrategyList component to display the strategies */}
       <PickList picks={picks} />
     </div>
   );
