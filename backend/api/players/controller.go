@@ -482,6 +482,7 @@ func GetOrCreatePrediction(playerIndex string, date time.Time) PlayerAvg {
 }
 
 func UpdateRosters(rosterSlots []PlayerRoster) error {
+    log.Printf("Updating %v slots on active_rosters", len(rosterSlots))
     t := time.Now()
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
     db := storage.GetDB()
@@ -545,6 +546,7 @@ func UpdateRosters(rosterSlots []PlayerRoster) error {
 		return err
 	}
 
+    log.Println("Done updating rosters")
     return  nil
 }
 
