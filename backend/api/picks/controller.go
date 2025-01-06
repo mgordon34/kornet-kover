@@ -95,7 +95,7 @@ type PropPickFormatted struct {
     Id              int         `json:"id"`
     UserId          int         `json:"user_id"`
     StratId         int         `json:"strat_id"`
-    Name            string      `json:"name"`
+    Name            string      `json:"player_name"`
     Side            string      `json:"side"`
     Line            float32     `json:"line"`
     Stat            string      `json:"stat"`
@@ -130,7 +130,7 @@ func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
 }
 
 func GetPropPicks(c *gin.Context) {
-    id, err := strconv.Atoi(c.Query("strat_id"))
+    id, err := strconv.Atoi(c.Query("user_id"))
     if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
