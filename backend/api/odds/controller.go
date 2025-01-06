@@ -80,7 +80,6 @@ func AddPlayerLines(playerLines []PlayerLine) {
 
 func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
     date = date.UTC()
-    startDate := date.AddDate(0, 0, -1)
     endDate := date.AddDate(0, 0, 1)
 
     db := storage.GetDB()
@@ -88,7 +87,7 @@ func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
                 (select player_index, stat, side, line, max(timestamp) as latest from player_lines where timestamp between ($1) and ($2) group by player_index, stat, side, line) mpl 
                 on pl.timestamp = mpl.latest and pl.player_index = mpl.player_index and pl.stat = mpl.stat and pl.side = mpl.side and pl.line = mpl.line;`
 
-    rows, err := db.Query(context.Background(), sql, startDate, endDate)
+    rows, err := db.Query(context.Background(), sql, date, endDate)
     if err != nil {
         log.Fatal("Error querying for player lines: ", err)
     }
