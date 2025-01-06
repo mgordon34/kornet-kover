@@ -5,6 +5,7 @@ export interface Strategy {
 
 export interface PropPick {
   id: number;
+  strat_id: number;
   player_name: string;
   num_games: number;
   side: string;

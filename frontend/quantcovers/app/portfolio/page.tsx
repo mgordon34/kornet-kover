@@ -17,9 +17,12 @@ async function getPicks(): Promise<PropPick[]> {
 const Portfolio = async () => {
   const picks = await getPicks();
 
+  const p1 = picks.filter(x => x.strat_id == 1);
+  const p2 = picks.filter(x => x.strat_id == 2);
   return (
     <div className="items-center justify-items-center p-8">
-      <PickList picks={picks} />
+      <PickList picks={p1} />
+      <PickList picks={p2} />
     </div>
   );
 };
