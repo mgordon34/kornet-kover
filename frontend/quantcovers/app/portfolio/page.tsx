@@ -5,7 +5,7 @@ import PickList from '../components/PickList';
 // Fetch picks directly on the server side using `fetch`
 async function getPicks(): Promise<PropPick[]> {
   const userId = 1;
-  const res = await fetch(`${process.env.API_URL}/picks?user_id=${userId}`, {
+  const res = await fetch(`${process.env.API_URL}/prop-picks?user_id=${userId}&date=2025-01-05`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${process.env.JWT_TOKEN}`, // Or use session/cookies for auth
@@ -14,7 +14,7 @@ async function getPicks(): Promise<PropPick[]> {
   return res.json();
 }
 
-const Picks = async () => {
+const Portfolio = async () => {
   const picks = await getPicks();
 
   return (
@@ -25,5 +25,5 @@ const Picks = async () => {
   );
 };
 
-export default Picks;
+export default Portfolio;
 

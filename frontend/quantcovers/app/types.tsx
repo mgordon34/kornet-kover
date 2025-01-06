@@ -5,8 +5,12 @@ export interface Strategy {
 
 export interface PropPick {
   id: number;
-  playerIndex: string;
+  player_name: string;
+  num_games: number;
   side: string;
   stat: string;
   line: number;
+  points: number;
+  rebounds: number;
+  assists: number;
 }
