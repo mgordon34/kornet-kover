@@ -6,6 +6,7 @@ import PickList from '../components/PickList';
 async function getPicks(): Promise<PropPick[]> {
   const userId = 1;
   const now = new Date();
+  console.log(process.env.API_URL)
   const res = await fetch(`${process.env.API_URL}/prop-picks?user_id=${userId}&date=${now.toISOString().split('T')[0]}`, {
     method: 'GET',
     headers: {

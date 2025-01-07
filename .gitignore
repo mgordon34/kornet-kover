@@ -1,2 +1,4 @@
 docker-compose*
 .env
+
+node_modules
