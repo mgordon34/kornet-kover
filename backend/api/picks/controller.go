@@ -125,6 +125,7 @@ func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
     if err != nil {
         return picks, errors.New(fmt.Sprintf("Error getting prop picks for strat %d on %v: %v", userId, date, err))
     }
+    defer row.Close()
 
     return picks, nil
 }
@@ -155,6 +156,7 @@ func getPropPick(stratId int) (PropPick, error) {
     WHERE id=($1)`
 
     row, _ := db.Query(context.Background(), sql, stratId)
+    defer row.Close()
     strat, err := pgx.CollectExactlyOneRow(row, pgx.RowToStructByName[PropPick])
     if err != nil {
         return strat, errors.New(fmt.Sprintf("Error getting prop pick %d: %v", stratId, err))
@@ -185,5 +187,8 @@ func MarkOldPicksInvalid(stratId int, date time.Time) {
     SET valid=false
     WHERE strat_id=($1) AND date=($2)`
 
-    db.QueryRow(context.Background(), sql, stratId, date)
+    _, err := db.Exec(context.Background(), sql, stratId, date)
+    if err != nil {
+        log.Fatal("Error marking old picks invalid: ", err)
+    }
 }

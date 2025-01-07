@@ -91,6 +91,7 @@ func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
     if err != nil {
         log.Fatal("Error querying for player lines: ", err)
     }
+    defer rows.Close()
     pLines, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlayerLine])
     if err != nil {
         log.Fatal("Error converting rows to playerLines: ", err)
@@ -113,6 +114,7 @@ func GetLastLine() (PlayerLine, error) {
     LIMIT 1`
 
     row, _ := db.Query(context.Background(), sql)
+    defer row.Close()
     pLine, err := pgx.CollectOneRow(row, pgx.RowToStructByName[PlayerLine])
     if err != nil {
         return PlayerLine{}, errors.New(fmt.Sprintf("Error getting last game: %v", err))

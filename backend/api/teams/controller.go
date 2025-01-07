@@ -61,6 +61,7 @@ func GetTeams() ([]Team, error) {
     if err != nil {
         log.Fatal("Error querying for NBAPIPPredictions: ", err)
     }
+    defer rows.Close()
 
     teams, err = pgx.CollectRows(rows, pgx.RowToStructByName[Team])
     if err != nil {

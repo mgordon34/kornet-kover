@@ -42,6 +42,7 @@ func GetLastGame() (Game, error) {
     if err != nil {
         return Game{}, errors.New(fmt.Sprintf("Error getting last game: %v", err))
     }
+    defer row.Close()
 
     return game, nil
 }
@@ -59,6 +60,7 @@ func GetGamesForDate(date time.Time) ([]Game, error) {
     if err != nil {
         return games, errors.New(fmt.Sprintf("Error getting last game: %v", err))
     }
+    defer row.Close()
 
     return games, nil
 }

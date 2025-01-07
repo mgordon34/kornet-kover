@@ -67,6 +67,7 @@ func GetPlayer(index string) (Player, error) {
     if err != nil {
         log.Fatal("Error querying for player index: ", err)
     }
+    defer rows.Close()
 
     player, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Player])
     if err != nil {
@@ -184,6 +185,7 @@ func GetPlayerStats(player string, startDate time.Time, endDate time.Time) (Play
     if err != nil {
         log.Fatal("Error querying for player stats: ", err)
     }
+    defer rows.Close()
 
     stats, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[NBAAvg])
     if err != nil {
@@ -249,6 +251,7 @@ func GetPlayerStatsForGames(gameIds []string) (map[string]PlayerAvg, error) {
     if err != nil {
         log.Fatal("Error querying for player stats: ", err)
     }
+    defer rows.Close()
 
     stats, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlayerStatInfo])
     if err != nil {
@@ -315,6 +318,7 @@ func GetPlayerStatsWithPlayer(player string, defender string, relationship Relat
     if err != nil {
         log.Fatal("Error querying for player stats: ", err)
     }
+    defer rows.Close()
 
     stats, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[NBAAvg])
     if err != nil {
@@ -422,6 +426,7 @@ func GetPIPPredictionsForDate(date time.Time) ([]NBAPIPPrediction, error) {
     if err != nil {
         log.Fatal("Error querying for NBAPIPPredictions: ", err)
     }
+    defer rows.Close()
 
     pipPreds, err = pgx.CollectRows(rows, pgx.RowToStructByName[NBAPIPPrediction])
     if err != nil {
@@ -440,6 +445,7 @@ func GetPlayerPIPPrediction(playerIndex string, date time.Time) (NBAPIPPredictio
     if err != nil {
         return NBAPIPPrediction{}, err
     }
+    defer rows.Close()
 
     pipPred, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[NBAPIPPrediction])
     if err != nil {
@@ -562,6 +568,7 @@ func GetActiveRosters() (map[string][]PlayerRoster, error) {
         log.Println(msg)
         return rosterMap, errors.New(msg)
     }
+    defer rows.Close()
 
     playerRosters, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlayerRoster])
     if err != nil {
