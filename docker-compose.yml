@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:14-alpine
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    env_file:
+      - .env
+  backend:
+     stdin_open: true
+     tty: true
+     build: ./backend
+     command: go run .
+     volumes:
+       - .:/code
+     ports:
+       - 3001:8080
+     env_file:
+       - .env
+  frontend:
+     build: 
+       context: ./frontend/
+       dockerfile: Dockerfile
+     env_file:
+       - .env
+     ports:
+       - 3000:3000
+volumes:
+  pg_data: 
