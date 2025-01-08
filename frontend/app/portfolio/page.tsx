@@ -12,6 +12,7 @@ async function getPicks(): Promise<PropPick[]> {
     headers: {
       'Authorization': `Bearer ${process.env.JWT_TOKEN}`, // Or use session/cookies for auth
     },
+    cache: "no-store",
   });
   return res.json();
 }
