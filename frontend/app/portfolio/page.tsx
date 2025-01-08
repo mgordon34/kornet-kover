@@ -23,9 +23,11 @@ const Portfolio = async () => {
   const p1 = picks.filter(x => x.strat_id == 1);
   const p2 = picks.filter(x => x.strat_id == 2);
   return (
-    <div className="items-center justify-items-center p-8">
-      <PickList picks={p1} />
-      <PickList picks={p2} />
+    <div className="flex flex-col items-center justify-items-center p-8">
+        <div className="inline-flex flex-col">
+          <PickList picks={p1} />
+          <PickList picks={p2} />
+        </div>
     </div>
   );
 };
