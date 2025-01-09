@@ -19,7 +19,10 @@ func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Player
     startDate, _ := time.Parse("2006-01-02", "2018-10-01")
     var predictedStats []Analysis
 
-    for _, player := range prunePlayers(roster) {
+    prunedPlayers := prunePlayers(roster)
+    prunedOpponents := prunePlayers(opponents)
+
+    for _, player := range prunedPlayers[:min(len(prunedPlayers),5)] {
         controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
 
         currYear := utils.DateToNBAYear(endDate)
@@ -28,7 +31,8 @@ func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Player
             continue
         }
 
-        pipPred := GetOrCreatePrediction(player, prunePlayers(opponents), players.Opponent, controlMap, startDate, endDate, forceUpdate)
+        log.Println(len(prunedOpponents))
+        pipPred := GetOrCreatePrediction(player, prunedOpponents[:min(len(prunedOpponents),8)], players.Opponent, controlMap, startDate, endDate, forceUpdate)
         prediction := players.NBAAvg{
             NumGames: pipPred.NumGames,
             Minutes: pipPred.Minutes,
@@ -64,7 +68,7 @@ func prunePlayers(roster []players.PlayerRoster) []string {
     var activePlayers []string
 
     for _, player := range roster {
-        if player.Status == "Available" && player.AvgMins > 20 {
+        if player.Status == "Available" && player.AvgMins > 10 {
             activePlayers = append(activePlayers, player.PlayerIndex)
         }
     }
@@ -74,7 +78,7 @@ func prunePlayers(roster []players.PlayerRoster) []string {
 
 func GetOrCreatePrediction(playerIndex string, opponents []string, relationship players.Relationship, controlMap map[int]players.PlayerAvg, startDate time.Time, endDate time.Time, forceUpdate bool) players.NBAPIPPrediction {
     if forceUpdate {
-        log.Println("Force creating new PIPPrediction...")
+        log.Printf("Force creating new PIPPrediction on %v players...", len(opponents))
         return CreatePIPPrediction(playerIndex, opponents, relationship, controlMap, startDate, endDate)
     }
 
