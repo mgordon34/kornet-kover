@@ -242,9 +242,10 @@ func runPickProps() ([]PropPick, error) {
 
     picker := PropSelector{
         StratId: 1,
+        StratName: "Percent",
         Thresholds: map[string]float32{
             "points": .3,
-            "rebounds": .3,
+            "rebounds": 10,
             "assists": 10,
         },
         TresholdType: Percent,
@@ -260,32 +261,33 @@ func runPickProps() ([]PropPick, error) {
     if err  != nil {
         return picks, err
     }
+    log.Printf("================================%v=========================================", picker.StratName)
     for _, pick := range picks {
         log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, PDiff: %.2f, ID: %v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.PDiff, pick.LineId)
     }
 
-    log.Println("=========================================================================")
-
-    apicker := PropSelector{
+    rpicker := PropSelector{
         StratId: 2,
+        StratName: "Raw",
         Thresholds: map[string]float32{
-            "points": 2,
-            "rebounds": 1.5,
-            "assists": 1.5,
+            "points": 2.5,
+            "rebounds": 1,
+            "assists": 1000,
         },
         TresholdType: Raw,
         RequireOutlier: false,
-        MinGames: 0,
+        MinGames: 10,
         MinOdds: -135,
         BetSize: 100,
         MaxOver: 100,
         MaxUnder: 0,
         TotalMax: 100,
     }
-    apicks, err := apicker.PickProps(oddsMap, results, today, true)
+    apicks, err := rpicker.PickProps(oddsMap, results, today, true)
     if err  != nil {
         return picks, err
     }
+    log.Printf("================================%v=========================================", rpicker.StratName)
     for _, pick := range apicks {
         log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, ID: %v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.LineId)
     }
