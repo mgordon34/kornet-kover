@@ -18,11 +18,13 @@ import (
 
 type PropSelector struct {
     StratId         int
+    StratName       string
     Thresholds      map[string]float32
     TresholdType    ThresholdType
     SortType        SortType
     SortDir         string
     RequireOutlier  bool
+    MinMinutes      float32
     MinGames        int
     MinOdds         int
     MinLine         float32
@@ -178,6 +180,9 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
     }
 
     nbaPred := pick.Prediction.(players.NBAAvg)
+    if p.MinMinutes != 0 && nbaPred.Minutes < p.MinMinutes {
+        return false
+    }
     if p.MinGames != 0 && nbaPred.NumGames < p.MinGames {
         return false
     }

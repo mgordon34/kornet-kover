@@ -47,8 +47,9 @@ func (b *BacktestResult) addResult(pick analysis.PropPick, result players.Player
     }
 }
 
-func (b BacktestResult) printResults() {
+func (b BacktestResult) printResults(name string) {
     log.Println("------------------------------------------")
+    log.Printf("Strategy: %s", name)
     log.Printf("%v Bets with %.2f%% winrate. Profits: $%.2f", b.Losses + b.Wins, (float32(b.Wins)/float32(b.Losses + b.Wins))*100, b.Profit)
     log.Println("------------------------------------------")
 }
@@ -147,7 +148,7 @@ func (b Backtester) RunBacktest() {
     }
 
     for _, strategy := range b.Strategies {
-        strategy.printResults()
+        strategy.printResults(strategy.StratName)
         strategy.resultBreakdown()
     }
 }
