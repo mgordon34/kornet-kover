@@ -6,8 +6,8 @@ import { calculateDiff } from '../../lib/pick_utils';
 // Fetch picks directly on the server side using `fetch`
 async function getPicks(): Promise<PropPick[]> {
   const userId = 1;
-  const now = new Date();
-  const res = await fetch(`${process.env.API_URL}/prop-picks?user_id=${userId}&date=${now.toISOString().split('T')[0]}`, {
+  const formattedDate = new Intl.DateTimeFormat('en-CA').format(new Date());
+  const res = await fetch(`${process.env.API_URL}/prop-picks?user_id=${userId}&date=${formattedDate}`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${process.env.JWT_TOKEN}`, // Or use session/cookies for auth
