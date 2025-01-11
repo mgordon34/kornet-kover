@@ -259,6 +259,10 @@ func UpdateActiveRosters() error {
 
     activeRoster = pruneActiveRoster(activeRoster)
 
+    for _, player := range activeRoster {
+        players.UpdatePlayerTables(player.PlayerIndex)
+    }
+
     err = players.UpdateRosters(activeRoster)
     if err != nil {
         return err
