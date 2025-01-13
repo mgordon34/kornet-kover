@@ -87,6 +87,22 @@ func (b BacktestResult) resultBreakdown() {
         15: []analysis.PropPick{},
     }
     rKeys := []float64{0,.5,1,1.5,2,2.5,3,3.5,4,4.5,5,8,10,15}
+    vBrackets := map[float64][]analysis.PropPick{
+        0: []analysis.PropPick{},
+        2: []analysis.PropPick{},
+        4: []analysis.PropPick{},
+        6: []analysis.PropPick{},
+        8: []analysis.PropPick{},
+        10: []analysis.PropPick{},
+        14: []analysis.PropPick{},
+        18: []analysis.PropPick{},
+        20: []analysis.PropPick{},
+        24: []analysis.PropPick{},
+        28: []analysis.PropPick{},
+        30: []analysis.PropPick{},
+        32: []analysis.PropPick{},
+    }
+    vKeys := []float64{0,2,4,6,8,10,14,18,20,24,28,30,32}
     for _, pick := range b.Bets {
         for key := range pBrackets {
             if math.Abs(float64(pick.PDiff)) > key {
@@ -96,6 +112,11 @@ func (b BacktestResult) resultBreakdown() {
         for key := range rBrackets {
             if math.Abs(float64(pick.Diff)) > key {
                 rBrackets[key] = append(rBrackets[key], *pick)
+            }
+        }
+        for key := range vBrackets {
+            if math.Abs(float64(pick.Over.Line)) > key {
+                vBrackets[key] = append(vBrackets[key], *pick)
             }
         }
     }
@@ -124,6 +145,19 @@ func (b BacktestResult) resultBreakdown() {
             }
         }
         log.Printf("%v: %v winrate and $%.2f profit[%v]", key, wins/float32(len(rBrackets[key])), profit, len(rBrackets[key]))
+    }
+    log.Println("------------------------------------------")
+    for _, key := range vKeys {
+        var wins, profit float32
+        for _, bet := range vBrackets[key] {
+            if bet.Result == "Win" {
+                wins++
+                profit += calculateProfit(bet.BetSize, bet.GetLine().Odds)
+            } else {
+                profit -= bet.BetSize
+            }
+        }
+        log.Printf("%v: %v winrate and $%.2f profit[%v]", key, wins/float32(len(vBrackets[key])), profit, len(vBrackets[key]))
     }
     log.Println("------------------------------------------")
 }
