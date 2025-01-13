@@ -13,7 +13,7 @@ const Navbar = () => {
           Strategies
         </Link>
         <Link href="/picks" className="text-lg font-semibold hover:text-gray-400">
-        Picks
+          Picks
         </Link>
       </div>
 
