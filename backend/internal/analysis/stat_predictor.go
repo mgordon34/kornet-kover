@@ -31,7 +31,6 @@ func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Player
             continue
         }
 
-        log.Println(len(prunedOpponents))
         pipPred := GetOrCreatePrediction(player, prunedOpponents[:min(len(prunedOpponents),8)], players.Opponent, controlMap, startDate, endDate, forceUpdate)
         prediction := players.NBAAvg{
             NumGames: pipPred.NumGames,
