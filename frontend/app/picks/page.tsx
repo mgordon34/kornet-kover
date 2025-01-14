@@ -1,10 +1,10 @@
 // app/strategies/page.tsx
-import { PropPick } from '../types';
+import { StrategyPicks } from '../types';
 import PickList from '../components/PickList';
 import { calculateDiff } from '../../lib/pick_utils';
 
 // Fetch picks directly on the server side using `fetch`
-async function getPicks(): Promise<PropPick[]> {
+async function getPicks(): Promise<StrategyPicks[]> {
   const userId = 1;
   const formattedDate = new Intl.DateTimeFormat('en-CA').format(new Date());
   const res = await fetch(`${process.env.API_URL}/prop-picks?user_id=${userId}&date=${formattedDate}`, {
@@ -17,20 +17,28 @@ async function getPicks(): Promise<PropPick[]> {
   return res.json();
 }
 
-const Portfolio = async () => {
-  const picks = await getPicks();
+const Picks = async () => {
+  const strategies = await getPicks();
 
-  const p1 = picks.filter(x => x.strat_id == 1).sort((a,b) => calculateDiff(b) - calculateDiff(a));
-  const p2 = picks.filter(x => x.strat_id == 2).sort((a,b) => calculateDiff(b) - calculateDiff(a));
   return (
     <div className="flex flex-col items-center justify-items-center p-8">
       <div className="inline-flex flex-col">
-        <PickList picks={p1} />
-        <PickList picks={p2} />
+        {strategies.map((strategy) => {
+          // Sort the picks for each strategy based on `calculateDiff`
+          const sortedPicks = strategy.picks.sort((a, b) => calculateDiff(b) - calculateDiff(a));
+          
+          return (
+            <div key={strategy.strat_id} className="my-4">
+              <h2 className="text-xl font-bold">{strategy.strat_name}</h2>
+              {/* Render the PickList component for each strategy */}
+              <PickList picks={sortedPicks} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
 
-export default Portfolio;
+export default Picks;
 

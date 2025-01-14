@@ -15,3 +15,9 @@ export interface PropPick {
   rebounds: number;
   assists: number;
 }
+
+export interface StrategyPicks {
+  strat_id: number;
+  strat_name: string;
+  picks: PropPick[];
+}
