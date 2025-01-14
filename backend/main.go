@@ -27,9 +27,9 @@ func main() {
     // runUpdateLines()
     // runPickProps()
 
-    // runBacktest()
+    runBacktest()
 
-    startServer()
+    // startServer()
 }
 
 func startServer() {
@@ -125,10 +125,10 @@ func runGetPlayerPip() {
 
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
+    // startDate, _ := time.ParseInLocation("2006-01-02", "2023-11-01", loc)
     startDate, _ := time.ParseInLocation("2006-01-02", "2024-11-01", loc)
-    // startDate, _ := time.ParseInLocation("2006-01-02", "2024-12-01", loc)
     // endDate, _ := time.ParseInLocation("2006-01-02", "2023-11-30", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2025-01-08", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2025-01-14", loc)
     pPicker := analysis.PropSelector{
         StratName: "Points Raw",
         Thresholds: map[string]float32{
