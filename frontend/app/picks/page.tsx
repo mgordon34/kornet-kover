@@ -29,7 +29,7 @@ const Picks = async () => {
           
           return (
             <div key={strategy.strat_id} className="my-4">
-              <h2 className="text-xl font-bold">{strategy.strat_name}</h2>
+              <h1 className='text-2xl font-semibold'>{strategy.strat_name}</h1>
               {/* Render the PickList component for each strategy */}
               <PickList picks={sortedPicks} />
             </div>
