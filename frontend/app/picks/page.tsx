@@ -24,10 +24,10 @@ const Portfolio = async () => {
   const p2 = picks.filter(x => x.strat_id == 2).sort((a,b) => calculateDiff(b) - calculateDiff(a));
   return (
     <div className="flex flex-col items-center justify-items-center p-8">
-        <div className="inline-flex flex-col">
-          <PickList picks={p1} />
-          <PickList picks={p2} />
-        </div>
+      <div className="inline-flex flex-col">
+        <PickList picks={p1} />
+        <PickList picks={p2} />
+      </div>
     </div>
   );
 };
