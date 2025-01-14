@@ -27,7 +27,9 @@ func main() {
     // runUpdateLines()
     // runPickProps()
 
-    runBacktest()
+    // runBacktest()
+
+    startServer()
 }
 
 func startServer() {

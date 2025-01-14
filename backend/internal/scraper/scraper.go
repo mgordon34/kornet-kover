@@ -257,6 +257,12 @@ func UpdateActiveRosters() error {
         activeRoster = append(activeRoster, scrapePlayersForTeam(team.Index, injuredPlayers)...)
     }
 
+    activeRoster = pruneActiveRoster(activeRoster)
+
+    for _, player := range activeRoster {
+        players.UpdatePlayerTables(player.PlayerIndex)
+    }
+
     err = players.UpdateRosters(activeRoster)
     if err != nil {
         return err
@@ -354,6 +360,22 @@ func getPlayersByTime(teamIndex string, rosterPlayers []string, injuredPlayers m
     })
 
     return roster
+}
+
+func pruneActiveRoster(activeRoster []players.PlayerRoster) []players.PlayerRoster {
+    var prunedRoster []players.PlayerRoster
+    var foundPlayers []string
+
+    for _, player := range activeRoster {
+        if slices.Contains(foundPlayers, player.PlayerIndex) {
+            log.Printf("Found duplicate for %s, skipping...", player.PlayerIndex)
+        } else {
+            foundPlayers = append(foundPlayers, player.PlayerIndex)
+            prunedRoster = append(prunedRoster, player)
+        }
+    }
+
+    return prunedRoster
 }
 
 func ScrapeTodaysRosters() [][]players.Roster {

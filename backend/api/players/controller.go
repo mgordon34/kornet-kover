@@ -487,6 +487,33 @@ func GetOrCreatePrediction(playerIndex string, date time.Time) PlayerAvg {
     return nbaAvg
 }
 
+func UpdatePlayerTables(playerIndex string) {
+    db := storage.GetDB()
+    sql := `SELECT count(1) FROM players
+                where index=($1)`
+
+    var count int
+    row := db.QueryRow(context.Background(), sql, playerIndex)
+    if err := row.Scan(&count); err != nil {
+        log.Printf("Error finding player index for %s", playerIndex)
+    }
+    if count == 0 {
+        log.Printf("Could not find player %v, adding...", playerIndex)
+        sql = `
+        INSERT INTO players (index, name, sport)
+        VALUES ($1, $2, $3)
+        ON CONFLICT DO NOTHING
+        RETURNING id`
+        var resId int
+        err := db.QueryRow(context.Background(), sql, playerIndex, "Placeholder Name", "nba").Scan(&resId)
+        if err != nil {
+            log.Printf("Error adding player %s: %v", playerIndex, err)
+        }
+        log.Println(row)
+        log.Printf("Added player: %v", playerIndex)
+    }
+}
+
 func UpdateRosters(rosterSlots []PlayerRoster) error {
     log.Printf("Updating %v slots on active_rosters", len(rosterSlots))
     t := time.Now()
