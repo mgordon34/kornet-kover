@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -95,6 +96,7 @@ type PropPickFormatted struct {
     Id              int         `json:"id"`
     UserId          int         `json:"user_id"`
     StratId         int         `json:"strat_id"`
+    StratName       string      `json:"strat_name"`
     Name            string      `json:"player_name"`
     Side            string      `json:"side"`
     Line            float32     `json:"line"`
@@ -111,7 +113,7 @@ func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
     db := storage.GetDB()
 
     sql := `
-    SELECT pp.id, u.id as user_id, pp.strat_id, p.name, pl.side, pl.line, pl.stat, pl.odds, 
+    SELECT pp.id, u.id as user_id, pp.strat_id, s.name as strat_name, p.name, pl.side, pl.line, pl.stat, pl.odds, 
     npp.num_games, npp.points, npp.rebounds, npp.assists, npp.minutes, pp.date from prop_picks pp
     LEFT JOIN player_lines pl on pl.id = pp.line_id
     LEFT JOIN players p on p.index = pl.player_index
@@ -130,6 +132,65 @@ func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
     return picks, nil
 }
 
+type PropPicksResponse struct {
+    StratId     int             `json:"strat_id"`
+    StratName   string          `json:"strat_name"`
+    Picks       []PickInfo      `json:"picks"`
+}
+type PickInfo struct {
+    Id              int         `json:"id"`
+    Name            string      `json:"player_name"`
+    Side            string      `json:"side"`
+    Line            float32     `json:"line"`
+    Stat            string      `json:"stat"`
+    Odds            int         `json:"odds"`
+    NumGames        int         `json:"num_games"`
+    Points          float32     `json:"points"`
+    Rebounds        float32     `json:"rebounds"`
+    Assists         float32     `json:"assists"`
+    Minutes         float32     `json:"minutes"`
+    Date            time.Time   `json:"date"`
+}
+
+func formatPicksByStrat(picks []PropPickFormatted) []PropPicksResponse {
+    var stratKeys []int
+    pickMap := make(map[int]PropPicksResponse)
+    for _, pick := range picks {
+        _, ok := pickMap[pick.StratId]; if !ok {
+            stratKeys = append(stratKeys, pick.StratId)
+            pickMap[pick.StratId] = PropPicksResponse{
+                StratId: pick.StratId,
+                StratName: pick.StratName,
+            }
+        }
+
+        pPick := pickMap[pick.StratId]
+        pPick.Picks = append(pPick.Picks, PickInfo{
+            Id: pick.Id,
+            Name: pick.Name,
+            Side: pick.Side,
+            Line: pick.Line,
+            Stat: pick.Stat,
+            Odds: pick.Odds,
+            NumGames: pick.NumGames,
+            Points: pick.Points,
+            Rebounds: pick.Rebounds,
+            Assists: pick.Assists,
+            Minutes: pick.Minutes,
+            Date: pick.Date,
+        })
+        pickMap[pick.StratId] = pPick
+    }
+
+    var sortedPicks []PropPicksResponse
+    sort.Ints(stratKeys)
+    for _, stratId := range stratKeys {
+        sortedPicks = append(sortedPicks, pickMap[stratId])
+    }
+
+    return sortedPicks
+}
+
 func GetPropPicks(c *gin.Context) {
     id, err := strconv.Atoi(c.Query("user_id"))
     if err != nil {
@@ -145,7 +206,7 @@ func GetPropPicks(c *gin.Context) {
         log.Println("Error in GetPropPicks:", err)
         c.JSON(http.StatusInternalServerError, err)
     }
-    c.JSON(http.StatusOK, picks)
+    c.JSON(http.StatusOK, formatPicksByStrat(picks))
 }
 
 func getPropPick(stratId int) (PropPick, error) {
