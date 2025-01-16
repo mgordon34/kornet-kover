@@ -1,6 +1,7 @@
 // app/strategies/page.tsx
 import { StrategyPicks } from '../types';
 import PickList from '../components/PickList';
+import { DatePicker } from '../components/DatePicker';
 import { calculateDiff } from '../../lib/pick_utils';
 
 // Fetch picks directly on the server side using `fetch`
@@ -22,6 +23,7 @@ const Picks = async () => {
 
   return (
     <div className="flex flex-col items-center justify-items-center p-8">
+      <DatePicker/>
       <div className="inline-flex flex-col">
         {strategies.map((strategy) => {
           // Sort the picks for each strategy based on `calculateDiff`
