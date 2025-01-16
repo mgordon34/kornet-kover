@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
@@ -34,6 +35,17 @@ func main() {
 
 func startServer() {
     r := gin.Default()
+
+    config := cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"}, // Replace with your frontend domain
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: false, // If using cookies or credentials
+		MaxAge:           12 * time.Hour, // Cache preflight response for 12 hours
+	}
+
+    r.Use(cors.New(config))
 
     r.GET("/update-games", scraper.GetUpdateGames)
     r.GET("/update-players", scraper.GetUpdateActiveRosters)
