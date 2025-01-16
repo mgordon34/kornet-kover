@@ -23,7 +23,9 @@ const Picks = () => {
         // },
         cache: "no-store",
       });
+      console.log(res)
       const data: StrategyPicks[] = await res.json();
+      console.log(data)
       setStrategies(data);
     } catch (error) {
       console.error("Error fetching picks:", error);
@@ -41,15 +43,21 @@ const Picks = () => {
         <DatePicker date={selectedDate} onDateChange={setSelectedDate} />
       </div>
       <div className="inline-flex flex-col">
-        {strategies.map((strategy) => {
-          const sortedPicks = strategy.picks.sort((a, b) => calculateDiff(b) - calculateDiff(a));
-          return (
-            <div key={strategy.strat_id} className="my-4">
-              <h1 className="text-2xl font-semibold">{strategy.strat_name}</h1>
-              <PickList picks={sortedPicks} />
-            </div>
-          );
-        })}
+        {strategies && strategies.length > 0 ? (
+          strategies.map((strategy) => {
+            const sortedPicks = strategy.picks.sort((a, b) => calculateDiff(b) - calculateDiff(a));
+            return (
+              <div key={strategy.strat_id} className="my-4">
+                <h1 className="text-2xl font-semibold">{strategy.strat_name}</h1>
+                <PickList picks={sortedPicks} />
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center">
+            <p>No picks available for the selected date.</p>
+          </div>
+        )}
       </div>
     </div>
   );
