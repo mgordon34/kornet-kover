@@ -1,40 +1,51 @@
 // app/strategies/page.tsx
-import { StrategyPicks } from '../types';
-import PickList from '../components/PickList';
-import { DatePicker } from '../components/DatePicker';
-import { calculateDiff } from '../../lib/pick_utils';
+"use client";
 
-// Fetch picks directly on the server side using `fetch`
-async function getPicks(): Promise<StrategyPicks[]> {
-  const userId = 1;
-  const formattedDate = new Intl.DateTimeFormat('en-CA').format(new Date());
-  const res = await fetch(`${process.env.API_URL}/prop-picks?user_id=${userId}&date=${formattedDate}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${process.env.JWT_TOKEN}`, // Or use session/cookies for auth
-    },
-    cache: "no-store",
-  });
-  return res.json();
-}
+import React, { useState, useEffect } from "react";
+import { StrategyPicks } from "../types";
+import PickList from "../components/PickList";
+import { DatePicker } from "../components/DatePicker";
+import { calculateDiff } from "../../lib/pick_utils";
 
-const Picks = async () => {
-  const strategies = await getPicks();
+const Picks = () => {
+  const [strategies, setStrategies] = useState<StrategyPicks[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  const fetchPicks = async (date: Date) => {
+    const userId = 1;
+    const formattedDate = new Intl.DateTimeFormat("en-CA").format(date);
+    console.log(process.env.API_URL);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prop-picks?user_id=${userId}&date=${formattedDate}`, {
+        method: "GET",
+        // headers: {
+        //   Authorization: `Bearer ${process.env.JWT_TOKEN}`, // Adjust auth as needed
+        // },
+        cache: "no-store",
+      });
+      const data: StrategyPicks[] = await res.json();
+      setStrategies(data);
+    } catch (error) {
+      console.error("Error fetching picks:", error);
+    }
+  };
+
+  // Fetch picks whenever the selected date changes
+  useEffect(() => {
+    fetchPicks(selectedDate);
+  }, [selectedDate]);
 
   return (
     <div className="flex flex-col items-center justify-items-center p-8">
       <div className="absolute right-8 top-24"> {/* Adjust right and top as needed */}
-        <DatePicker />
+        <DatePicker date={selectedDate} onDateChange={setSelectedDate} />
       </div>
       <div className="inline-flex flex-col">
         {strategies.map((strategy) => {
-          // Sort the picks for each strategy based on `calculateDiff`
           const sortedPicks = strategy.picks.sort((a, b) => calculateDiff(b) - calculateDiff(a));
-          
           return (
             <div key={strategy.strat_id} className="my-4">
-              <h1 className='text-2xl font-semibold'>{strategy.strat_name}</h1>
-              {/* Render the PickList component for each strategy */}
+              <h1 className="text-2xl font-semibold">{strategy.strat_name}</h1>
               <PickList picks={sortedPicks} />
             </div>
           );
