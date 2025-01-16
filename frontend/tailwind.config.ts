@@ -5,6 +5,7 @@ export default {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/globals.css",
   ],
   theme: {
     extend: {
@@ -14,6 +15,10 @@ export default {
         ring: "hsl(var(--ring))",
         background: "var(--background)",
         foreground: "var(--foreground)",
+        secondary: "var(--secondary)",
+        accent: "var(--accent)",
+        muted: "var(--muted)",
+        "muted-foreground": "var(--muted-foreground)",
       },
     },
   },

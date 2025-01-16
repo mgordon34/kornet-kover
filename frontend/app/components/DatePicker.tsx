@@ -34,7 +34,7 @@ export function DatePicker() {
 
   return (
     <div className="flex items-center space-x-2">
-      <Button variant="outline" size="icon" onClick={goToPreviousDay}>
+      <Button className="bg-secondary" variant="outline" size="icon" onClick={goToPreviousDay}>
         <ChevronLeftIcon className="h-4 w-4" />
       </Button>
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
@@ -42,7 +42,7 @@ export function DatePicker() {
           <Button
             variant={"outline"}
             className={cn(
-              "justify-start text-left font-normal",
+              "bg-secondary justify-start text-left font-normal",
               !date && "text-muted-foreground"
             )}
           >
@@ -50,7 +50,7 @@ export function DatePicker() {
             {format(date, "MM/dd/yy")}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-black shadow-lg rounded-lg" align="start">
+        <PopoverContent className="w-auto p-0 bg-dark shadow-lg rounded-lg" align="start">
           <Calendar
             mode="single"
             selected={date}
@@ -60,7 +60,7 @@ export function DatePicker() {
           />
         </PopoverContent>
       </Popover>
-      <Button variant="outline" size="icon" onClick={goToNextDay}>
+      <Button className="bg-secondary" variant="outline" size="icon" onClick={goToNextDay}>
         <ChevronRightIcon className="h-4 w-4" />
       </Button>
     </div>

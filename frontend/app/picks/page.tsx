@@ -23,7 +23,7 @@ const Picks = async () => {
 
   return (
     <div className="flex flex-col items-center justify-items-center p-8">
-      <div className="absolute right-8 top-16"> {/* Adjust right and top as needed */}
+      <div className="absolute right-8 top-24"> {/* Adjust right and top as needed */}
         <DatePicker />
       </div>
       <div className="inline-flex flex-col">
