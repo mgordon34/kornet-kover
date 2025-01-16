@@ -23,7 +23,9 @@ const Picks = async () => {
 
   return (
     <div className="flex flex-col items-center justify-items-center p-8">
-      <DatePicker/>
+      <div className="absolute right-8 top-16"> {/* Adjust right and top as needed */}
+        <DatePicker />
+      </div>
       <div className="inline-flex flex-col">
         {strategies.map((strategy) => {
           // Sort the picks for each strategy based on `calculateDiff`

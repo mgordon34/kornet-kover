@@ -25,7 +25,7 @@ export function DatePicker() {
     setDate((prevDate) => addDays(prevDate, 1))
   }
 
-  const handleDateSelect = (newDate: Date | null) => {
+  const handleDateSelect = (newDate: Date | undefined) => {
     if (newDate) {
       setDate(newDate)
       setPopoverOpen(false) // Close the popover when a date is selected
@@ -50,7 +50,7 @@ export function DatePicker() {
             {format(date, "MM/dd/yy")}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0 bg-black shadow-lg rounded-lg" align="start">
           <Calendar
             mode="single"
             selected={date}
