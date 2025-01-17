@@ -38,17 +38,26 @@ const ClientPicks: React.FC<ClientPicksProps> = ({ initialDate, initialStrategie
   }, [selectedDate]);
 
   return (
-    <div className="flex flex-col items-center justify-items-center p-8">
-      <div className="absolute right-8 top-24">
-        <DatePicker date={selectedDate} onDateChange={setSelectedDate} />
+    <div className="flex flex-col items-center p-4">
+    {/* Header Section */}
+      <div className="relative flex w-full flex-col mb-4">
+        {/* DatePicker */}
+        <div className="sm:absolute sm:top-0 sm:right-0">
+          <DatePicker date={selectedDate} onDateChange={setSelectedDate} />
+        </div>
       </div>
-      <div className="inline-flex flex-col">
+
+      {/* Picks Section */}
+      <div className="flex flex-col justify-center">
         {strategies && strategies.length > 0 ? (
           strategies.map((strategy) => {
             const sortedPicks = strategy.picks.sort((a, b) => calculateDiff(b) - calculateDiff(a));
             return (
-              <div key={strategy.strat_id} className="my-4">
-                <h1 className="text-2xl font-semibold">{strategy.strat_name}</h1>
+              <div
+                key={strategy.strat_id}
+                className="my-4 w-full px-2"
+              >
+                <h1 className="text-lg font-semibold">{strategy.strat_name}</h1>
                 <PickList picks={sortedPicks} />
               </div>
             );
