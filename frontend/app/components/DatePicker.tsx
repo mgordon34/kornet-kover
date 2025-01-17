@@ -51,7 +51,6 @@ export function DatePicker({ date, onDateChange }: { date: Date; onDateChange: (
             selected={date}
             onSelect={handleDateSelect}
             initialFocus
-            formatters={{ formatDate: (date) => format(date, "MM/dd/yy") }}
           />
         </PopoverContent>
       </Popover>
