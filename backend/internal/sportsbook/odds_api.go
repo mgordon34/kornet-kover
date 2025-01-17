@@ -73,6 +73,7 @@ func UpdateLines() error {
     startDate := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
     GetOdds(startDate, today)
+    GetLiveOdds(today)
 
     return nil
 }
@@ -273,8 +274,8 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
 }
 
 func GetOdds(startDate time.Time, endDate time.Time) {
-    for d := startDate; d.After(endDate) == false; d = d.AddDate(0, 0, 1) {
-        log.Printf("Getting sportsbook odds for %v...", d)
+    for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
+        log.Printf("Getting historical sportsbook odds for %v...", d)
         var lines []odds.PlayerLine
 
         games := GetGamesForDate(d, requestOddsAPI)
@@ -286,12 +287,11 @@ func GetOdds(startDate time.Time, endDate time.Time) {
     }
 }
 
-func GetLiveOdds() {
-    loc, _ := time.LoadLocation("America/New_York")
-    d, _ := time.ParseInLocation("2006-01-02", "2025-01-17", loc)
+func GetLiveOdds(date time.Time) {
+    log.Printf("Getting live sportsbook odds for %v...", date)
     var lines []odds.PlayerLine
 
-    games := GetLiveGamesForDate(d, requestOddsAPI)
+    games := GetLiveGamesForDate(date, requestOddsAPI)
     for _, game := range games {
         lines = append(lines, GetLiveOddsForGame(game, requestOddsAPI)...)
     }
