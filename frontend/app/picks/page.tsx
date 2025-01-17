@@ -7,6 +7,8 @@ import PickList from "../components/PickList";
 import { DatePicker } from "../components/DatePicker";
 import { calculateDiff } from "../../lib/pick_utils";
 
+export const dynamic = "force-dynamic"
+
 const Picks = () => {
   const [strategies, setStrategies] = useState<StrategyPicks[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -14,7 +16,6 @@ const Picks = () => {
   const fetchPicks = async (date: Date) => {
     const userId = 1;
     const formattedDate = new Intl.DateTimeFormat("en-CA").format(date);
-    console.log(process.env.API_URL);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prop-picks?user_id=${userId}&date=${formattedDate}`, {
         method: "GET",
@@ -23,9 +24,7 @@ const Picks = () => {
         // },
         cache: "no-store",
       });
-      console.log(res)
       const data: StrategyPicks[] = await res.json();
-      console.log(data)
       setStrategies(data);
     } catch (error) {
       console.error("Error fetching picks:", error);
