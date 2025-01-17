@@ -141,30 +141,32 @@ type OddResponse struct {
 	Timestamp         time.Time `json:"timestamp"`
 	PreviousTimestamp time.Time `json:"previous_timestamp"`
 	NextTimestamp     time.Time `json:"next_timestamp"`
-	Data              struct {
-		ID           string    `json:"id"`
-		SportKey     string    `json:"sport_key"`
-		SportTitle   string    `json:"sport_title"`
-		CommenceTime time.Time `json:"commence_time"`
-		HomeTeam     string    `json:"home_team"`
-		AwayTeam     string    `json:"away_team"`
-		Bookmakers   []struct {
-			Key        string    `json:"key"`
-			Title      string    `json:"title"`
-			LastUpdate time.Time `json:"last_update"`
-			Markets    []struct {
-				Key        string    `json:"key"`
-				LastUpdate time.Time `json:"last_update"`
-				Outcomes   []struct {
-					Name        string  `json:"name"`
-					Description string  `json:"description"`
-					Price       int `json:"price"`
-					Point       float32 `json:"point"`
-				} `json:"outcomes"`
+	Data              OddsInfo  `json:"data"`
+}
+
+type OddsInfo struct {
+    ID           string    `json:"id"`
+    SportKey     string    `json:"sport_key"`
+    SportTitle   string    `json:"sport_title"`
+    CommenceTime time.Time `json:"commence_time"`
+    HomeTeam     string    `json:"home_team"`
+    AwayTeam     string    `json:"away_team"`
+    Bookmakers   []struct {
+        Key        string    `json:"key"`
+        Title      string    `json:"title"`
+        LastUpdate time.Time `json:"last_update"`
+        Markets    []struct {
+            Key        string    `json:"key"`
+            LastUpdate time.Time `json:"last_update"`
+            Outcomes   []struct {
+                Name        string  `json:"name"`
+                Description string  `json:"description"`
+                Price       int `json:"price"`
+                Point       float32 `json:"point"`
                 Link        string `json:"link"`
-			} `json:"markets"`
-		} `json:"bookmakers"`
-	} `json:"data"`
+            } `json:"outcomes"`
+        } `json:"markets"`
+    } `json:"bookmakers"`
 }
 
 func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
@@ -181,6 +183,7 @@ func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
         "includeLinks=" + "true",
     }
     res, err := requestOddsAPI(fmt.Sprintf(endpont, "basketball_nba", game.ID), addlArgs)
+    log.Println(res)
     if err != nil {
         log.Fatal("Error getting odds api: ", err)
     }
@@ -211,7 +214,7 @@ func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
                 Side: line.Name,
                 Line: line.Point,
                 Odds: line.Price,
-                Link: market.Link,
+                Link: line.Link,
             }
             lines = append(lines, line)
         }
@@ -225,29 +228,29 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
     var lines []odds.PlayerLine
     nameMap := make(map[string]string)
 
-    endpont := "historical/sports/%s/events/%s/odds"
+    endpont := "sports/%s/events/%s/odds"
     addlArgs := []string {
-        "date=" + game.CommenceTime.UTC().Format("2006-01-02T15:04:05Z"),
         "bookmakers=" + "williamhill_us",
         "markets=" + "player_points,player_rebounds,player_assists",
         "oddsFormat=" + "american",
         "includeLinks=" + "true",
     }
     res, err := requestOddsAPI(fmt.Sprintf(endpont, "basketball_nba", game.ID), addlArgs)
+    log.Println(res)
     if err != nil {
         log.Fatal("Error getting odds api: ", err)
     }
 
-    var oddResponse OddResponse
-    if err := json.Unmarshal([]byte(res), &oddResponse); err != nil {
+    var OddsInfo OddsInfo
+    if err := json.Unmarshal([]byte(res), &OddsInfo); err != nil {
         panic(err)
     }
 
-    if len(oddResponse.Data.Bookmakers) == 0 {
+    if len(OddsInfo.Bookmakers) == 0 {
         log.Printf("Could not find odds for %s vs %s", game.HomeTeam, game.AwayTeam)
         return lines
     }
-    for _, market := range oddResponse.Data.Bookmakers[0].Markets {
+    for _, market := range OddsInfo.Bookmakers[0].Markets {
         stat := odds_markets[market.Key]
         for _, line := range market.Outcomes {
             playerName := strings.Join(strings.Split(line.Description, " ")[:2], " ")
@@ -264,7 +267,7 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
                 Side: line.Name,
                 Line: line.Point,
                 Odds: line.Price,
-                Link: market.Link,
+                Link: line.Link,
             }
             lines = append(lines, line)
         }
