@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { StrategyPicks } from "../types";
 import PickList from "../components/PickList";
 import { DatePicker } from "../components/DatePicker";
@@ -18,16 +18,17 @@ const ClientPicks: React.FC<ClientPicksProps> = ({ initialDate, initialStrategie
   const fetchPicks = async (date: Date) => {
     const userId = 1;
     const formattedDate = new Intl.DateTimeFormat("en-CA").format(date);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prop-picks?user_id=${userId}&date=${formattedDate}`, {
-        method: "GET",
-        cache: "no-store",
-      });
-      const data: StrategyPicks[] = await res.json();
-      setStrategies(data);
-    } catch (error) {
-      console.error("Error fetching picks:", error);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prop-picks?user_id=${userId}&date=${formattedDate}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch picks: ${res.statusText}`);
     }
+
+    const data: StrategyPicks[] = await res.json();
+    setStrategies(data);
   };
 
   useEffect(() => {
