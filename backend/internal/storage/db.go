@@ -75,6 +75,7 @@ func InitTables() {
             points INT NOT NULL,
             rebounds INT NOT NULL,
             assists INT NOT NULL,
+            threes INT NOT NULL,
             usg REAL NOT NULL,
             ortg INT NOT NULL,
             drtg INT NOT NULL,
