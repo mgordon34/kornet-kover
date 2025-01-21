@@ -131,6 +131,7 @@ func AddPlayerGames(pGames []PlayerGame) {
                 pGame.Points,
                 pGame.Rebounds,
                 pGame.Assists,
+                pGame.Threes,
                 pGame.Usg,
                 pGame.Ortg,
                 pGame.Drtg,
@@ -149,6 +150,7 @@ func AddPlayerGames(pGames []PlayerGame) {
             "points",
             "rebounds",
             "assists",
+            "threes",
             "usg",
             "ortg",
             "drtg",
@@ -161,8 +163,8 @@ func AddPlayerGames(pGames []PlayerGame) {
 
 	_, err = txn.Exec(
         context.Background(),
-        ` INSERT INTO nba_player_games (player_index, game, team_index, minutes, points, rebounds, assists, usg, ortg, drtg)
-        SELECT player_index, game, team_index, minutes, points, rebounds, assists, usg, ortg, drtg FROM player_games_temp
+        ` INSERT INTO nba_player_games (player_index, game, team_index, minutes, points, rebounds, assists, threes, usg, ortg, drtg)
+        SELECT player_index, game, team_index, minutes, points, rebounds, assists, threes, usg, ortg, drtg FROM player_games_temp
         ON CONFLICT DO NOTHING`,
     )
 	if err != nil {
@@ -177,7 +179,7 @@ func AddPlayerGames(pGames []PlayerGame) {
 func GetPlayerStats(player string, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
     db := storage.GetDB()
     sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
-            avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
+            avg(assists) as assists, avg(threes) as threes, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
                 left join games on games.id = nba_player_games.game
                 where nba_player_games.player_index = ($1) and nba_player_games.minutes > 10 and games.date between ($2) and ($3)`
 
@@ -240,7 +242,7 @@ type PlayerStatInfo struct {
 func GetPlayerStatsForGames(gameIds []string) (map[string]PlayerAvg, error) {
     playerMap := make(map[string]PlayerAvg)
     db := storage.GetDB()
-    sql := `SELECT player_index, 1 as num_games, minutes, points, rebounds, assists, usg, ortg, drtg FROM nba_player_games
+    sql := `SELECT player_index, 1 as num_games, minutes, points, rebounds, assists, threes, usg, ortg, drtg FROM nba_player_games
                 left join games gg on gg.id = nba_player_games.game
                 where gg.id IN (%s)`
 
@@ -274,7 +276,10 @@ func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) m
             useDate = endDate
         }
 
-        yearlyStats, _ := GetPlayerStats(player, d, useDate)
+        yearlyStats, err := GetPlayerStats(player, d, useDate)
+        if err != nil {
+            log.Println("Error finding Player stats for %v: %v", player, err)
+        }
         if yearlyStats.IsValid() {
             playerStats[utils.DateToNBAYear(d)] = yearlyStats.ConvertToPer()
         }
@@ -286,7 +291,7 @@ func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) m
 func GetPlayerStatsWithPlayer(player string, defender string, relationship Relationship, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
     db := storage.GetDB()
     sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
-            avg(assists) as assists, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
+            avg(assists) as assists, avg(threes) as threes, avg(usg) as usg, avg(ortg) as ortg, avg(drtg) as drtg FROM nba_player_games
                 left join games gg on gg.id = nba_player_games.game
                 where nba_player_games.player_index = ($1) and nba_player_games.minutes > 10 and gg.date between ($3) and ($4)`
     opponent_filter := `
@@ -370,6 +375,7 @@ func AddPIPPrediction(pPreds []NBAPIPPrediction) {
                 pPred.Points,
                 pPred.Rebounds,
                 pPred.Assists,
+                pPred.Threes,
                 pPred.Usg,
                 pPred.Ortg,
                 pPred.Drtg,
@@ -389,6 +395,7 @@ func AddPIPPrediction(pPreds []NBAPIPPrediction) {
             "points",
             "rebounds",
             "assists",
+            "threes",
             "usg",
             "ortg",
             "drtg",
@@ -401,11 +408,11 @@ func AddPIPPrediction(pPreds []NBAPIPPrediction) {
 
 	_, err = txn.Exec(
         context.Background(),
-        ` INSERT INTO nba_pip_predictions (player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg)
-        SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg FROM pip_prediction_temp
+        ` INSERT INTO nba_pip_predictions (player_index, date, version, num_games, minutes, points, rebounds, assists, threes, usg, ortg, drtg)
+        SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, threes, usg, ortg, drtg FROM pip_prediction_temp
         ON CONFLICT (player_index, date, version) DO UPDATE
         SET num_games=excluded.num_games, minutes=excluded.minutes, points=excluded.points, rebounds=excluded.rebounds,
-        assists=excluded.assists, usg=excluded.usg, ortg=excluded.ortg, drtg=excluded.drtg`,
+        assists=excluded.assists, threes=excluded.threes, usg=excluded.usg, ortg=excluded.ortg, drtg=excluded.drtg`,
     )
 	if err != nil {
 		panic(err)
@@ -419,7 +426,7 @@ func AddPIPPrediction(pPreds []NBAPIPPrediction) {
 func GetPIPPredictionsForDate(date time.Time) ([]NBAPIPPrediction, error) {
     var pipPreds []NBAPIPPrediction
     db := storage.GetDB()
-    sql := `SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg FROM nba_pip_predictions
+    sql := `SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, threes, usg, ortg, drtg FROM nba_pip_predictions
                 where date=($1)`
 
     rows, err := db.Query(context.Background(), sql, date.Format(time.DateOnly))
@@ -438,7 +445,7 @@ func GetPIPPredictionsForDate(date time.Time) ([]NBAPIPPrediction, error) {
 
 func GetPlayerPIPPrediction(playerIndex string, date time.Time) (NBAPIPPrediction, error) {
     db := storage.GetDB()
-    sql := `SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, usg, ortg, drtg FROM nba_pip_predictions
+    sql := `SELECT player_index, date, version, num_games, minutes, points, rebounds, assists, threes, usg, ortg, drtg FROM nba_pip_predictions
                 where date=($1) and player_index=($2)`
 
     rows, err := db.Query(context.Background(), sql, date.Format(time.DateOnly), playerIndex)
@@ -480,6 +487,8 @@ func GetOrCreatePrediction(playerIndex string, date time.Time) PlayerAvg {
         Minutes: pipPred.Minutes,
         Points: float32(pipPred.Points),
         Rebounds: float32(pipPred.Rebounds),
+        Assists: float32(pipPred.Assists),
+        Threes: float32(pipPred.Threes),
         Usg: pipPred.Usg,
         Ortg: float32(pipPred.Ortg),
         Drtg: float32(pipPred.Drtg),

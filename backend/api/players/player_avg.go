@@ -20,6 +20,7 @@ type NBAAvg struct {
     Points       float32     `json:"avg_points"`
     Rebounds     float32     `json:"avg_rebounds"`
     Assists      float32     `json:"avg_assists"`
+    Threes       float32     `json:"avg_threes"`
     Usg          float32     `json:"avg_usg"`
     Ortg         float32     `json:"avg_drtg"`
     Drtg         float32     `json:"avg_ortg"`
@@ -35,6 +36,7 @@ func (n NBAAvg) GetStats() map[string]float32 {
         "points": n.Points,
         "rebounds": n.Rebounds,
         "assists": n.Assists,
+        "threes": n.Threes,
         "usg": n.Usg,
         "ortg": n.Ortg,
         "drtg": n.Drtg,
@@ -53,6 +55,7 @@ func (n NBAAvg) AddAvg(a PlayerAvg) PlayerAvg {
         Points: (n.Points * float32(n.NumGames) + nba.Points * float32(nba.NumGames)) / total_games,
         Rebounds: (n.Rebounds * float32(n.NumGames) + nba.Rebounds * float32(nba.NumGames)) / total_games,
         Assists: (n.Assists * float32(n.NumGames) + nba.Assists * float32(nba.NumGames)) / total_games,
+        Threes: (n.Threes * float32(n.NumGames) + nba.Threes * float32(nba.NumGames)) / total_games,
         Usg: (n.Usg * float32(n.NumGames) + nba.Usg * float32(nba.NumGames)) / total_games,
         Ortg: (n.Ortg * float32(n.NumGames) + nba.Ortg * float32(nba.NumGames)) / total_games,
         Drtg: (n.Drtg * float32(n.NumGames) + nba.Drtg * float32(nba.NumGames)) / total_games,
@@ -70,6 +73,7 @@ func (n NBAAvg) CompareAvg(controlAvg PlayerAvg) PlayerAvg {
         Points: getStatPchange(nbaControl.Points, n.Points),
         Rebounds: getStatPchange(nbaControl.Rebounds, n.Rebounds),
         Assists: getStatPchange(nbaControl.Assists, n.Assists),
+        Threes: getStatPchange(nbaControl.Threes, n.Threes),
         Usg: getStatPchange(nbaControl.Usg, n.Usg),
         Ortg: getStatPchange(nbaControl.Ortg, n.Ortg),
         Drtg: getStatPchange(nbaControl.Drtg, n.Drtg),
@@ -84,6 +88,7 @@ func (n NBAAvg) ConvertToPer() PlayerAvg {
             Points: n.Points / n.Minutes,
             Rebounds: n.Rebounds / n.Minutes,
             Assists: n.Assists / n.Minutes,
+            Threes: n.Threes / n.Minutes,
             Usg: n.Usg / n.Minutes,
             Ortg: n.Ortg / n.Minutes,
             Drtg: n.Drtg / n.Minutes,
@@ -101,6 +106,7 @@ func (n NBAAvg) ConvertToStats() PlayerAvg {
             Points: n.Points * n.Minutes,
             Rebounds: n.Rebounds * n.Minutes,
             Assists: n.Assists * n.Minutes,
+            Threes: n.Threes * n.Minutes,
             Usg: n.Usg * n.Minutes,
             Ortg: n.Ortg * n.Minutes,
             Drtg: n.Drtg * n.Minutes,
@@ -120,6 +126,7 @@ func (n NBAAvg) PredictStats(pipFactor PlayerAvg) PlayerAvg {
         Points: (n.Points + n.Points * nbaPip.Points) * predictedMinutes,
         Rebounds: (n.Rebounds + n.Rebounds * nbaPip.Rebounds) * predictedMinutes,
         Assists: (n.Assists + n.Assists * nbaPip.Assists) * predictedMinutes,
+        Threes: (n.Threes + n.Threes * nbaPip.Threes) * predictedMinutes,
         Usg: (n.Usg + n.Usg * nbaPip.Usg) * predictedMinutes,
         Ortg: (n.Ortg + n.Ortg * nbaPip.Ortg) * predictedMinutes,
         Drtg: (n.Drtg + n.Drtg * nbaPip.Drtg) * predictedMinutes,
