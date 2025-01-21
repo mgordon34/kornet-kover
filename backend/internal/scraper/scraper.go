@@ -182,6 +182,9 @@ func addPlayerStat(stat string, value string, playerGame players.PlayerGame) pla
     case "ast":
         ast, _ := strconv.Atoi(value)
         playerGame.Assists = ast
+    case "fg3":
+        fg3, _ := strconv.Atoi(value)
+        playerGame.Threes = fg3
     case "usg_pct":
         u, _ := strconv.ParseFloat(value, 32)
         usg := float32(u)
