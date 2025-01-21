@@ -22,6 +22,7 @@ type PlayerGame struct {
     Points          int         `json:"points"`
     Rebounds        int         `json:"rebounds"`
     Assists         int         `json:"assists"`
+    Threes          int         `json:"threes"`
     Usg             float32     `json:"usg"`
     Ortg            int         `json:"drtg"`
     Drtg            int         `json:"ortg"`
@@ -43,6 +44,7 @@ type NBAPIPPrediction struct {
     Points          float32     `json:"points"`
     Rebounds        float32     `json:"rebounds"`
     Assists         float32     `json:"assists"`
+    Threes          float32     `json:"threes"`
     Usg             float32     `json:"usg"`
     Ortg            float32     `json:"drtg"`
     Drtg            float32     `json:"ortg"`
