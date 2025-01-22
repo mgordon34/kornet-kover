@@ -223,7 +223,7 @@ func runPickProps() ([]PropPick, error) {
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
 
     // Gather player Odds map for upcoming games
-    oddsMap, err := odds.GetPlayerOddsForDate(today, []string{"points, rebounds, assists"})
+    oddsMap, err := odds.GetPlayerOddsForDate(today, []string{"points, rebounds, assists, threes"})
     if err  != nil {
         return picks, err
     }

@@ -26,6 +26,7 @@ var odds_markets = map[string]string{
     "player_points": "points",
     "player_rebounds": "rebounds",
     "player_assists": "assists",
+    "player_threes": "threes",
 }
 
 func requestOddsAPI(endpoint string, addlArgs []string) (response string, err error) {
@@ -178,7 +179,7 @@ func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
     addlArgs := []string {
         "date=" + game.CommenceTime.UTC().Format("2006-01-02T15:04:05Z"),
         "bookmakers=" + "williamhill_us",
-        "markets=" + "player_points,player_rebounds,player_assists",
+        "markets=" + "player_points,player_rebounds,player_assists,player_threes",
         "oddsFormat=" + "american",
         "includeLinks=" + "true",
     }
@@ -231,7 +232,7 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
     endpont := "sports/%s/events/%s/odds"
     addlArgs := []string {
         "bookmakers=" + "williamhill_us",
-        "markets=" + "player_points,player_rebounds,player_assists",
+        "markets=" + "player_points,player_rebounds,player_assists,player_threes",
         "oddsFormat=" + "american",
         "includeLinks=" + "true",
     }
