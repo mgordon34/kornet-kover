@@ -17,7 +17,8 @@ func AddGame(game Game) (int, error) {
     sqlStmt := `
 	INSERT INTO games (sport, home_index, away_index, home_score, away_score, date)
 	VALUES ($1, $2, $3, $4, $5, $6)
-	ON CONFLICT DO NOTHING
+	ON CONFLICT (date, sport, home_index) DO UPDATE
+    SET home_index=excluded.home_index
     RETURNING ID`
     var resId int
     err := db.QueryRow(context.Background(), sqlStmt, game.Sport, game.HomeIndex, game.AwayIndex, game.HomeScore, game.AwayScore, game.Date).Scan(&resId)
