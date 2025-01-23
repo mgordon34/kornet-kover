@@ -318,5 +318,32 @@ func runPickProps() ([]PropPick, error) {
         log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, ID: %v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.LineId)
     }
 
+    tpicker := PropSelector{
+        StratId: 4,
+        StratName: "Threes",
+        Thresholds: map[string]float32{
+            "points": 1000,
+            "rebounds": 1000,
+            "assists": 1000,
+            "threes": .6,
+        },
+        TresholdType: Percent,
+        RequireOutlier: true,
+        MinGames: 10,
+        MinOdds: -135,
+        BetSize: 100,
+        MaxOver: 100,
+        MaxUnder: 0,
+        TotalMax: 100,
+    }
+    tpicks, err := tpicker.PickProps(oddsMap, results, today, true)
+    if err  != nil {
+        return picks, err
+    }
+    log.Printf("================================%v=========================================", rpicker.StratName)
+    for _, pick := range tpicks {
+        log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, ID: %v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.LineId)
+    }
+
     return picks, nil
 }

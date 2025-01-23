@@ -381,6 +381,24 @@ func runBacktest() {
         MaxUnder: 0,
         TotalMax: 100,
     }
+    tfPicker := analysis.PropSelector{
+        StratName: "Final Threes",
+        Thresholds: map[string]float32{
+            "points": 1000,
+            "rebounds": 1000,
+            "assists": 1000,
+            "threes": .6,
+        },
+        TresholdType: analysis.Percent,
+        RequireOutlier: true,
+        MinOdds: -135,
+        MinGames: 10,
+        MinMinutes: 0,
+        BetSize: 100,
+        MaxOver: 5,
+        MaxUnder: 0,
+        TotalMax: 100,
+    }
     b := backtesting.Backtester{
         StartDate: startDate,
         EndDate: endDate,
@@ -399,6 +417,7 @@ func runBacktest() {
             {PropSelector: fsPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: foPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: fPickerP, BacktestResult: &backtesting.BacktestResult{}},
+            {PropSelector: tfPicker, BacktestResult: &backtesting.BacktestResult{}},
         },
     }
     b.RunBacktest()
