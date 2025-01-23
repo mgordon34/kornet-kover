@@ -276,10 +276,7 @@ func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) m
             useDate = endDate
         }
 
-        yearlyStats, err := GetPlayerStats(player, d, useDate)
-        if err != nil {
-            log.Println("Error finding Player stats for %v: %v", player, err)
-        }
+        yearlyStats, _ := GetPlayerStats(player, d, useDate)
         if yearlyStats.IsValid() {
             playerStats[utils.DateToNBAYear(d)] = yearlyStats.ConvertToPer()
         }
