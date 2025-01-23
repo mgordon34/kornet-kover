@@ -175,7 +175,7 @@ func (b Backtester) backtestDate(date time.Time) {
         log.Fatal("Error getting historical stats: ", err)
     }
 
-    todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists"})
+    todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists", "threes"})
     if err != nil {
         log.Fatal("Error getting historical odds: ", err)
     }

@@ -192,6 +192,24 @@ func runBacktest() {
         MaxUnder: 0,
         TotalMax: 200,
     }
+    tPicker := analysis.PropSelector{
+        StratName: "Threes Raw",
+        Thresholds: map[string]float32{
+            "points": 100,
+            "rebounds": 100,
+            "assists": 100,
+            "threes": 0,
+        },
+        TresholdType: analysis.Raw,
+        RequireOutlier: false,
+        MinOdds: -135,
+        MinGames: 10,
+        MinMinutes: 0,
+        BetSize: 100,
+        MaxOver: 1000,
+        MaxUnder: 0,
+        TotalMax: 200,
+    }
     pPickerP := analysis.PropSelector{
         StratName: "Points(outlier)",
         Thresholds: map[string]float32{
@@ -232,6 +250,24 @@ func runBacktest() {
             "points": 100,
             "rebounds": 100,
             "assists": 0,
+        },
+        TresholdType: analysis.Percent,
+        RequireOutlier: true,
+        MinOdds: -135,
+        MinGames: 10,
+        MinMinutes: 0,
+        BetSize: 100,
+        MaxOver: 1000,
+        MaxUnder: 0,
+        TotalMax: 1000,
+    }
+    tPickerP := analysis.PropSelector{
+        StratName: "Threes(outlier)",
+        Thresholds: map[string]float32{
+            "points": 100,
+            "rebounds": 100,
+            "assists": 100,
+            "threes": 0,
         },
         TresholdType: analysis.Percent,
         RequireOutlier: true,
@@ -352,9 +388,11 @@ func runBacktest() {
             {PropSelector: pPicker, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: rPicker, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: aPicker, BacktestResult: &backtesting.BacktestResult{}},
+            {PropSelector: tPicker, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: pPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: rPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: aPickerP, BacktestResult: &backtesting.BacktestResult{}},
+            {PropSelector: tPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: fpPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: frPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: faPickerP, BacktestResult: &backtesting.BacktestResult{}},

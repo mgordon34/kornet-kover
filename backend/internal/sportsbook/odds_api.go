@@ -237,7 +237,6 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
         "includeLinks=" + "true",
     }
     res, err := requestOddsAPI(fmt.Sprintf(endpont, "basketball_nba", game.ID), addlArgs)
-    log.Println(res)
     if err != nil {
         log.Fatal("Error getting odds api: ", err)
     }
