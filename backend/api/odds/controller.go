@@ -36,6 +36,7 @@ func AddPlayerLines(playerLines []PlayerLine) {
             playerLine.Timestamp,
             playerLine.Stat,
             playerLine.Side,
+            playerLine.Type,
             playerLine.Line,
             playerLine.Odds,
             playerLine.Link,
@@ -51,6 +52,7 @@ func AddPlayerLines(playerLines []PlayerLine) {
             "timestamp",
             "stat",
             "side",
+            "type",
             "line",
             "odds",
             "link",
@@ -64,8 +66,8 @@ func AddPlayerLines(playerLines []PlayerLine) {
 
 	_, err = txn.Exec(
         context.Background(),
-        `INSERT INTO player_lines (sport, player_index, timestamp, stat, side, line, odds, link)
-        SELECT sport, player_index, timestamp, stat, side, line, odds, link FROM player_lines_temp
+        `INSERT INTO player_lines (sport, player_index, timestamp, stat, side, type, line, odds, link)
+        SELECT sport, player_index, timestamp, stat, side, type, line, odds, link FROM player_lines_temp
         ON CONFLICT DO NOTHING`,
     )
 	if err != nil {
@@ -78,16 +80,16 @@ func AddPlayerLines(playerLines []PlayerLine) {
     log.Println("success adding player_lines")
 }
 
-func GetPlayerLinesForDate(date time.Time) ([]PlayerLine, error) {
+func GetPlayerLinesForDate(date time.Time, lineType string) ([]PlayerLine, error) {
     date = date.UTC()
     endDate := date.AddDate(0, 0, 1)
 
     db := storage.GetDB()
-    sql := `SELECT pl.id, pl.sport, pl.player_index, pl.timestamp, pl.stat, pl.side, pl.line, pl.odds, pl.link FROM player_lines pl INNER JOIN
-                (select player_index, stat, side, line, max(timestamp) as latest from player_lines where timestamp between ($1) and ($2) group by player_index, stat, side, line) mpl 
+    sql := `SELECT pl.id, pl.sport, pl.player_index, pl.timestamp, pl.stat, pl.side, pl.type, pl.line, pl.odds, pl.link FROM player_lines pl INNER JOIN
+                (select player_index, stat, side, type, line, max(timestamp) as latest from player_lines where (timestamp between ($1) and ($2)) and type = ($3) group by player_index, stat, side, line) mpl 
                 on pl.timestamp = mpl.latest and pl.player_index = mpl.player_index and pl.stat = mpl.stat and pl.side = mpl.side and pl.line = mpl.line;`
 
-    rows, err := db.Query(context.Background(), sql, date, endDate)
+    rows, err := db.Query(context.Background(), sql, date, endDate, lineType)
     if err != nil {
         log.Fatal("Error querying for player lines: ", err)
     }
@@ -109,7 +111,7 @@ func GetLastLine() (PlayerLine, error) {
     db := storage.GetDB()
 
     sql := `
-	SELECT id, sport, player_index, timestamp, stat, side, line, odds, link from player_lines
+	SELECT id, sport, player_index, timestamp, stat, side, type, line, odds, link from player_lines
     ORDER BY timestamp DESC
     LIMIT 1`
 
@@ -126,7 +128,7 @@ func GetLastLine() (PlayerLine, error) {
 func GetPlayerOddsForDate(date time.Time, stats []string) (map[string]map[string]PlayerOdds, error) {
     oddsMap := make(map[string]map[string]PlayerOdds)
 
-    lines, err := GetPlayerLinesForDate(date)
+    lines, err := GetPlayerLinesForDate(date, "mainline")
     if err != nil {
         return oddsMap, err
     }

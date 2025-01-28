@@ -88,6 +88,7 @@ func InitTables() {
             timestamp timestamp NOT NULL,
             stat VARCHAR(50),
             side VARCHAR(50),
+            type VARCHAR(50) NOT NULL,
             line REAL NOT NULL,
             odds INT NOT NULL,
             link VARCHAR(255),
