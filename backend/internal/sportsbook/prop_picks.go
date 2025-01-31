@@ -48,11 +48,11 @@ func requestPropOdds(endpoint string, addlArgs []string) (response string, err e
 
 func PPUpdateLines() error {
     lastLine, err := odds.GetLastLine()
-    log.Printf("Last line: %v", lastLine)
     if err != nil {
         log.Println(err)
         return err
     }
+    log.Printf("Last line: %v", lastLine)
 
     startDate := lastLine.Timestamp
     endDate := time.Now()
