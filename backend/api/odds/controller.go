@@ -86,7 +86,7 @@ func GetPlayerLinesForDate(date time.Time, lineType string) ([]PlayerLine, error
 
     db := storage.GetDB()
     sql := `SELECT pl.id, pl.sport, pl.player_index, pl.timestamp, pl.stat, pl.side, pl.type, pl.line, pl.odds, pl.link FROM player_lines pl INNER JOIN
-                (select player_index, stat, side, type, line, max(timestamp) as latest from player_lines where (timestamp between ($1) and ($2)) and type = ($3) group by player_index, stat, side, line) mpl 
+                (select player_index, stat, side, line, max(timestamp) as latest from player_lines where (timestamp between ($1) and ($2)) and type = ($3) group by player_index, stat, side, line) mpl 
                 on pl.timestamp = mpl.latest and pl.player_index = mpl.player_index and pl.stat = mpl.stat and pl.side = mpl.side and pl.line = mpl.line;`
 
     rows, err := db.Query(context.Background(), sql, date, endDate, lineType)
