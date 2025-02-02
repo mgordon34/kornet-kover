@@ -62,11 +62,11 @@ func GetUpdateLines(c *gin.Context) {
 
 func UpdateLines() error {
     lastLine, err := odds.GetLastLine()
-    log.Printf("Last line: %v", lastLine)
     if err != nil {
         log.Println(err)
         return err
     }
+    log.Printf("Last line: %v", lastLine)
 
     loc, _ := time.LoadLocation("America/New_York")
     d := lastLine.Timestamp.In(loc)
