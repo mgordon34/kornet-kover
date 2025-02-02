@@ -214,6 +214,7 @@ func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
                 Stat: stat,
                 Side: line.Name,
                 Line: line.Point,
+				Type: "mainline",
                 Odds: line.Price,
                 Link: line.Link,
             }
@@ -266,6 +267,7 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
                 Stat: stat,
                 Side: line.Name,
                 Line: line.Point,
+				Type: "mainline",
                 Odds: line.Price,
                 Link: line.Link,
             }
