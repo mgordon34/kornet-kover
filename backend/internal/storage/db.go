@@ -92,7 +92,7 @@ func InitTables() {
             line REAL NOT NULL,
             odds INT NOT NULL,
             link VARCHAR(255),
-            CONSTRAINT uq_prop_index UNIQUE(sport, player_index, timestamp, stat, side)
+            CONSTRAINT uq_prop_index UNIQUE(sport, player_index, timestamp, stat, side, line)
         )`,
         `CREATE TABLE IF NOT EXISTS nba_pip_factors (
             id SERIAL PRIMARY KEY,
