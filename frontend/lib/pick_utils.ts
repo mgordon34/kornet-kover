@@ -8,6 +8,8 @@ export function getPrediction(pick: PropPick): number {
             return pick.rebounds;
         case "assists":
             return pick.assists;
+        case "threes":
+            return pick.threes;
 
         default:
             return pick.points;

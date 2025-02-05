@@ -14,6 +14,7 @@ export interface PropPick {
   points: number;
   rebounds: number;
   assists: number;
+  threes: number;
 }
 
 export interface StrategyPicks {
