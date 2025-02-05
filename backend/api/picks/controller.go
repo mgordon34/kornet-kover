@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -165,6 +166,9 @@ func formatPicksByStrat(picks []PropPickFormatted) []PropPicksResponse {
                 StratName: pick.StratName,
             }
         }
+		if math.IsNaN(float64(pick.Threes)) {
+			pick.Threes = 0
+		}
 
         pPick := pickMap[pick.StratId]
         pPick.Picks = append(pPick.Picks, PickInfo{
