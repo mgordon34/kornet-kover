@@ -7,9 +7,9 @@ type PlayerLine struct {
     Sport           string    `json:"sport"`
     PlayerIndex     string    `json:"player_index"`
     Timestamp       time.Time `json:"timestamp"`
+    Type            string    `json:"type"`
     Stat            string    `json:"stat"`
     Side            string    `json:"side"`
-    Type            string    `json:"type"`
     Line            float32   `json:"line"`
     Odds            int       `json:"odds"`
     Link            string    `json:"link"`
