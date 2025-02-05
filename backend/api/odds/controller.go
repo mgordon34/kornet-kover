@@ -139,6 +139,31 @@ func GetPlayerOddsForDate(date time.Time, stats []string) (map[string]map[string
     return oddsMap, nil
 }
 
+func GetAlternatePlayerOddsForDate(date time.Time, stats []string) (map[string]map[string][]PlayerLine, error) {
+    oddsMap := make(map[string]map[string][]PlayerLine)
+
+    lines, err := GetPlayerLinesForDate(date, "alternate")
+    if err != nil {
+        return oddsMap, err
+    }
+    for _, line := range lines {
+        addAlternateLineToOddsMap(oddsMap, line)
+    }
+
+    return oddsMap, nil
+}
+
+func addAlternateLineToOddsMap(oddsMap map[string]map[string][]PlayerLine, line PlayerLine) {
+    if _, ok := oddsMap[line.PlayerIndex]; !ok {
+        oddsMap[line.PlayerIndex] = make(map[string][]PlayerLine)
+    }
+    if _, ok := oddsMap[line.PlayerIndex][line.Stat]; !ok {
+        oddsMap[line.PlayerIndex][line.Stat] = []PlayerLine{}
+    }
+
+    oddsMap[line.PlayerIndex][line.Stat] = append(oddsMap[line.PlayerIndex][line.Stat], line)
+}
+
 func addLineToOddsMap(oddsMap map[string]map[string]PlayerOdds, line PlayerLine) {
     if _, ok := oddsMap[line.PlayerIndex]; !ok {
         oddsMap[line.PlayerIndex] = make(map[string]PlayerOdds)
@@ -148,20 +173,31 @@ func addLineToOddsMap(oddsMap map[string]map[string]PlayerOdds, line PlayerLine)
     }
 
     pOdds := oddsMap[line.PlayerIndex][line.Stat]
-    if line.Side == "Over" && isLineCloser(pOdds.Over, line) {
+    if line.Side == "Over" && isLineCloser(pOdds.Over, line, 0) {
         pOdds.Over = line
-    } else if isLineCloser(pOdds.Under, line) {
+    } else if line.Side == "Under" && isLineCloser(pOdds.Under, line, 0) {
         pOdds.Under = line
     }
     oddsMap[line.PlayerIndex][line.Stat] = pOdds
 }
 
-func isLineCloser(curLine PlayerLine, newLine PlayerLine) bool {
-    if curLine.Odds == 0 {
+func isLineCloser(currLine PlayerLine, newLine PlayerLine, target int) bool {
+    if currLine.Odds == 0 {
         return true
     }
-    curOdds := math.Abs(math.Abs(float64(curLine.Odds)))
-    newOdds := math.Abs(math.Abs(float64(newLine.Odds)))
+	curDiff := getDistanceFromTarget(currLine.Odds, target)
+	newDiff := getDistanceFromTarget(newLine.Odds, target)
 
-    return newOdds < curOdds
+    return newDiff < curDiff
+}
+
+func getDistanceFromTarget(odds int, target int) float64 {
+	var normalizedOdds int
+	if odds < 0 {
+		normalizedOdds = odds + 100
+	} else {
+		normalizedOdds = odds - 100
+	}
+
+	return math.Abs(float64(normalizedOdds - target))
 }

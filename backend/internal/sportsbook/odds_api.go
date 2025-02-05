@@ -178,13 +178,15 @@ func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
     endpont := "historical/sports/%s/events/%s/odds"
     addlArgs := []string {
         "date=" + game.CommenceTime.UTC().Format("2006-01-02T15:04:05Z"),
-        "bookmakers=" + "williamhill_us",
-        "markets=" + "player_points,player_rebounds,player_assists,player_threes",
+		"regions=us",
+        "bookmakers=" + "fanduel",
+        // "bookmakers=" + "williamhill_us",
+        // "markets=" + "player_points,player_rebounds,player_assists,player_threes",
+        "markets=" + "player_points_alternate,player_rebounds_alternate,player_assists_alternate,player_threes_alternate",
         "oddsFormat=" + "american",
         "includeLinks=" + "true",
     }
     res, err := requestOddsAPI(fmt.Sprintf(endpont, "basketball_nba", game.ID), addlArgs)
-    log.Println(res)
     if err != nil {
         log.Fatal("Error getting odds api: ", err)
     }
@@ -199,7 +201,8 @@ func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
         return lines
     }
     for _, market := range oddResponse.Data.Bookmakers[0].Markets {
-        stat := odds_markets[market.Key]
+		truncated_string := strings.ReplaceAll(market.Key, "_alternate", "")
+        stat := odds_markets[truncated_string]
         for _, line := range market.Outcomes {
             playerName := strings.Join(strings.Split(line.Description, " ")[:2], " ")
             playerIndex, err := players.PlayerNameToIndex(nameMap, playerName)
@@ -214,7 +217,7 @@ func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
                 Stat: stat,
                 Side: line.Name,
                 Line: line.Point,
-				Type: "mainline",
+				Type: getMarketType(market.Key),
                 Odds: line.Price,
                 Link: line.Link,
             }
@@ -232,8 +235,10 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
 
     endpont := "sports/%s/events/%s/odds"
     addlArgs := []string {
-        "bookmakers=" + "williamhill_us",
-        "markets=" + "player_points,player_rebounds,player_assists,player_threes",
+		"regions=us",
+        // "bookmakers=" + "williamhill_us",
+        // "markets=" + "player_points,player_rebounds,player_assists,player_threes,player_points_alternate",
+        "markets=" + "player_points_alternate",
         "oddsFormat=" + "american",
         "includeLinks=" + "true",
     }
@@ -252,7 +257,8 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
         return lines
     }
     for _, market := range OddsInfo.Bookmakers[0].Markets {
-        stat := odds_markets[market.Key]
+		truncated_string := strings.ReplaceAll(market.Key, "_alternate", "")
+        stat := odds_markets[truncated_string]
         for _, line := range market.Outcomes {
             playerName := strings.Join(strings.Split(line.Description, " ")[:2], " ")
             playerIndex, err := players.PlayerNameToIndex(nameMap, playerName)
@@ -267,7 +273,7 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
                 Stat: stat,
                 Side: line.Name,
                 Line: line.Point,
-				Type: "mainline",
+				Type: getMarketType(market.Key),
                 Odds: line.Price,
                 Link: line.Link,
             }
@@ -276,6 +282,13 @@ func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
     }
 
     return lines
+}
+
+func getMarketType(market string) string {
+	if strings.Contains(market, "alternate") {
+		return "alternate"
+	}
+	return "mainline"
 }
 
 func GetOdds(startDate time.Time, endDate time.Time) {

@@ -28,13 +28,13 @@ type BacktestResult struct {
 
 func (b *BacktestResult) addResult(pick analysis.PropPick, result players.PlayerAvg) {
     if result == nil {
-        log.Printf("Skipping result for %s, no stats found", pick.PlayerIndex)
+        log.Printf("Skipping result for %s, no stats found", pick.Analysis.PlayerIndex)
         return
     }
     b.Bets = append(b.Bets, &pick)
     actualValue := result.GetStats()[pick.Stat]
 
-    if pick.Side == "Over" && actualValue > pick.Over.Line || pick.Side == "Under" && actualValue < pick.Under.Line {
+    if pick.Side == "Over" && actualValue > pick.GetLine().Line || pick.Side == "Under" && actualValue < pick.GetLine().Line {
         pick.Result = "Win"
         b.Wins++
         b.Profit += calculateProfit(pick.BetSize, pick.GetLine().Odds)
@@ -57,6 +57,11 @@ func (b BacktestResult) printResults(name string) {
 func (b BacktestResult) resultBreakdown() {
     log.Println("------------------------------------------")
     pBrackets := map[float64][]analysis.PropPick{
+        -.5: []analysis.PropPick{},
+        -.4: []analysis.PropPick{},
+        -.3: []analysis.PropPick{},
+        -.2: []analysis.PropPick{},
+        -.1: []analysis.PropPick{},
         0: []analysis.PropPick{},
         .1: []analysis.PropPick{},
         .2: []analysis.PropPick{},
@@ -69,8 +74,13 @@ func (b BacktestResult) resultBreakdown() {
         .9: []analysis.PropPick{},
         1: []analysis.PropPick{},
     }
-    pKeys := []float64{0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1}
+    pKeys := []float64{-.5,-.4,-.3,-.2,-.1,0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1}
     rBrackets := map[float64][]analysis.PropPick{
+        -5: []analysis.PropPick{},
+        -4: []analysis.PropPick{},
+        -3: []analysis.PropPick{},
+        -2: []analysis.PropPick{},
+        -1: []analysis.PropPick{},
         0: []analysis.PropPick{},
         .5: []analysis.PropPick{},
         1: []analysis.PropPick{},
@@ -86,17 +96,42 @@ func (b BacktestResult) resultBreakdown() {
         10: []analysis.PropPick{},
         15: []analysis.PropPick{},
     }
-    rKeys := []float64{0,.5,1,1.5,2,2.5,3,3.5,4,4.5,5,8,10,15}
+    rKeys := []float64{-5,-4,-3,-2,-1,0,.5,1,1.5,2,2.5,3,3.5,4,4.5,5,8,10,15}
+    oBrackets := map[int][]analysis.PropPick{
+        0: []analysis.PropPick{},
+        100: []analysis.PropPick{},
+        200: []analysis.PropPick{},
+        300: []analysis.PropPick{},
+        400: []analysis.PropPick{},
+        500: []analysis.PropPick{},
+        600: []analysis.PropPick{},
+        700: []analysis.PropPick{},
+        800: []analysis.PropPick{},
+        900: []analysis.PropPick{},
+        1000: []analysis.PropPick{},
+    }
+    oKeys := []int{0,100,200,300,400,500,600,700,800,900,1000}
     for _, pick := range b.Bets {
         for key := range pBrackets {
-            if math.Abs(float64(pick.PDiff)) > key {
+            if float64(pick.PDiff) > key {
                 pBrackets[key] = append(pBrackets[key], *pick)
             }
         }
         for key := range rBrackets {
-            if math.Abs(float64(pick.Diff)) > key {
+            if float64(pick.Diff) > key {
                 rBrackets[key] = append(rBrackets[key], *pick)
             }
+        }
+        for key := range oBrackets {
+            if pick.GetLine().Odds >= key && pick.GetLine().Odds < (key + 100) {
+                oBrackets[key] = append(oBrackets[key], *pick)
+            }
+			if key == 1000 && pick.GetLine().Odds >= 1100 {
+                oBrackets[key] = append(oBrackets[key], *pick)
+			}
+			if key == 0 && pick.GetLine().Odds < 0 {
+                oBrackets[key] = append(oBrackets[key], *pick)
+			}
         }
     }
 
@@ -124,6 +159,19 @@ func (b BacktestResult) resultBreakdown() {
             }
         }
         log.Printf("%v: %v winrate and $%.2f profit[%v]", key, wins/float32(len(rBrackets[key])), profit, len(rBrackets[key]))
+    }
+    log.Println("------------------------------------------")
+    for _, key := range oKeys {
+        var wins, profit float32
+        for _, bet := range oBrackets[key] {
+            if bet.Result == "Win" {
+                wins++
+                profit += calculateProfit(bet.BetSize, bet.GetLine().Odds)
+            } else {
+                profit -= bet.BetSize
+            }
+        }
+        log.Printf("%v: %v winrate and $%.2f profit[%v]", key, wins/float32(len(oBrackets[key])), profit, len(oBrackets[key]))
     }
     log.Println("------------------------------------------")
 }
@@ -175,7 +223,8 @@ func (b Backtester) backtestDate(date time.Time) {
         log.Fatal("Error getting historical stats: ", err)
     }
 
-    todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists", "threes"})
+    // todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists", "threes"})
+    todaysOdds, err := odds.GetAlternatePlayerOddsForDate(date, []string{"points", "rebounds", "assists", "threes"})
     if err != nil {
         log.Fatal("Error getting historical odds: ", err)
     }
@@ -201,11 +250,11 @@ func (b Backtester) backtestDate(date time.Time) {
 
     var picks []analysis.PropPick
     for _, strategy := range b.Strategies {
-        picks, _ = strategy.PickProps(todaysOdds, results, date, false)
+        picks, _ = strategy.PickAlternateProps(todaysOdds, results, date, false)
 
         for _, pick := range picks {
-            log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f Odds: %v/%v", pick.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.Over.Odds, pick.Under.Odds)
-            strategy.addResult(pick, statMap[pick.PlayerIndex])
+            log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f Odds: %v/%v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.GetLine().Line, pick.Diff, pick.Over.Odds, pick.Under.Odds)
+            strategy.addResult(pick, statMap[pick.Analysis.PlayerIndex])
         }
     }
 }
