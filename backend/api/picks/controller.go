@@ -106,6 +106,7 @@ type PropPickFormatted struct {
     Points          float32     `json:"points"`
     Rebounds        float32     `json:"rebounds"`
     Assists         float32     `json:"assists"`
+    Threes          float32     `json:"threes"`
     Minutes         float32     `json:"minutes"`
     Date            time.Time   `json:"date"`
 }
@@ -114,7 +115,7 @@ func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
 
     sql := `
     SELECT pp.id, u.id as user_id, pp.strat_id, s.name as strat_name, p.name, pl.side, pl.line, pl.stat, pl.odds, 
-    npp.num_games, npp.points, npp.rebounds, npp.assists, npp.minutes, pp.date from prop_picks pp
+    npp.num_games, npp.points, npp.rebounds, npp.assists, npp.threes, npp.minutes, pp.date from prop_picks pp
     LEFT JOIN player_lines pl on pl.id = pp.line_id
     LEFT JOIN players p on p.index = pl.player_index
     LEFT JOIN nba_pip_predictions npp on npp.player_index = pl.player_index and npp.date = pp.date
@@ -148,6 +149,7 @@ type PickInfo struct {
     Points          float32     `json:"points"`
     Rebounds        float32     `json:"rebounds"`
     Assists         float32     `json:"assists"`
+    Threes          float32     `json:"threes"`
     Minutes         float32     `json:"minutes"`
     Date            time.Time   `json:"date"`
 }
@@ -177,6 +179,7 @@ func formatPicksByStrat(picks []PropPickFormatted) []PropPicksResponse {
             Rebounds: pick.Rebounds,
             Assists: pick.Assists,
             Minutes: pick.Minutes,
+            Threes: pick.Threes,
             Date: pick.Date,
         })
         pickMap[pick.StratId] = pPick
