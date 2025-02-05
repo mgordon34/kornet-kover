@@ -84,7 +84,7 @@ func runSportsbookGetGames() {
     endDate, _ := time.ParseInLocation("2006-01-02", "2025-01-21", loc)
     log.Printf("Finding games from %v to %v", startDate, endDate)
 
-    sportsbook.GetOdds(startDate, endDate)
+    sportsbook.GetOdds(startDate, endDate, "mainline")
 }
 
 func runGetPlayerOdds() {

@@ -23,10 +23,10 @@ const (
 )
 
 var odds_markets = map[string]string{
-    "player_points": "points",
-    "player_rebounds": "rebounds",
-    "player_assists": "assists",
-    "player_threes": "threes",
+	"player_points": "points",
+	"player_rebounds": "rebounds",
+	"player_assists": "assists",
+	"player_threes": "threes",
 }
 
 func requestOddsAPI(endpoint string, addlArgs []string) (response string, err error) {
@@ -73,7 +73,8 @@ func UpdateLines() error {
     t := time.Now().In(loc)
     startDate := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-    GetOdds(startDate, today)
+    GetOdds(startDate, today, "mainline")
+    GetOdds(startDate, today, "alternate")
     GetLiveOdds(today)
 
     return nil
@@ -170,19 +171,26 @@ type OddsInfo struct {
     } `json:"bookmakers"`
 }
 
-func GetOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
+func GetOddsForGame(game EventInfo, oddsType string, apiGetter APIGetter) []odds.PlayerLine {
     log.Printf("Getting odds for %s vs %s", game.HomeTeam, game.AwayTeam)
     var lines []odds.PlayerLine
     nameMap := make(map[string]string)
+
+	var markets, bookmakers string
+	if oddsType == "alternate" {
+		bookmakers = "fanduel"
+		markets = "player_points_alternate,player_rebounds_alternate,player_assists_alternate,player_threes_alternate"
+	} else {
+		bookmakers = "williamhill_us"
+        markets = "player_points,player_rebounds,player_assists,player_threes"
+	}
 
     endpont := "historical/sports/%s/events/%s/odds"
     addlArgs := []string {
         "date=" + game.CommenceTime.UTC().Format("2006-01-02T15:04:05Z"),
 		"regions=us",
-        "bookmakers=" + "fanduel",
-        // "bookmakers=" + "williamhill_us",
-        // "markets=" + "player_points,player_rebounds,player_assists,player_threes",
-        "markets=" + "player_points_alternate,player_rebounds_alternate,player_assists_alternate,player_threes_alternate",
+        "bookmakers=" + bookmakers,
+        "markets=" + markets,
         "oddsFormat=" + "american",
         "includeLinks=" + "true",
     }
@@ -291,14 +299,14 @@ func getMarketType(market string) string {
 	return "mainline"
 }
 
-func GetOdds(startDate time.Time, endDate time.Time) {
+func GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
     for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
         log.Printf("Getting historical sportsbook odds for %v...", d)
         var lines []odds.PlayerLine
 
         games := GetGamesForDate(d, requestOddsAPI)
         for _, game := range games {
-            lines = append(lines, GetOddsForGame(game, requestOddsAPI)...)
+            lines = append(lines, GetOddsForGame(game, oddsType, requestOddsAPI)...)
         }
 
         odds.AddPlayerLines(lines)
