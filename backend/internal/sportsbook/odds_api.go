@@ -75,7 +75,8 @@ func UpdateLines() error {
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
     GetOdds(startDate, today, "mainline")
     GetOdds(startDate, today, "alternate")
-    GetLiveOdds(today)
+    GetLiveOdds(today, "mainline")
+    GetLiveOdds(today, "alternate")
 
     return nil
 }
@@ -236,17 +237,24 @@ func GetOddsForGame(game EventInfo, oddsType string, apiGetter APIGetter) []odds
     return lines
 }
 
-func GetLiveOddsForGame(game EventInfo, apiGetter APIGetter) []odds.PlayerLine {
+func GetLiveOddsForGame(game EventInfo, oddsType string, apiGetter APIGetter) []odds.PlayerLine {
     log.Printf("Getting odds for %s vs %s", game.HomeTeam, game.AwayTeam)
     var lines []odds.PlayerLine
     nameMap := make(map[string]string)
 
+	var markets, bookmakers string
+	if oddsType == "alternate" {
+		bookmakers = "fanduel"
+		markets = "player_points_alternate,player_rebounds_alternate,player_assists_alternate,player_threes_alternate"
+	} else {
+		bookmakers = "williamhill_us"
+        markets = "player_points,player_rebounds,player_assists,player_threes"
+	}
+
     endpont := "sports/%s/events/%s/odds"
     addlArgs := []string {
-		"regions=us",
-        // "bookmakers=" + "williamhill_us",
-        // "markets=" + "player_points,player_rebounds,player_assists,player_threes,player_points_alternate",
-        "markets=" + "player_points_alternate",
+        "bookmakers=" + bookmakers,
+        "markets=" + markets,
         "oddsFormat=" + "american",
         "includeLinks=" + "true",
     }
@@ -313,13 +321,13 @@ func GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
     }
 }
 
-func GetLiveOdds(date time.Time) {
+func GetLiveOdds(date time.Time, oddsType string) {
     log.Printf("Getting live sportsbook odds for %v...", date)
     var lines []odds.PlayerLine
 
     games := GetLiveGamesForDate(date, requestOddsAPI)
     for _, game := range games {
-        lines = append(lines, GetLiveOddsForGame(game, requestOddsAPI)...)
+        lines = append(lines, GetLiveOddsForGame(game, oddsType, requestOddsAPI)...)
     }
 
     odds.AddPlayerLines(lines)
