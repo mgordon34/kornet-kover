@@ -309,7 +309,7 @@ func getMarketType(market string) string {
 
 func GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
     for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
-        log.Printf("Getting historical sportsbook odds for %v...", d)
+        log.Printf("Getting historical %s sportsbook odds for %v...", oddsType, d)
         var lines []odds.PlayerLine
 
         games := GetGamesForDate(d, requestOddsAPI)
@@ -322,7 +322,7 @@ func GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
 }
 
 func GetLiveOdds(date time.Time, oddsType string) {
-    log.Printf("Getting live sportsbook odds for %v...", date)
+    log.Printf("Getting live %s sportsbook odds for %v...", oddsType, date)
     var lines []odds.PlayerLine
 
     games := GetLiveGamesForDate(date, requestOddsAPI)
