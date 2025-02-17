@@ -107,15 +107,16 @@ type PlayerOdds struct {
     Under   PlayerLine
 }
 
-func GetLastLine() (PlayerLine, error) {
+func GetLastLine(oddsType string) (PlayerLine, error) {
     db := storage.GetDB()
 
     sql := `
 	SELECT id, sport, player_index, timestamp, stat, side, type, line, odds, link from player_lines
+	where type = ($1)
     ORDER BY timestamp DESC
     LIMIT 1`
 
-    row, _ := db.Query(context.Background(), sql)
+    row, _ := db.Query(context.Background(), sql, oddsType)
     defer row.Close()
     pLine, err := pgx.CollectOneRow(row, pgx.RowToStructByName[PlayerLine])
     if err != nil {

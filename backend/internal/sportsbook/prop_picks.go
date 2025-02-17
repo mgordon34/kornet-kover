@@ -47,7 +47,7 @@ func requestPropOdds(endpoint string, addlArgs []string) (response string, err e
 }
 
 func PPUpdateLines() error {
-    lastLine, err := odds.GetLastLine()
+    lastLine, err := odds.GetLastLine("mainline")
     if err != nil {
         log.Println(err)
         return err

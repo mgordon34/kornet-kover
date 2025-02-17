@@ -61,7 +61,7 @@ func GetUpdateLines(c *gin.Context) {
 }
 
 func UpdateLines() error {
-    lastLine, err := odds.GetLastLine()
+    lastLine, err := odds.GetLastLine("mainline")
     if err != nil {
         log.Println(err)
         return err
