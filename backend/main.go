@@ -80,11 +80,11 @@ func runGetPIPPredictions() {
 
 func runSportsbookGetGames() {
     loc, _ := time.LoadLocation("America/New_York")
-    startDate, _ := time.ParseInLocation("2006-01-02", "2024-01-25", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2024-10-24", loc)
+    startDate, _ := time.ParseInLocation("2006-01-02", "2023-10-24", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2025-01-21", loc)
     log.Printf("Finding games from %v to %v", startDate, endDate)
 
-    sportsbook.GetOdds(startDate, endDate)
+    sportsbook.GetOdds(startDate, endDate, "mainline")
 }
 
 func runGetPlayerOdds() {
@@ -137,20 +137,20 @@ func runGetPlayerPip() {
 
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
-    startDate, _ := time.ParseInLocation("2006-01-02", "2024-11-01", loc)
+    startDate, _ := time.ParseInLocation("2006-01-02", "2023-12-01", loc)
     // startDate, _ := time.ParseInLocation("2006-01-02", "2024-12-01", loc)
-    // endDate, _ := time.ParseInLocation("2006-01-02", "2023-11-30", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2025-01-08", loc)
+    // endDate, _ := time.ParseInLocation("2006-01-02", "2025-01-20", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2024-04-15", loc)
     pPicker := analysis.PropSelector{
         StratName: "Points Raw",
         Thresholds: map[string]float32{
-            "points": 0,
+            "points": -10,
             "rebounds": 100,
             "assists": 100,
         },
         TresholdType: analysis.Raw,
         RequireOutlier: false,
-        MinOdds: -135,
+        MinOdds: 300,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -162,12 +162,12 @@ func runBacktest() {
         StratName: "Rebounds Raw",
         Thresholds: map[string]float32{
             "points": 100,
-            "rebounds": 0,
+            "rebounds": -10,
             "assists": 100,
         },
         TresholdType: analysis.Raw,
         RequireOutlier: false,
-        MinOdds: -135,
+        MinOdds: 300,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -180,11 +180,11 @@ func runBacktest() {
         Thresholds: map[string]float32{
             "points": 100,
             "rebounds": 100,
-            "assists": 0,
+            "assists": -10,
         },
         TresholdType: analysis.Raw,
         RequireOutlier: false,
-        MinOdds: -135,
+        MinOdds: 300,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -198,11 +198,11 @@ func runBacktest() {
             "points": 100,
             "rebounds": 100,
             "assists": 100,
-            "threes": 0,
+            "threes": -10,
         },
         TresholdType: analysis.Raw,
         RequireOutlier: false,
-        MinOdds: -135,
+        MinOdds: 300,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -213,13 +213,13 @@ func runBacktest() {
     pPickerP := analysis.PropSelector{
         StratName: "Points(outlier)",
         Thresholds: map[string]float32{
-            "points": 0,
+            "points": -.5,
             "rebounds": 100,
             "assists": 100,
         },
         TresholdType: analysis.Percent,
         RequireOutlier: true,
-        MinOdds: -135,
+        MinOdds: 500,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -231,12 +231,12 @@ func runBacktest() {
         StratName: "Rebounds(outlier)",
         Thresholds: map[string]float32{
             "points": 100,
-            "rebounds": 0,
+            "rebounds": -.5,
             "assists": 100,
         },
         TresholdType: analysis.Percent,
         RequireOutlier: true,
-        MinOdds: -135,
+        MinOdds: 500,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -249,11 +249,11 @@ func runBacktest() {
         Thresholds: map[string]float32{
             "points": 100,
             "rebounds": 100,
-            "assists": 0,
+            "assists": -.5,
         },
         TresholdType: analysis.Percent,
         RequireOutlier: true,
-        MinOdds: -135,
+        MinOdds: 500,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -267,11 +267,11 @@ func runBacktest() {
             "points": 100,
             "rebounds": 100,
             "assists": 100,
-            "threes": 0,
+            "threes": -.5,
         },
         TresholdType: analysis.Percent,
         RequireOutlier: true,
-        MinOdds: -135,
+        MinOdds: 500,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -282,13 +282,13 @@ func runBacktest() {
     fpPickerP := analysis.PropSelector{
         StratName: "Points(weighted)",
         Thresholds: map[string]float32{
-            "points": .3,
+            "points": .5,
             "rebounds": 100,
             "assists": 100,
         },
         TresholdType: analysis.Percent,
         RequireOutlier: false,
-        MinOdds: -135,
+        MinOdds: 100,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -300,12 +300,12 @@ func runBacktest() {
         StratName: "Rebounds(weighted)",
         Thresholds: map[string]float32{
             "points": 100,
-            "rebounds": .3,
+            "rebounds": .2,
             "assists": 100,
         },
         TresholdType: analysis.Percent,
         RequireOutlier: false,
-        MinOdds: -135,
+        MinOdds: 100,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -318,11 +318,29 @@ func runBacktest() {
         Thresholds: map[string]float32{
             "points": 100,
             "rebounds": 100,
-            "assists": .3,
+            "assists": .2,
         },
         TresholdType: analysis.Percent,
         RequireOutlier: false,
-        MinOdds: -135,
+        MinOdds: 100,
+        MinGames: 10,
+        MinMinutes: 0,
+        BetSize: 100,
+        MaxOver: 1000,
+        MaxUnder: 0,
+        TotalMax: 100,
+    }
+    ftPickerP := analysis.PropSelector{
+        StratName: "Threes(weighted)",
+        Thresholds: map[string]float32{
+            "points": 100,
+            "rebounds": 100,
+            "assists": 100,
+            "threes": .3,
+        },
+        TresholdType: analysis.Percent,
+        RequireOutlier: false,
+        MinOdds: 100,
         MinGames: 10,
         MinMinutes: 0,
         BetSize: 100,
@@ -414,6 +432,7 @@ func runBacktest() {
             {PropSelector: fpPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: frPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: faPickerP, BacktestResult: &backtesting.BacktestResult{}},
+            {PropSelector: ftPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: fsPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: foPickerP, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: fPickerP, BacktestResult: &backtesting.BacktestResult{}},
