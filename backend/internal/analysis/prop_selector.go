@@ -425,5 +425,10 @@ func runPickProps() ([]PropPick, error) {
 		log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, ID: %v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.LineId)
 	}
 
+	altOddsMap, err := odds.GetAlternatePlayerOddsForDate(today, []string{"points, rebounds, assists, threes"})
+	if err != nil {
+		return picks, err
+	}
+
 	return picks, nil
 }
