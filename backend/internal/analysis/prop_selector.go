@@ -431,17 +431,17 @@ func runPickProps() ([]PropPick, error) {
 	}
 	altPicker := PropSelector{
 		StratId:   4,
-		StratName: "Threes",
+		StratName: "Alt Points",
 		Thresholds: map[string]float32{
-			"points":   1000,
+			"points":   -5,
 			"rebounds": 1000,
 			"assists":  1000,
-			"threes":   .6,
+			"threes":   1000,
 		},
-		TresholdType:   Percent,
+		TresholdType:   Raw,
 		RequireOutlier: true,
 		MinGames:       10,
-		MinOdds:        -135,
+		MinOdds:        200,
 		BetSize:        100,
 		MaxOver:        100,
 		MaxUnder:       0,
