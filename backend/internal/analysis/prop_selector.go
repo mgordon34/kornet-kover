@@ -429,6 +429,32 @@ func runPickProps() ([]PropPick, error) {
 	if err != nil {
 		return picks, err
 	}
+	altPicker := PropSelector{
+		StratId:   4,
+		StratName: "Threes",
+		Thresholds: map[string]float32{
+			"points":   1000,
+			"rebounds": 1000,
+			"assists":  1000,
+			"threes":   .6,
+		},
+		TresholdType:   Percent,
+		RequireOutlier: true,
+		MinGames:       10,
+		MinOdds:        -135,
+		BetSize:        100,
+		MaxOver:        100,
+		MaxUnder:       0,
+		TotalMax:       100,
+	}
+	altPicks, err := altPicker.PickAlternateProps(altOddsMap, results, today, true)
+	if err != nil {
+		return picks, err
+	}
+	log.Printf("================================%v=========================================", altPicker.StratName)
+	for _, pick := range altPicks {
+		log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, ID: %v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.LineId)
+	}
 
 	return picks, nil
 }
