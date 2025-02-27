@@ -274,7 +274,7 @@ func GetPlayerStatsForGames(gameIds []string) (map[string]PlayerAvg, error) {
 func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
 	playerStats := make(map[int]PlayerAvg)
 
-	for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
+	for d := startDate; !d.After(endDate); d = d.AddDate(1, 0, 0) {
 		useDate := d.AddDate(1, 0, 0)
 		if useDate.After(endDate) {
 			useDate = endDate
@@ -337,7 +337,7 @@ func GetPlayerStatsWithPlayer(player string, defender string, relationship Relat
 func GetPlayerPerWithPlayerByYear(player string, defender string, relationship Relationship, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
 	playerStats := make(map[int]PlayerAvg)
 
-	for d := startDate; d.After(endDate) == false; d = d.AddDate(1, 0, 0) {
+	for d := startDate; !d.After(endDate); d = d.AddDate(1, 0, 0) {
 		useDate := d.AddDate(1, 0, 0)
 		if useDate.After(endDate) {
 			useDate = endDate
