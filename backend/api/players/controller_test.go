@@ -7,25 +7,27 @@ import (
 )
 
 func TestPlayerNameToIndex(t *testing.T) {
-    storage.InitDB()
+	storage.InitTables()
 
-    playerName := "Aaron Gordon"
-    want := "gordoaa01"
-    index, err := PlayerNameToIndex(playerName)
-    if err != nil {
-        t.Fatalf(`PlayerNameToIndex resulted in err: %v`, err)
-    }
-    if index != want {
-        t.Fatalf(`PlayerNameToIndex = %s, want match for %s`, index, want)
-    }
+	nameMap := map[string]string{}
+	playerName := "Aaron Gordon"
+	want := "gordoaa01"
+	index, err := PlayerNameToIndex(nameMap, playerName)
+	if err != nil {
+		t.Fatalf(`PlayerNameToIndex resulted in err: %v`, err)
+	}
+	if index != want {
+		t.Fatalf(`PlayerNameToIndex = %s, want match for %s`, index, want)
+	}
 }
 
 func TestPlayerNameToIndexWithBadName(t *testing.T) {
-    storage.InitDB()
+	storage.InitTables()
 
-    badName := "Aaron Gordo"
-    index, err := PlayerNameToIndex(badName)
-    if err == nil {
-        t.Fatalf(`PlayerNameToIndex incorrectly found result: %v`, index)
-    }
+	nameMap := map[string]string{}
+	badName := "Aaron Gordo"
+	index, err := PlayerNameToIndex(nameMap, badName)
+	if err == nil {
+		t.Fatalf(`PlayerNameToIndex incorrectly found result: %v`, index)
+	}
 }
