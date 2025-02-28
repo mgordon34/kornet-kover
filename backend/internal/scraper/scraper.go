@@ -38,7 +38,7 @@ func ScrapeNbaTeams() {
         })
     })
 
-    c.Visit("https://www.basketball-reference.com/leagues/NBA_2024_standings.html")
+    c.Visit(utils.SportConfigs[utils.NBA].Domain + "/leagues/NBA_2024_standings.html")
 
     teams.AddTeams(nbaTeams)
 }
@@ -51,10 +51,12 @@ func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) erro
 
     c := colly.NewCollector()
     c.OnHTML("td.gamelink", func(e *colly.HTMLElement) {
+        log.Printf("Found game: %s", e.ChildAttr("a", "href"))
         games := e.ChildAttrs("a", "href")
         for _, gameString := range games {
+            log.Printf("Scraping game: %s", gameString)
             time.Sleep(4 * time.Second)
-            scrapeGame(gameString)
+            scrapeGame(sport, gameString)
         }
     })
 
@@ -62,7 +64,7 @@ func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) erro
         log.Printf("Scraping %s games for date: %v", sport, d)
         time.Sleep(4 * time.Second)
 
-        url := fmt.Sprintf("https://www.%s%s/index.fcgi?month=%d&day=%d&year=%d",
+        url := fmt.Sprintf("%s%s/index.fcgi?month=%d&day=%d&year=%d",
             config.Domain,
             config.BoxScoreURL,
             d.Month(),
@@ -75,8 +77,14 @@ func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) erro
     return nil
 }
 
-func scrapeGame(gameString string) {
-    baseUrl := "https://www.basketball-reference.com"
+func scrapeGame(sport utils.Sport, gameString string) {
+    config, ok := utils.SportConfigs[sport]
+    if !ok {
+        log.Printf("Unsupported sport: %s", sport)
+        return
+    }
+    baseUrl := config.Domain
+    
     var teams [2]string
     var scores [2]int
     var pSlice []players.Player
@@ -111,7 +119,7 @@ func scrapeGame(gameString string) {
         }
     })
 
-    c.Visit(baseUrl + gameString)
+    c.Visit(fmt.Sprintf("%s%s", baseUrl, gameString))
 
     dateString := strings.Split(gameString, "/")[2][:8]
     dateString = fmt.Sprintf("%s-%s-%s", dateString[:4], dateString[4:6], dateString[6:8])
@@ -256,7 +264,7 @@ func UpdateGames(sport utils.Sport) error {
     lastGameDate := lastGame.Date
     startDate := lastGameDate.AddDate(0, 0, 1)
     endDate := time.Now()
-    return ScrapeGames(utils.NBA, startDate, endDate)
+    return ScrapeGames(sport, startDate, endDate)
 }
 
 func UpdateActiveRosters() error {
@@ -288,7 +296,7 @@ func UpdateActiveRosters() error {
 func scrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
     var roster []players.PlayerRoster
 
-    url := fmt.Sprintf("https://www.basketball-reference.com/teams/%v/2025.html", teamIndex)
+    url := fmt.Sprintf("%s/teams/%v/2025.html", utils.SportConfigs[utils.NBA].Domain, teamIndex)
     c := colly.NewCollector()
     log.Println("Visiting team page for ", teamIndex)
     time.Sleep(4 * time.Second)
@@ -393,7 +401,7 @@ func pruneActiveRoster(activeRoster []players.PlayerRoster) []players.PlayerRost
 }
 
 func ScrapeTodaysRosters() [][]players.Roster {
-    baseUrl := "https://www.basketball-reference.com/leagues/NBA_2025_games-%v.html"
+    baseUrl := "%s/leagues/NBA_2025_games-%v.html"
     c := colly.NewCollector()
     var games [][]players.Roster
     now := time.Now()
@@ -422,14 +430,14 @@ func ScrapeTodaysRosters() [][]players.Roster {
         })
     })
 
-    str := fmt.Sprintf(baseUrl, month)
+    str := fmt.Sprintf(baseUrl, utils.SportConfigs[utils.NBA].Domain, month)
     c.Visit(str)
 
     return games
 }
 
 func ScrapeTodaysGames() [][]string {
-    baseUrl := "https://www.basketball-reference.com/leagues/NBA_2025_games-%v.html"
+    baseUrl := "%s/leagues/NBA_2025_games-%v.html"
     c := colly.NewCollector()
     var games [][]string
 
@@ -455,7 +463,7 @@ func ScrapeTodaysGames() [][]string {
         })
     })
 
-    str := fmt.Sprintf(baseUrl, month)
+    str := fmt.Sprintf(baseUrl, utils.SportConfigs[utils.NBA].Domain, month)
     c.Visit(str)
 
     return games
@@ -463,7 +471,7 @@ func ScrapeTodaysGames() [][]string {
 
 func getRosterForTeam(teamIndex string, missingPlayers map[string]string) players.Roster {
     var roster = players.Roster{}
-    url := fmt.Sprintf("https://www.basketball-reference.com/teams/%v/2025.html", teamIndex)
+    url := fmt.Sprintf("%s/teams/%v/2025.html", utils.SportConfigs[utils.NBA].Domain, teamIndex)
     c := colly.NewCollector()
     log.Println("Visiting team page for ", teamIndex)
     time.Sleep(4 * time.Second)
@@ -521,7 +529,7 @@ func GetMissingPlayers() map[string]string {
         })
     })
 
-    c.Visit("https://www.basketball-reference.com/friv/injuries.fcgi")
+    c.Visit(utils.SportConfigs[utils.NBA].Domain + "/friv/injuries.fcgi")
     return players
 }
 

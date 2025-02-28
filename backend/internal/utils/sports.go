@@ -14,11 +14,11 @@ type SportConfig struct {
 
 var SportConfigs = map[Sport]SportConfig{
 	NBA: {
-		Domain:      "basketball-reference.com",
+		Domain:      "https://www.basketball-reference.com",
 		BoxScoreURL: "/boxscores",
 	},
 	MLB: {
-		Domain:      "baseball-reference.com",
+		Domain:      "https://www.baseball-reference.com",
 		BoxScoreURL: "/boxes",
 	},
 }
