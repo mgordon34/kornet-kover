@@ -27,7 +27,6 @@ func main() {
 
     // runUpdateGames()
     // runUpdateLines()
-    // runPickProps()
 
     // runBacktest()
 
