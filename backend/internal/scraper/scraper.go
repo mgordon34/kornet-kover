@@ -226,7 +226,7 @@ func fixPlayerStats(gameId int, pMap map[string]players.PlayerGame) []players.Pl
 }
 
 func GetUpdateGames(c *gin.Context) {
-    err := UpdateGames()
+    err := UpdateGames(utils.NBA)
     if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
@@ -247,7 +247,7 @@ func GetUpdateActiveRosters(c *gin.Context) {
 // This is done by utilizing GetLastGame to determine the date window to perform game scraping
 // Returns the number of new games added or error
 // TODO: Optimizations for offseason could be made here
-func UpdateGames() error {
+func UpdateGames(sport utils.Sport) error {
     lastGame, err := games.GetLastGame()
     if err != nil {
         return err

@@ -17,6 +17,7 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/scraper"
 	"github.com/mgordon34/kornet-kover/internal/sportsbook"
 	"github.com/mgordon34/kornet-kover/internal/storage"
+	"github.com/mgordon34/kornet-kover/internal/utils"
 )
 
 func main() {
@@ -60,7 +61,7 @@ func startServer() {
 
 func runUpdateGames() {
     log.Println("Updating games...")
-    scraper.UpdateGames()
+    scraper.UpdateGames(utils.NBA)
 }
 
 func runUpdateLines() {
