@@ -1,7 +1,6 @@
 package analysis
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -130,7 +129,7 @@ func (p PropSelector) PickProps(props map[string]map[string]odds.PlayerOdds, ana
 		picks.MarkOldPicksInvalid(p.StratId, date)
 		err := picks.AddPropPicks(models)
 		if err != nil {
-			return selectedPicks, errors.New(fmt.Sprintf("Error getting saving picks: %v", err))
+			return selectedPicks, fmt.Errorf("error getting saving picks: %v", err)
 		}
 	}
 
@@ -186,7 +185,7 @@ func (p PropSelector) PickAlternateProps(props map[string]map[string][]odds.Play
 		picks.MarkOldPicksInvalid(p.StratId, date)
 		err := picks.AddPropPicks(models)
 		if err != nil {
-			return selectedPicks, errors.New(fmt.Sprintf("Error getting saving picks: %v", err))
+			return selectedPicks, fmt.Errorf("error getting saving picks: %v", err)
 		}
 	}
 
