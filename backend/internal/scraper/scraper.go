@@ -16,6 +16,7 @@ import (
 	"github.com/mgordon34/kornet-kover/api/games"
 	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/api/teams"
+	"github.com/mgordon34/kornet-kover/internal/utils"
 )
 
 func ScrapeNbaTeams() {
@@ -37,13 +38,17 @@ func ScrapeNbaTeams() {
         })
     })
 
-    c.Visit( "https://www.basketball-reference.com/leagues/NBA_2024_standings.html")
+    c.Visit("https://www.basketball-reference.com/leagues/NBA_2024_standings.html")
 
     teams.AddTeams(nbaTeams)
 }
 
-func ScrapeGames(startDate time.Time, endDate time.Time) {
-    baseUrl := "https://www.basketball-reference.com/boxscores/index.fcgi?month=%d&day=%d&year=%d"
+func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) error {
+    config, ok := utils.SportConfigs[sport]
+    if !ok {
+        return fmt.Errorf("unsupported sport: %s", sport)
+    }
+
     c := colly.NewCollector()
     c.OnHTML("td.gamelink", func(e *colly.HTMLElement) {
         games := e.ChildAttrs("a", "href")
@@ -53,12 +58,21 @@ func ScrapeGames(startDate time.Time, endDate time.Time) {
         }
     })
 
-    for d := startDate; d.After(endDate) == false; d = d.AddDate(0, 0, 1) {
-        log.Printf("Scraping games for date: %v", d)
+    for d := startDate; !d.After(endDate); d = d.AddDate(0, 0, 1) {
+        log.Printf("Scraping %s games for date: %v", sport, d)
         time.Sleep(4 * time.Second)
 
-        c.Visit(fmt.Sprintf(baseUrl, d.Month(), d.Day(), d.Year()))
+        url := fmt.Sprintf("https://www.%s%s/index.fcgi?month=%d&day=%d&year=%d",
+            config.Domain,
+            config.BoxScoreURL,
+            d.Month(),
+            d.Day(),
+            d.Year(),
+        )
+        c.Visit(url)
     }
+
+    return nil
 }
 
 func scrapeGame(gameString string) {
@@ -106,13 +120,13 @@ func scrapeGame(gameString string) {
         return
     }
 
-    game := games.Game {
-        Sport: "nba",
+    game := games.Game{
+        Sport:     "nba",
         HomeIndex: teams[1],
         AwayIndex: teams[0],
         HomeScore: scores[1],
         AwayScore: scores[0],
-        Date: date,
+        Date:      date,
     }
     gameId, err := games.AddGame(game)
     if err != nil {
@@ -121,15 +135,13 @@ func scrapeGame(gameString string) {
 
     players.AddPlayers(pSlice)
 
-    var pgSlice []players.PlayerGame
-    pgSlice = fixPlayerStats(gameId, playerGames)
-    players.AddPlayerGames(pgSlice)
+    players.AddPlayerGames(fixPlayerStats(gameId, playerGames))
 }
 
 func collectStats(t *colly.HTMLElement, playerGames map[string]players.PlayerGame, tIndex string) {
     t.ForEach("tbody > tr", func(i int, tr *colly.HTMLElement) {
         if i == 5 {
-            return 
+            return
         }
         index := strings.Split(tr.ChildAttr("a", "href"), "/")[3]
         index = strings.TrimSuffix(index, ".html")
@@ -146,12 +158,12 @@ func collectStats(t *colly.HTMLElement, playerGames map[string]players.PlayerGam
     })
 }
 
-func getPlayers(t *colly.HTMLElement) []players.Player{
+func getPlayers(t *colly.HTMLElement) []players.Player {
     var pSlice []players.Player
 
     t.ForEach("tbody > tr", func(i int, tr *colly.HTMLElement) {
         if i == 5 {
-            return 
+            return
         }
 
         index := strings.Split(tr.ChildAttr("a", "href"), "/")[3]
@@ -235,17 +247,16 @@ func GetUpdateActiveRosters(c *gin.Context) {
 // This is done by utilizing GetLastGame to determine the date window to perform game scraping
 // Returns the number of new games added or error
 // TODO: Optimizations for offseason could be made here
-func UpdateGames() error{
+func UpdateGames() error {
     lastGame, err := games.GetLastGame()
     if err != nil {
         return err
     }
 
-    startDate := lastGame.Date
+    lastGameDate := lastGame.Date
+    startDate := lastGameDate.AddDate(0, 0, 1)
     endDate := time.Now()
-    ScrapeGames(startDate, endDate)
-
-    return nil
+    return ScrapeGames(utils.NBA, startDate, endDate)
 }
 
 func UpdateActiveRosters() error {
@@ -309,7 +320,7 @@ func getPlayersOnRoster(t *colly.HTMLElement) []string {
                     firstSplit := strings.Split(td.ChildAttr("a", "href"), "/")[3]
                     playerIndex := strings.Split(firstSplit, ".")[0]
                     rosterPlayers = append(rosterPlayers, playerIndex)
-                } 
+                }
             })
 
         })
@@ -329,7 +340,7 @@ func getPlayersByTime(teamIndex string, rosterPlayers []string, injuredPlayers m
             tr.ForEach("td", func(i int, td *colly.HTMLElement) {
                 dataStat := td.Attr("data-stat")
 
-                if dataStat == "name_display" && td.Attr("data-append-csv") != ""{
+                if dataStat == "name_display" && td.Attr("data-append-csv") != "" {
                     playerIndex = td.Attr("data-append-csv")
                 } else if dataStat == "mp_per_g" {
                     mins, _ := strconv.ParseFloat(td.Text, 64)
@@ -339,7 +350,7 @@ func getPlayersByTime(teamIndex string, rosterPlayers []string, injuredPlayers m
             })
 
             // Remove players that are no longer listed on active roster
-            if !slices.Contains(rosterPlayers, playerIndex){
+            if !slices.Contains(rosterPlayers, playerIndex) {
                 log.Printf("%v is no longer on the roster", playerIndex)
                 return
             }
@@ -353,11 +364,11 @@ func getPlayersByTime(teamIndex string, rosterPlayers []string, injuredPlayers m
             }
 
             roster = append(roster, players.PlayerRoster{
-                Sport: "nba",
+                Sport:       "nba",
                 PlayerIndex: playerIndex,
-                TeamIndex: teamIndex,
-                Status: status,
-                AvgMins: avgMins,
+                TeamIndex:   teamIndex,
+                Status:      status,
+                AvgMins:     avgMins,
             })
         })
     })
@@ -394,7 +405,7 @@ func ScrapeTodaysRosters() [][]players.Roster {
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
         t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
             dataStat := tr.ChildAttr("th", "csk")
-            if dataStat != "" && dataStat[:8] == dateStr{
+            if dataStat != "" && dataStat[:8] == dateStr {
                 var homeRoster, awayRoster players.Roster
                 tr.ForEach("td", func(i int, td *colly.HTMLElement) {
                     dataStat := td.Attr("data-stat")
@@ -429,7 +440,7 @@ func ScrapeTodaysGames() [][]string {
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
         t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
             dataStat := tr.ChildAttr("th", "csk")
-            if dataStat != "" && dataStat[:8] == dateStr{
+            if dataStat != "" && dataStat[:8] == dateStr {
                 var matchup []string
                 tr.ForEach("td", func(i int, td *colly.HTMLElement) {
                     dataStat := td.Attr("data-stat")
@@ -466,7 +477,7 @@ func getRosterForTeam(teamIndex string, missingPlayers map[string]string) player
 
         t.ForEach("td", func(i int, td *colly.HTMLElement) {
             dataStat := td.Attr("data-stat")
-            if dataStat == "name_display" && td.Attr("data-append-csv") != ""{
+            if dataStat == "name_display" && td.Attr("data-append-csv") != "" {
                 playerIndex := td.Attr("data-append-csv")
 
                 if _, ok := missingPlayers[playerIndex]; ok {
@@ -502,7 +513,7 @@ func GetMissingPlayers() map[string]string {
                 dataStat := td.Attr("data-stat")
                 if dataStat == "note" {
                     reason := strings.ToLower(td.Text)
-                    if strings.Contains(reason, "out") || strings.Contains(reason, "doubtful") || strings.Contains(reason, "questionable"){
+                    if strings.Contains(reason, "out") || strings.Contains(reason, "doubtful") || strings.Contains(reason, "questionable") {
                         players[pIndex] = reason
                     }
                 }
