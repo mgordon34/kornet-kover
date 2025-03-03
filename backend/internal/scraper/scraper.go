@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gin-gonic/gin"
 	"github.com/gocolly/colly"
 	"github.com/mgordon34/kornet-kover/api/games"
@@ -151,6 +152,12 @@ func scrapeGame(sport utils.Sport, gameString string) {
         })
     })
 
+    // Extract comments from raw HTML
+    var commentTables []*goquery.Document
+    c.OnResponse(func(r *colly.Response) {
+        commentTables = parseTablesFromComments(string(r.Body))
+    })
+
     // Aggregate all player tables to get player stats
     var playerTables []*colly.HTMLElement
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
@@ -176,19 +183,53 @@ func scrapeGame(sport utils.Sport, gameString string) {
     gameId, err := games.AddGame(game)
     if err != nil {
         log.Printf("Error adding game: %v", err)
-        return
     }
 
     switch sport {
     case utils.NBA:
-        scrapeNBAPlayerStats(playerTables, gameId)
+        pSlice, pGames := scrapeNBAPlayerStats(playerTables, gameId)
+        players.AddPlayers(pSlice)
+        players.AddPlayerGames(pGames)
     case utils.MLB:
-        scrapeMLBPlayerStats(playerTables, gameId)
+        scrapeMLBPlayerStats(commentTables, gameId)
     }
 
     // players.AddPlayers(pSlice)
 
     // players.AddPlayerGames(fixPlayerStats(gameId, playerGames))
+}
+
+func parseTablesFromComments(html string) []*goquery.Document {
+    var commentTables []*goquery.Document
+
+    commentStart := "<!--"
+    commentEnd := "-->"
+    for {
+        start := strings.Index(html, commentStart)
+        if start == -1 {
+            break
+        }
+        end := strings.Index(html[start:], commentEnd)
+        if end == -1 {
+            break
+        }
+        end += start + len(commentEnd)
+        comment := html[start:end]
+        if strings.Contains(comment, "<table") {
+            // Parse the table HTML from the comment
+            tableHTML := comment[len(commentStart):len(comment)-len(commentEnd)]
+            tableDoc, err := goquery.NewDocumentFromReader(strings.NewReader(tableHTML))
+            if err != nil {
+                log.Printf("Error parsing table HTML: %v", err)
+                continue
+            }
+            commentTables = append(commentTables, tableDoc)
+
+        }
+        html = html[end:]
+    }
+
+    return commentTables
 }
 
 func scrapeNBAPlayerStats(playerTables []*colly.HTMLElement, gameId int) ([]players.Player, []players.PlayerGame) {
@@ -217,11 +258,16 @@ func scrapeNBAPlayerStats(playerTables []*colly.HTMLElement, gameId int) ([]play
     return pSlice, pGames
 }
 
-func scrapeMLBPlayerStats(playerTables []*colly.HTMLElement, gameId int) {
-    for _, t := range playerTables {
-        id := t.Attr("id")
-        log.Printf("MLB player table id: %s", id)
+func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int) ([]players.Player, []players.PlayerGame) {
+    for _, tableDoc := range commentTables {
+        if strings.Contains(tableDoc.Find("table").AttrOr("class", ""), "stats_table") {
+            tableDoc.Find("tr").Each(func(i int, s *goquery.Selection) {
+                log.Printf("Row %d: %s", i, s.Text())
+            })
+        }
     }
+
+    return nil, nil
 }
 
 func collectStats(t *colly.HTMLElement, playerGames map[string]players.PlayerGame, tIndex string) {
