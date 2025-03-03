@@ -51,10 +51,8 @@ func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) erro
 
     c := colly.NewCollector()
     c.OnHTML("td.gamelink", func(e *colly.HTMLElement) {
-        log.Printf("Found game: %s", e.ChildAttr("a", "href"))
         games := e.ChildAttrs("a", "href")
         for _, gameString := range games {
-            log.Printf("Scraping game: %s", gameString)
             time.Sleep(4 * time.Second)
             scrapeGame(sport, gameString)
         }
@@ -77,7 +75,30 @@ func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) erro
     return nil
 }
 
+func getDateString(gameString string, sport utils.Sport) (string, error) {
+    parts := strings.Split(gameString, "/")
+    if len(parts) < 3 {
+        return "", fmt.Errorf("invalid game string format: %s", gameString)
+    }
+
+    var dateStr string
+    switch sport {
+    case utils.NBA:
+        // Format: /boxscores/202503010CHO.html
+        dateStr = parts[2][:8]
+    case utils.MLB:
+        // Format: /boxes/PHI/PHI202310240.shtml
+        dateStr = parts[3][3:11]
+    default:
+        return "", fmt.Errorf("unsupported sport: %s", sport)
+    }
+
+    // Format as YYYY-MM-DD
+    return fmt.Sprintf("%s-%s-%s", dateStr[:4], dateStr[4:6], dateStr[6:8]), nil
+}
+
 func scrapeGame(sport utils.Sport, gameString string) {
+    log.Printf("Scraping %s game: %s", sport, gameString)
     config, ok := utils.SportConfigs[sport]
     if !ok {
         log.Printf("Unsupported sport: %s", sport)
@@ -93,8 +114,10 @@ func scrapeGame(sport utils.Sport, gameString string) {
 
     c.OnHTML("div.scorebox", func(div *colly.HTMLElement) {
         div.ForEach("strong", func(i int, e *colly.HTMLElement) {
-            team := e.ChildAttr("a", "href")
-            teams[i] = strings.Split(team, "/")[2]
+            if i < 2 {
+                team := e.ChildAttr("a", "href")
+                teams[i] = strings.Split(team, "/")[2]
+            }
         })
         div.ForEach("div.score", func(i int, e *colly.HTMLElement) {
             score, err := strconv.Atoi(e.Text)
@@ -121,15 +144,19 @@ func scrapeGame(sport utils.Sport, gameString string) {
 
     c.Visit(fmt.Sprintf("%s%s", baseUrl, gameString))
 
-    dateString := strings.Split(gameString, "/")[2][:8]
-    dateString = fmt.Sprintf("%s-%s-%s", dateString[:4], dateString[4:6], dateString[6:8])
+    dateString, err := getDateString(gameString, sport)
+    if err != nil {
+        log.Printf("Error getting date string: %v", err)
+        return
+    }
+
     date, err := time.Parse("2006-01-02", dateString)
     if err != nil {
         return
     }
 
     game := games.Game{
-        Sport:     "nba",
+        Sport:     string(sport),
         HomeIndex: teams[1],
         AwayIndex: teams[0],
         HomeScore: scores[1],
