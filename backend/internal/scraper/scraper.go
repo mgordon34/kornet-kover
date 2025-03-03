@@ -113,12 +113,11 @@ func scrapeGame(sport utils.Sport, gameString string) {
     }
     baseUrl := config.Domain
     
-    var teams [2]string
-    var scores [2]int
-    var pSlice []players.Player
-    playerGames := make(map[string]players.PlayerGame)
     c := colly.NewCollector()
 
+    // Collect team and score information
+    var teams [2]string
+    var scores [2]int
     c.OnHTML("div.scorebox", func(div *colly.HTMLElement) {
         div.ForEach("strong", func(i int, e *colly.HTMLElement) {
             if i < 2 {
@@ -135,18 +134,10 @@ func scrapeGame(sport utils.Sport, gameString string) {
         })
     })
 
+    // Aggregate all player tables to get player stats
+    var playerTables []*colly.HTMLElement
     c.OnHTML("table.stats_table", func(t *colly.HTMLElement) {
-        id := t.Attr("id")
-        if strings.Contains(id, "game-basic") {
-            pSlice = append(pSlice, getPlayers(t)...)
-
-            teamIndex := strings.Split(id, "-")[1]
-            collectStats(t, playerGames, teamIndex)
-        }
-        if strings.Contains(id, "game-advanced") {
-            teamIndex := strings.Split(id, "-")[1]
-            collectStats(t, playerGames, teamIndex)
-        }
+        playerTables = append(playerTables, t)
     })
 
     c.Visit(fmt.Sprintf("%s%s", baseUrl, gameString))
@@ -167,12 +158,53 @@ func scrapeGame(sport utils.Sport, gameString string) {
     }
     gameId, err := games.AddGame(game)
     if err != nil {
+        log.Printf("Error adding game: %v", err)
         return
     }
 
-    players.AddPlayers(pSlice)
+    switch sport {
+    case utils.NBA:
+        scrapeNBAPlayerStats(playerTables, gameId)
+    case utils.MLB:
+        scrapeMLBPlayerStats(playerTables, gameId)
+    }
 
-    players.AddPlayerGames(fixPlayerStats(gameId, playerGames))
+    // players.AddPlayers(pSlice)
+
+    // players.AddPlayerGames(fixPlayerStats(gameId, playerGames))
+}
+
+func scrapeNBAPlayerStats(playerTables []*colly.HTMLElement, gameId int) ([]players.Player, []players.PlayerGame) {
+    var pSlice []players.Player
+    playerGames := make(map[string]players.PlayerGame)
+
+    for _, t := range playerTables {
+
+        id := t.Attr("id")
+        if strings.Contains(id, "game-basic") {
+            pSlice = append(pSlice, getPlayers(t)...)
+
+            teamIndex := strings.Split(id, "-")[1]
+            collectStats(t, playerGames, teamIndex)
+        }
+        if strings.Contains(id, "game-advanced") {
+            teamIndex := strings.Split(id, "-")[1]
+            collectStats(t, playerGames, teamIndex)
+        }
+    }
+
+    pGames := fixPlayerStats(gameId, playerGames)
+
+    log.Printf("Players: %v", pSlice)
+    log.Printf("Player games: %v", pGames)
+    return pSlice, pGames
+}
+
+func scrapeMLBPlayerStats(playerTables []*colly.HTMLElement, gameId int) {
+    for _, t := range playerTables {
+        id := t.Attr("id")
+        log.Printf("MLB player table id: %s", id)
+    }
 }
 
 func collectStats(t *colly.HTMLElement, playerGames map[string]players.PlayerGame, tIndex string) {
