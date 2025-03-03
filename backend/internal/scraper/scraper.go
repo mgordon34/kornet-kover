@@ -75,10 +75,10 @@ func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) erro
     return nil
 }
 
-func getDateString(gameString string, sport utils.Sport) (string, error) {
+func getDate(gameString string, sport utils.Sport) (time.Time, error) {
     parts := strings.Split(gameString, "/")
     if len(parts) < 3 {
-        return "", fmt.Errorf("invalid game string format: %s", gameString)
+        return time.Time{}, fmt.Errorf("invalid game string format: %s", gameString)
     }
 
     var dateStr string
@@ -90,11 +90,18 @@ func getDateString(gameString string, sport utils.Sport) (string, error) {
         // Format: /boxes/PHI/PHI202310240.shtml
         dateStr = parts[3][3:11]
     default:
-        return "", fmt.Errorf("unsupported sport: %s", sport)
+        return time.Time{}, fmt.Errorf("unsupported sport: %s", sport)
     }
 
     // Format as YYYY-MM-DD
-    return fmt.Sprintf("%s-%s-%s", dateStr[:4], dateStr[4:6], dateStr[6:8]), nil
+    dateString := fmt.Sprintf("%s-%s-%s", dateStr[:4], dateStr[4:6], dateStr[6:8])
+
+    date, err := time.Parse("2006-01-02", dateString)
+    if err != nil {
+        return time.Time{}, err
+    }
+
+    return date, nil
 }
 
 func scrapeGame(sport utils.Sport, gameString string) {
@@ -144,14 +151,9 @@ func scrapeGame(sport utils.Sport, gameString string) {
 
     c.Visit(fmt.Sprintf("%s%s", baseUrl, gameString))
 
-    dateString, err := getDateString(gameString, sport)
+    date, err := getDate(gameString, sport)
     if err != nil {
         log.Printf("Error getting date string: %v", err)
-        return
-    }
-
-    date, err := time.Parse("2006-01-02", dateString)
-    if err != nil {
         return
     }
 
