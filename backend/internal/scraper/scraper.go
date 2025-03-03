@@ -43,6 +43,23 @@ func ScrapeNbaTeams() {
     teams.AddTeams(nbaTeams)
 }
 
+func ScrapeMLBTeams() {
+    c := colly.NewCollector()
+    var mlbTeams []teams.Team
+
+    c.OnHTML("table > tbody", func(t *colly.HTMLElement) {
+        t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            index := "MLB_" + strings.Split(tr.ChildAttr("a", "href"), "/")[2]
+            name := tr.ChildText("a")
+            mlbTeams = append(mlbTeams, teams.Team{Index: index, Name: name})
+        })
+    })
+
+    c.Visit(utils.SportConfigs[utils.MLB].Domain + "/leagues/majors/2024-standings.shtml")
+
+    teams.AddTeams(mlbTeams)
+}
+
 func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) error {
     config, ok := utils.SportConfigs[sport]
     if !ok {
