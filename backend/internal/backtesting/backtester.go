@@ -111,6 +111,30 @@ func (b BacktestResult) resultBreakdown() {
         1000: []analysis.PropPick{},
     }
     oKeys := []int{0,100,200,300,400,500,600,700,800,900,1000}
+    lKeys := []float32{0,1,2,3,4,5,6,7,8,9,10,12,14,16,18,20,22,24,26,28,30}
+    lBrackets := map[float32][]analysis.PropPick{
+        0: []analysis.PropPick{},
+        1: []analysis.PropPick{},
+        2: []analysis.PropPick{},
+        3: []analysis.PropPick{},
+        4: []analysis.PropPick{},
+        5: []analysis.PropPick{},
+        6: []analysis.PropPick{},
+        7: []analysis.PropPick{},
+        8: []analysis.PropPick{},
+        9: []analysis.PropPick{},
+        10: []analysis.PropPick{},
+        12: []analysis.PropPick{},
+        14: []analysis.PropPick{},
+        16: []analysis.PropPick{},
+        18: []analysis.PropPick{},
+        20: []analysis.PropPick{},
+        22: []analysis.PropPick{},
+        24: []analysis.PropPick{},
+        26: []analysis.PropPick{},
+        28: []analysis.PropPick{},
+        30: []analysis.PropPick{},
+    }
     for _, pick := range b.Bets {
         for key := range pBrackets {
             if float64(pick.PDiff) > key {
@@ -132,6 +156,11 @@ func (b BacktestResult) resultBreakdown() {
 			if key == 0 && pick.GetLine().Odds < 0 {
                 oBrackets[key] = append(oBrackets[key], *pick)
 			}
+        }
+        for key := range lBrackets {
+            if pick.GetLine().Line < key {
+                lBrackets[key] = append(lBrackets[key], *pick)
+            }
         }
     }
 
@@ -159,6 +188,19 @@ func (b BacktestResult) resultBreakdown() {
             }
         }
         log.Printf("%v: %v winrate and $%.2f profit[%v]", key, wins/float32(len(rBrackets[key])), profit, len(rBrackets[key]))
+    }
+    log.Println("------------------------------------------")
+    for _, key := range lKeys {
+        var wins, profit float32
+        for _, bet := range lBrackets[key] {
+            if bet.Result == "Win" {
+                wins++
+                profit += calculateProfit(bet.BetSize, bet.GetLine().Odds)
+            } else {
+                profit -= bet.BetSize
+            }
+        }
+        log.Printf("%v: %v winrate and $%.2f profit[%v]", key, wins/float32(len(lBrackets[key])), profit, len(lBrackets[key]))
     }
     log.Println("------------------------------------------")
     for _, key := range oKeys {
