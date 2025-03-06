@@ -158,7 +158,7 @@ func GetOutliers(baseStats players.PlayerAvg, predictedStats players.PlayerAvg) 
     for stat, value := range pStats {
         diff := value - bStats[stat]
         pDiff := (value - bStats[stat]) / bStats[stat]
-        if (pDiff < -.9 ||  pDiff > .0) && (diff > 0 || diff < 2) {
+        if (pDiff < -.9 || pDiff > .0) && (diff > 0 || diff < -100) {
             outliers[stat] = pDiff
         }
     }
