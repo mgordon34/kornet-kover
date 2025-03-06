@@ -436,7 +436,7 @@ func runPickProps() ([]PropPick, error) {
 		StratId:   5,
 		StratName: "Alt Points",
 		Thresholds: map[string]float32{
-			"points":   -.1,
+			"points":   -.3,
 			"rebounds": 1000,
 			"assists":  1000,
 			"threes":   1000,
@@ -445,6 +445,7 @@ func runPickProps() ([]PropPick, error) {
 		RequireOutlier: true,
 		MinGames:       10,
 		MinOdds:        200,
+		MinLine:        20,
 		BetSize:        100,
 		MaxOver:        100,
 		MaxUnder:       0,
