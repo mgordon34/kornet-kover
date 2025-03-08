@@ -26,6 +26,7 @@ type PropSelector struct {
 	MinMinutes     float32
 	MinGames       int
 	MinOdds        int
+	MaxOdds        int
 	MinLine        float32
 	MaxLine        float32
 	MinDiff        float32
@@ -230,7 +231,10 @@ func (p PropSelector) isPickElligible(pick PropPick) bool {
 	case Percent:
 		diff = float64(pick.PDiff)
 	}
-	if pick.GetLine().Odds < p.MinOdds || pick.GetLine().Odds >= 10000{
+	if pick.GetLine().Odds < p.MinOdds {
+		return false
+	}
+	if p.MaxOdds != 0 && pick.GetLine().Odds >= p.MaxOdds {
 		return false
 	}
 	if p.MinLine != 0 && pick.GetLine().Line < p.MinLine {
@@ -445,6 +449,7 @@ func runPickProps() ([]PropPick, error) {
 		RequireOutlier: true,
 		MinGames:       10,
 		MinOdds:        200,
+		MaxOdds:        600,
 		MinLine:        20,
 		BetSize:        100,
 		MaxOver:        100,
@@ -459,6 +464,64 @@ func runPickProps() ([]PropPick, error) {
 	for _, pick := range altPicks {
 		log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, Odds: %v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.GetLine().Line, pick.Diff, pick.GetLine().Odds)
 	}
+	altRPicker := PropSelector{
+		StratId:   9,
+		StratName: "Alt Rebounds",
+		Thresholds: map[string]float32{
+			"points":   1000,
+			"rebounds": -100,
+			"assists":  1000,
+			"threes":   1000,
+		},
+		TresholdType:   Raw,
+		RequireOutlier: true,
+		MinGames:       10,
+		MinOdds:        300,
+		MaxOdds:        600,
+		MaxLine:        10,
+		BetSize:        100,
+		MaxOver:        100,
+		MaxUnder:       0,
+		TotalMax:       100,
+	}
+	altRPicks, err := altRPicker.PickAlternateProps(altOddsMap, results, today, true)
+	if err != nil {
+		return picks, err
+	}
+	log.Printf("================================%v=========================================", altRPicker.StratName)
+	for _, pick := range altRPicks {
+		log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, Odds: %v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.GetLine().Line, pick.Diff, pick.GetLine().Odds)
+	}
+
+	altAPicker := PropSelector{
+		StratId:   10,
+		StratName: "Alt Assists",
+		Thresholds: map[string]float32{
+			"points":   1000,
+			"rebounds": 1000,
+			"assists":  -100,
+			"threes":   1000,
+		},
+		TresholdType:   Raw,
+		RequireOutlier: true,
+		MinGames:       10,
+		MinOdds:        300,
+		MaxOdds:        600,
+		MaxLine:        9,
+		BetSize:        100,
+		MaxOver:        100,
+		MaxUnder:       0,
+		TotalMax:       100,
+	}
+	altAPicks, err := altAPicker.PickAlternateProps(altOddsMap, results, today, true)
+	if err != nil {
+		return picks, err
+	}
+	log.Printf("================================%v=========================================", altAPicker.StratName)
+	for _, pick := range altAPicks {
+		log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, Odds: %v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.GetLine().Line, pick.Diff, pick.GetLine().Odds)
+	}
+
 	altPPicker := PropSelector{
 		StratId:   6,
 		StratName: "Alt Points(Longshot)",
@@ -486,7 +549,7 @@ func runPickProps() ([]PropPick, error) {
 	for _, pick := range altPPicks {
 		log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, Odds: %v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.GetLine().Line, pick.Diff, pick.GetLine().Odds)
 	}
-	altAPicker := PropSelector{
+	altALPicker := PropSelector{
 		StratId:   7,
 		StratName: "Alt Assists(Longshot)",
 		Thresholds: map[string]float32{
@@ -505,15 +568,15 @@ func runPickProps() ([]PropPick, error) {
 		MaxUnder:       0,
 		TotalMax:       100,
 	}
-	altAPicks, err := altAPicker.PickAlternateProps(altOddsMap, results, today, true)
+	altALPicks, err := altALPicker.PickAlternateProps(altOddsMap, results, today, true)
 	if err != nil {
 		return picks, err
 	}
-	log.Printf("================================%v=========================================", altAPicker.StratName)
-	for _, pick := range altAPicks {
+	log.Printf("================================%v=========================================", altALPicker.StratName)
+	for _, pick := range altALPicks {
 		log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, Odds: %v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.GetLine().Line, pick.Diff, pick.GetLine().Odds)
 	}
-	altTPicker := PropSelector{
+	altTLPicker := PropSelector{
 		StratId:   8,
 		StratName: "Alt Threes(Longshot)",
 		Thresholds: map[string]float32{
@@ -532,12 +595,12 @@ func runPickProps() ([]PropPick, error) {
 		MaxUnder:       0,
 		TotalMax:       100,
 	}
-	altTPicks, err := altTPicker.PickAlternateProps(altOddsMap, results, today, true)
+	altTLPicks, err := altTLPicker.PickAlternateProps(altOddsMap, results, today, true)
 	if err != nil {
 		return picks, err
 	}
-	log.Printf("================================%v=========================================", altTPicker.StratName)
-	for _, pick := range altTPicks {
+	log.Printf("================================%v=========================================", altTLPicker.StratName)
+	for _, pick := range altTLPicks {
 		log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, Odds: %v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.GetLine().Line, pick.Diff, pick.GetLine().Odds)
 	}
 
