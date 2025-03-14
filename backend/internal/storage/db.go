@@ -141,7 +141,7 @@ func InitTables() {
             id SERIAL PRIMARY KEY,
             stategy_id INT REFERENCES strategies(id),
             function VARCHAR(255) NOT NULL,
-            comparator VARCHAR(255) NOT NULL,
+            operator VARCHAR(255) NOT NULL,
             threshold VARCHAR(255) NOT NULL
         )`,
 		`CREATE TABLE IF NOT EXISTS prop_picks (
