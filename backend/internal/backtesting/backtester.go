@@ -286,8 +286,8 @@ func (b Backtester) backtestDate(date time.Time) {
         homeRoster := convertPlayerMaptoPlayerRosters(playerMap["home"][:8])
         awayRoster := convertPlayerMaptoPlayerRosters(playerMap["away"][:8])
 
-        results = append(results, analysis.RunAnalysisOnGame(homeRoster, awayRoster, date, false, false)...)
-        results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster, date, false, false)...)
+        results = append(results, analysis.RunAnalysisOnGame(homeRoster, awayRoster, date, false, true)...)
+        results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster, date, false, true)...)
     }
 
     var picks []analysis.PropPick
