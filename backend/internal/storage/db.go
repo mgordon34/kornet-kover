@@ -139,10 +139,15 @@ func InitTables() {
         )`,
 		`CREATE TABLE IF NOT EXISTS strategy_filters (
             id SERIAL PRIMARY KEY,
-            stategy_id INT REFERENCES strategies(id),
+            strategy_id INT REFERENCES strategies(id),
             function VARCHAR(255) NOT NULL,
-            operator VARCHAR(255) NOT NULL,
-            threshold VARCHAR(255) NOT NULL
+            stat VARCHAR(255) NOT NULL,
+            operator VARCHAR(50) NOT NULL,
+            comparison_type VARCHAR(50) NOT NULL,
+            compare_value REAL,
+            compare_function VARCHAR(255),
+            compare_stat VARCHAR(255),
+            modifier_operator VARCHAR(50)
         )`,
 		`CREATE TABLE IF NOT EXISTS prop_picks (
             id SERIAL PRIMARY KEY,
