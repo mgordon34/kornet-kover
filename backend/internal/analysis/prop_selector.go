@@ -450,7 +450,7 @@ func runPickProps() ([]PropPick, error) {
         MinGames:       10,
         MinOdds:        200,
         MaxOdds:        600,
-        MinLine:        20,
+        MaxLine:        20,
         BetSize:        100,
         MaxOver:        100,
         MaxUnder:       0,
