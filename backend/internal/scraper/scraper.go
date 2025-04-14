@@ -141,6 +141,11 @@ func scrapeGame(sport utils.Sport, gameString string) {
             if i < 2 {
                 team := e.ChildAttr("a", "href")
                 teams[i] = strings.Split(team, "/")[2]
+                if sport == utils.NBA {
+                    teams[i] = strings.ReplaceAll(teams[i], "BKN", "BRK")
+                } else if sport == utils.MLB {
+                    teams[i] = "MLB_" + teams[i]
+                }
             }
         })
         div.ForEach("div.score", func(i int, e *colly.HTMLElement) {
