@@ -196,10 +196,9 @@ func scrapeGame(sport utils.Sport, gameString string) {
         players.AddPlayers(pSlice)
         players.AddPlayerGames(pGames)
     case utils.MLB:
-        _, pGames := scrapeMLBPlayerStats(commentTables, gameId, game)
-        for _, g := range pGames {
-            log.Printf("MLB Player game: %v", g.PlayerIndex)
-        }
+        pSlice, pGames := scrapeMLBPlayerStats(commentTables, gameId, game)
+        players.AddPlayers(pSlice)
+        players.AddMLBPlayerGames(pGames)
     }
 
     // players.AddPlayers(pSlice)
@@ -269,6 +268,7 @@ func scrapeNBAPlayerStats(playerTables []*colly.HTMLElement, gameId int) ([]play
 func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game games.Game) ([]players.Player, []players.MLBPlayerGameBatting) {
     battingIndex := 0
     pitchingIndex := 0
+    var pSlice []players.Player
     var pGames []players.MLBPlayerGameBatting
 
     for _, tableDoc := range commentTables {
@@ -279,6 +279,7 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
             })
         }
 
+        // Scrape batting stats
         if strings.Contains(tableDoc.Find("table").AttrOr("id", ""), "batting") {
             var teamIndex string
             if battingIndex == 0 {
@@ -288,15 +289,18 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
             }
             log.Printf("Team index: %s", teamIndex)
 
-            isDone := false
             tableDoc.Find("tbody").Find("tr").Each(func(i int, s *goquery.Selection) {
-                if s.AttrOr("class", "") == "spacer" {
-                    isDone = true
-                }
+                if s.AttrOr("class", "") != "spacer" {
+                    playerIndex := strings.Split(strings.Split(s.Find("th").Find("a").AttrOr("href", ""), "/")[3], ".")[0]
+                    playerName := s.Find("th").Find("a").Text()
+                    playerName, err := utils.NormalizeString(playerName)
+                    if err != nil {
+                        log.Printf("Error normalizing player name: %v", err)
+                    }
+                    pSlice = append(pSlice, players.Player{Index: playerIndex, Name: playerName, Sport: "mlb"})
 
-                if !isDone {
                     pGame := players.MLBPlayerGameBatting {
-                        PlayerIndex: strings.Split(strings.Split(s.Find("th").Find("a").AttrOr("href", ""), "/")[3], ".")[0],
+                        PlayerIndex: playerIndex,
                         Game:        gameId,
                         TeamIndex:   teamIndex,
                     }
@@ -311,7 +315,7 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
         }
     }
 
-    return nil, pGames
+    return pSlice, pGames
 }
 
 func parseMLBPlayerGame(pGame players.MLBPlayerGameBatting, s *goquery.Selection) players.MLBPlayerGameBatting {
