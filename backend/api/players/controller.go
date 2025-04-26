@@ -179,6 +179,87 @@ func AddPlayerGames(pGames []PlayerGame) {
 	}
 }
 
+func AddMLBPlayerGames(pGames []MLBPlayerGameBatting) {
+	db := storage.GetDB()
+	txn, _ := db.Begin(context.Background())
+	_, err := txn.Exec(
+		context.Background(),
+		`CREATE TEMP TABLE player_games_temp
+        ON COMMIT DROP
+        AS SELECT * FROM mlb_player_games_batting
+        WITH NO DATA`,
+	)
+	if err != nil {
+		panic(err)
+	}
+	var playersInterface [][]interface{}
+	for _, pGame := range pGames {
+		playersInterface = append(
+			playersInterface,
+			[]interface{}{
+				pGame.PlayerIndex,
+				pGame.Game,
+				pGame.TeamIndex,
+				pGame.AtBats,
+				pGame.Runs,
+				pGame.Hits,
+				pGame.RBIs,
+				pGame.Walks,
+				pGame.Strikeouts,
+				pGame.PAs,
+				pGame.Pitches,
+				pGame.Strikes,
+				pGame.OBP,
+				pGame.SLG,
+				pGame.OPS,
+				pGame.WPA,
+			},
+		)
+	}
+
+	_, err = txn.CopyFrom(
+		context.Background(),
+		pgx.Identifier{"player_games_temp"},
+		[]string{
+			"player_index",
+			"game",
+			"team_index",
+			"at_bats",
+			"runs",
+			"hits",
+			"rbis",
+			"walks",
+			"strikeouts",
+			"pas",
+			"pitches",
+			"strikes",
+			"obp",
+			"slg",
+			"ops",
+			"wpa",
+		},
+		pgx.CopyFromRows(playersInterface),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = txn.Exec(
+		context.Background(),
+		` INSERT INTO mlb_player_games_batting (player_index, game, team_index, at_bats, runs, hits, rbis, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa)
+        SELECT player_index, game, team_index, at_bats, runs, hits, rbis, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa FROM player_games_temp
+        ON CONFLICT DO NOTHING`,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := txn.Commit(context.Background()); err != nil {
+		panic(err)
+	}
+
+}
+
 func GetPlayerStats(player string, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
 	db := storage.GetDB()
 	sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 

@@ -81,6 +81,28 @@ func InitTables() {
             drtg INT NOT NULL,
             CONSTRAINT uq_player_games UNIQUE(player_index, game)
         )`,
+		`CREATE TABLE IF NOT EXISTS mlb_player_games_batting (
+            id SERIAL PRIMARY KEY,
+            player_index VARCHAR(20) REFERENCES players(index),
+            game INT REFERENCES games(id),
+            team_index VARCHAR(255) REFERENCES teams(index),
+            at_bats INT NOT NULL,
+            runs INT NOT NULL,
+            hits INT NOT NULL,
+            rbis INT NOT NULL,
+            home_runs INT NOT NULL,
+            walks INT NOT NULL,
+            strikeouts INT NOT NULL,
+            pas INT NOT NULL,
+            pitches INT NOT NULL,
+            strikes INT NOT NULL,
+            obp REAL NOT NULL,
+            slg REAL NOT NULL,
+            ops REAL NOT NULL,
+            wpa REAL NOT NULL,
+            details TEXT NOT NULL,
+            CONSTRAINT uq_mlb_player_games_batting UNIQUE(player_index, game)
+        )`,
 		`CREATE TABLE IF NOT EXISTS player_lines (
             id SERIAL PRIMARY KEY,
             sport VARCHAR(255) NOT NULL,
