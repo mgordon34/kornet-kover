@@ -179,7 +179,7 @@ func AddPlayerGames(pGames []PlayerGame) {
 	}
 }
 
-func AddMLBPlayerGames(pGames []MLBPlayerGameBatting) {
+func AddMLBPlayerGamesBatting(pGames []MLBPlayerGameBatting) {
 	db := storage.GetDB()
 	txn, _ := db.Begin(context.Background())
 	_, err := txn.Exec(
@@ -248,6 +248,81 @@ func AddMLBPlayerGames(pGames []MLBPlayerGameBatting) {
 		context.Background(),
 		` INSERT INTO mlb_player_games_batting (player_index, game, team_index, at_bats, runs, hits, rbis, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa)
         SELECT player_index, game, team_index, at_bats, runs, hits, rbis, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa FROM player_games_temp
+        ON CONFLICT DO NOTHING`,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := txn.Commit(context.Background()); err != nil {
+		panic(err)
+	}
+
+}
+
+func AddMLBPlayerGamesPitching(pGames []MLBPlayerGamePitching) {
+	db := storage.GetDB()
+	txn, _ := db.Begin(context.Background())
+	_, err := txn.Exec(
+		context.Background(),
+		`CREATE TEMP TABLE player_games_temp
+        ON COMMIT DROP
+        AS SELECT * FROM mlb_player_games_pitching
+        WITH NO DATA`,
+	)
+	if err != nil {
+		panic(err)
+	}
+	var playersInterface [][]interface{}
+	for _, pGame := range pGames {
+		playersInterface = append(
+			playersInterface,
+			[]interface{}{
+				pGame.PlayerIndex,
+				pGame.Game,
+				pGame.TeamIndex,
+				pGame.Innings,
+				pGame.Hits,
+				pGame.Runs,
+				pGame.EarnedRuns,
+				pGame.Walks,
+				pGame.Strikeouts,
+				pGame.HomeRuns,
+				pGame.ERA,
+				pGame.BattersFaced,
+				pGame.WPA,
+			},
+		)
+	}
+
+	_, err = txn.CopyFrom(
+		context.Background(),
+		pgx.Identifier{"player_games_temp"},
+		[]string{
+			"player_index",
+			"game",
+			"team_index",
+			"innings",
+			"hits",
+			"runs",
+			"earned_runs",
+			"walks",
+			"strikeouts",
+			"home_runs",
+			"era",
+			"batters_faced",
+			"wpa",
+		},
+		pgx.CopyFromRows(playersInterface),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = txn.Exec(
+		context.Background(),
+		` INSERT INTO mlb_player_games_pitching (player_index, game, team_index, innings, hits, runs, earned_runs, walks, strikeouts, home_runs, era, batters_faced, wpa)
+        SELECT player_index, game, team_index, innings, hits, runs, earned_runs, walks, strikeouts, home_runs, era, batters_faced, wpa FROM player_games_temp
         ON CONFLICT DO NOTHING`,
 	)
 	if err != nil {
