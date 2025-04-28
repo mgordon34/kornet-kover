@@ -196,9 +196,10 @@ func scrapeGame(sport utils.Sport, gameString string) {
         players.AddPlayers(pSlice)
         players.AddPlayerGames(pGames)
     case utils.MLB:
-        pSlice, pGames := scrapeMLBPlayerStats(commentTables, gameId, game)
+        pSlice, battingGames, pitchingGames := scrapeMLBPlayerStats(commentTables, gameId, game)
         players.AddPlayers(pSlice)
-        players.AddMLBPlayerGames(pGames)
+        players.AddMLBPlayerGamesBatting(battingGames)
+        players.AddMLBPlayerGamesPitching(pitchingGames)
     }
 
     // players.AddPlayers(pSlice)
@@ -265,12 +266,12 @@ func scrapeNBAPlayerStats(playerTables []*colly.HTMLElement, gameId int) ([]play
     return pSlice, pGames
 }
 
-func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game games.Game) ([]players.Player, []players.MLBPlayerGameBatting) {
+func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game games.Game) ([]players.Player, []players.MLBPlayerGameBatting, []players.MLBPlayerGamePitching) {
     battingIndex := 0
     pitchingIndex := 0
     var pSlice []players.Player
-    var pGames []players.MLBPlayerGameBatting
-
+    var battingGames []players.MLBPlayerGameBatting
+    var pitchingGames []players.MLBPlayerGamePitching
     for _, tableDoc := range commentTables {
 
         if strings.Contains(tableDoc.Find("table").AttrOr("class", ""), "stats_table") {
@@ -292,8 +293,7 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
             tableDoc.Find("tbody").Find("tr").Each(func(i int, s *goquery.Selection) {
                 if s.AttrOr("class", "") != "spacer" {
                     playerIndex := strings.Split(strings.Split(s.Find("th").Find("a").AttrOr("href", ""), "/")[3], ".")[0]
-                    playerName := s.Find("th").Find("a").Text()
-                    playerName, err := utils.NormalizeString(playerName)
+                    playerName, err := utils.NormalizeString(s.Find("th").Find("a").Text())
                     if err != nil {
                         log.Printf("Error normalizing player name: %v", err)
                     }
@@ -304,21 +304,58 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
                         Game:        gameId,
                         TeamIndex:   teamIndex,
                     }
-                    pGame = parseMLBPlayerGame(pGame, s)
+                    pGame = parseMLBPlayerGameBatting(pGame, s)
                     log.Printf("Player Batting: %v", pGame)
-                    pGames = append(pGames, pGame)
+                    battingGames = append(battingGames, pGame)
                 }
             })
 
             battingIndex++
+        }
+
+        // Scrape pitching stats
+        if strings.Contains(tableDoc.Find("table").AttrOr("id", ""), "pitching") {
+            var teamIndex string
+
+            tableDoc.Find("tr").Each(func(i int, s *goquery.Selection) {
+                if s.Find("th").Text() == "Team Totals" {
+                    pitchingIndex++
+                } else if s.Find("th").AttrOr("aria-label", "") != "Pitching" {
+
+                    if pitchingIndex == 0 {
+                        teamIndex = game.AwayIndex
+                    } else {
+                        teamIndex = game.HomeIndex
+                    }
+
+                    if s.AttrOr("class", "") != "spacer" {
+                        playerIndex := strings.Split(strings.Split(s.Find("th").Find("a").AttrOr("href", ""), "/")[3], ".")[0]
+                        playerName, err := utils.NormalizeString(s.Find("th").Find("a").Text())
+                        if err != nil {
+                            log.Printf("Error normalizing player name: %v", err)
+                        }
+                        pSlice = append(pSlice, players.Player{Index: playerIndex, Name: playerName, Sport: "mlb"})
+
+                        pGame := players.MLBPlayerGamePitching {
+                            PlayerIndex: playerIndex,
+                            Game:        gameId,
+                            TeamIndex:   teamIndex,
+                        }
+                        pGame = parseMLBPlayerGamePitching(pGame, s)
+                        log.Printf("Player Pitching: %v", pGame)
+                        pitchingGames = append(pitchingGames, pGame)
+                    }
+                }
+            })
+
             pitchingIndex++
         }
     }
 
-    return pSlice, pGames
+    return pSlice, battingGames, pitchingGames
 }
 
-func parseMLBPlayerGame(pGame players.MLBPlayerGameBatting, s *goquery.Selection) players.MLBPlayerGameBatting {
+func parseMLBPlayerGameBatting(pGame players.MLBPlayerGameBatting, s *goquery.Selection) players.MLBPlayerGameBatting {
     s.Find("td").Each(func(i int, td *goquery.Selection) {
         dataStat := td.AttrOr("data-stat", "")
         switch dataStat {
@@ -341,20 +378,56 @@ func parseMLBPlayerGame(pGame players.MLBPlayerGameBatting, s *goquery.Selection
         case "strikes_total":
             pGame.Strikes, _ = strconv.Atoi(td.Text())
         case "onbase_perc":
-            obp, _ := strconv.ParseFloat(td.Text(), 32)
+            obp, _ := strconv.ParseFloat(strings.TrimSpace(td.Text()), 32)
             pGame.OBP = float32(obp)
         case "slugging_perc":
-            slg, _ := strconv.ParseFloat(td.Text(), 32)
+            slg, _ := strconv.ParseFloat(strings.TrimSpace(td.Text()), 32)
             pGame.SLG = float32(slg)
         case "onbase_plus_slugging":
-            ops, _ := strconv.ParseFloat(td.Text(), 32)
+            ops, _ := strconv.ParseFloat(strings.TrimSpace(td.Text()), 32)
             pGame.OPS = float32(ops)
         case "wpa_bat":
-            wpa, _ := strconv.ParseFloat(td.Text(), 32)
+            wpa, _ := strconv.ParseFloat(strings.TrimSpace(td.Text()), 32)
             pGame.WPA = float32(wpa)
         case "details":
             pGame.Details = td.Text()
             pGame.HomeRuns = parseHomeRuns(pGame.Details)
+        }
+    })
+
+    return pGame
+}
+
+func parseMLBPlayerGamePitching(pGame players.MLBPlayerGamePitching, s *goquery.Selection) players.MLBPlayerGamePitching {
+    s.Find("td").Each(func(i int, td *goquery.Selection) {
+        dataStat := td.AttrOr("data-stat", "")
+        switch dataStat {
+        case "IP":
+            ip, err := strconv.ParseFloat(strings.TrimSpace(td.Text()), 32)
+            if err != nil {
+                log.Printf("Error parsing innings: %v", err)
+            }
+            pGame.Innings = float32(ip)
+        case "H":
+            pGame.Hits, _ = strconv.Atoi(td.Text())
+        case "R":
+            pGame.Runs, _ = strconv.Atoi(td.Text())
+        case "ER":
+            pGame.EarnedRuns, _ = strconv.Atoi(td.Text())
+        case "BB":
+            pGame.Walks, _ = strconv.Atoi(td.Text())
+        case "SO":
+            pGame.Strikeouts, _ = strconv.Atoi(td.Text())
+        case "HR":
+            pGame.HomeRuns, _ = strconv.Atoi(td.Text())
+        case "earned_run_avg":
+            era, _ := strconv.ParseFloat(strings.TrimSpace(td.Text()), 32)
+            pGame.ERA = float32(era)
+        case "batters_faced":
+            pGame.BattersFaced, _ = strconv.Atoi(td.Text())
+        case "wpa_def":
+            wpa, _ := strconv.ParseFloat(strings.TrimSpace(td.Text()), 32)
+            pGame.WPA = float32(wpa)
         }
     })
 
