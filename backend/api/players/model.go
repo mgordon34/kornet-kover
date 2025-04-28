@@ -56,10 +56,11 @@ type MLBPlayerGamePitching struct {
     Innings         float32     `json:"innings"`
     Hits            int         `json:"hits"`
     Runs            int         `json:"runs"`
+    EarnedRuns      int         `json:"earned_runs"`
     Walks           int         `json:"walks"`
     Strikeouts      int         `json:"strikeouts"`
     HomeRuns        int         `json:"home_runs"`
-    ERA             int         `json:"era"`
+    ERA             float32     `json:"era"`
     BattersFaced    int         `json:"batters_faced"`
     WPA             float32     `json:"wpa"`
 }

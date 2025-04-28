@@ -111,10 +111,11 @@ func InitTables() {
             innings REAL NOT NULL,
             hits INT NOT NULL,
             runs INT NOT NULL,
+            earned_runs INT NOT NULL,
             walks INT NOT NULL,
             strikeouts INT NOT NULL,
             home_runs INT NOT NULL,
-            era INT NOT NULL,
+            era REAL NOT NULL,
             batters_faced INT NOT NULL,
             wpa REAL NOT NULL,
             CONSTRAINT uq_mlb_player_games_pitching UNIQUE(player_index, game)
