@@ -305,7 +305,7 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
                         TeamIndex:   teamIndex,
                     }
                     pGame = parseMLBPlayerGame(pGame, s)
-                    log.Printf("Player game: %v", pGame)
+                    log.Printf("Player Batting: %v", pGame)
                     pGames = append(pGames, pGame)
                 }
             })
