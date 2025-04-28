@@ -49,6 +49,21 @@ type MLBPlayerGameBatting struct {
     Details         string      `json:"details"`
 }
 
+type MLBPlayerGamePitching struct {
+    PlayerIndex     string      `json:"player_index"`
+    Game            int         `json:"game"`
+    TeamIndex       string      `json:"team_index"`
+    Innings         float32     `json:"innings"`
+    Hits            int         `json:"hits"`
+    Runs            int         `json:"runs"`
+    Walks           int         `json:"walks"`
+    Strikeouts      int         `json:"strikeouts"`
+    HomeRuns        int         `json:"home_runs"`
+    ERA             int         `json:"era"`
+    BattersFaced    int         `json:"batters_faced"`
+    WPA             float32     `json:"wpa"`
+}
+
 type PIPFactor struct {
     PlayerIndex     string      `json:"player_index"`
     OtherIndex      string      `json:"other_index"`
