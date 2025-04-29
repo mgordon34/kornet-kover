@@ -350,6 +350,8 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
 
             pitchingIndex++
         }
+
+		// Scrape at bat stats
     }
 
     return pSlice, battingGames, pitchingGames
