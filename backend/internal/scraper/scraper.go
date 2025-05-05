@@ -196,10 +196,11 @@ func scrapeGame(sport utils.Sport, gameString string) {
         players.AddPlayers(pSlice)
         players.AddPlayerGames(pGames)
     case utils.MLB:
-        pSlice, battingGames, pitchingGames := scrapeMLBPlayerStats(commentTables, gameId, game)
+        pSlice, battingGames, pitchingGames, pbpSlice := scrapeMLBPlayerStats(commentTables, gameId, game)
         players.AddPlayers(pSlice)
         players.AddMLBPlayerGamesBatting(battingGames)
         players.AddMLBPlayerGamesPitching(pitchingGames)
+        players.AddMLBPlayByPlays(pbpSlice)
     }
 
     // players.AddPlayers(pSlice)
@@ -266,12 +267,13 @@ func scrapeNBAPlayerStats(playerTables []*colly.HTMLElement, gameId int) ([]play
     return pSlice, pGames
 }
 
-func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game games.Game) ([]players.Player, []players.MLBPlayerGameBatting, []players.MLBPlayerGamePitching) {
+func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game games.Game) ([]players.Player, []players.MLBPlayerGameBatting, []players.MLBPlayerGamePitching, []players.MLBPlayByPlay) {
     battingIndex := 0
     pitchingIndex := 0
-    var pSlice []players.Player
     var battingGames []players.MLBPlayerGameBatting
     var pitchingGames []players.MLBPlayerGamePitching
+    var pbpSlice []players.MLBPlayByPlay
+    pMap := make(map[string]players.Player)
     for _, tableDoc := range commentTables {
 
         if strings.Contains(tableDoc.Find("table").AttrOr("class", ""), "stats_table") {
@@ -297,7 +299,7 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
                     if err != nil {
                         log.Printf("Error normalizing player name: %v", err)
                     }
-                    pSlice = append(pSlice, players.Player{Index: playerIndex, Name: playerName, Sport: "mlb"})
+                    pMap[playerName] = players.Player{Index: playerIndex, Name: playerName, Sport: "mlb"}
 
                     pGame := players.MLBPlayerGameBatting {
                         PlayerIndex: playerIndex,
@@ -305,7 +307,6 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
                         TeamIndex:   teamIndex,
                     }
                     pGame = parseMLBPlayerGameBatting(pGame, s)
-                    log.Printf("Player Batting: %v", pGame)
                     battingGames = append(battingGames, pGame)
                 }
             })
@@ -330,11 +331,6 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
 
                     if s.AttrOr("class", "") != "spacer" {
                         playerIndex := strings.Split(strings.Split(s.Find("th").Find("a").AttrOr("href", ""), "/")[3], ".")[0]
-                        playerName, err := utils.NormalizeString(s.Find("th").Find("a").Text())
-                        if err != nil {
-                            log.Printf("Error normalizing player name: %v", err)
-                        }
-                        pSlice = append(pSlice, players.Player{Index: playerIndex, Name: playerName, Sport: "mlb"})
 
                         pGame := players.MLBPlayerGamePitching {
                             PlayerIndex: playerIndex,
@@ -342,7 +338,6 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
                             TeamIndex:   teamIndex,
                         }
                         pGame = parseMLBPlayerGamePitching(pGame, s)
-                        log.Printf("Player Pitching: %v", pGame)
                         pitchingGames = append(pitchingGames, pGame)
                     }
                 }
@@ -352,9 +347,107 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
         }
 
 		// Scrape at bat stats
+        if strings.Contains(tableDoc.Find("table").AttrOr("id", ""), "play_by_play") {
+            var prevBatterName string
+            var prevPBP players.MLBPlayByPlay
+            batterAppearances := make(map[string]map[int]int) // Track appearances per batter per inning
+            
+            tableDoc.Find("tbody").Find("tr").Each(func(i int, s *goquery.Selection) {
+                if strings.HasPrefix(s.AttrOr("id", ""), "event") {
+                    batterName, _ := utils.NormalizeString(s.Find("td[data-stat='batter']").Text())
+                    pitcherName, _ := utils.NormalizeString(s.Find("td[data-stat='pitcher']").Text())
+                    inning, _ := strconv.Atoi(s.Find("th").Text()[1:])
+                    
+                    // Initialize batter's inning map if not exists
+                    if _, exists := batterAppearances[batterName]; !exists {
+                        batterAppearances[batterName] = make(map[int]int)
+                    }
+                    
+                    // Increment appearance count for this batter in this inning
+                    batterAppearances[batterName][inning]++
+                    
+                    if batterName == prevBatterName {
+                        // Remove previous entry for this batter
+                        pbpSlice = pbpSlice[:len(pbpSlice)-1]
+                        batterAppearances[batterName][inning]--
+                        
+                        // Overwrite previous play by play for same batter
+                        prevPBP = parseMLBPPlayByPlay(prevPBP, s)
+                        prevPBP.Appearance = batterAppearances[batterName][inning]
+                        
+                        // Add updated entry
+                        pbpSlice = append(pbpSlice, prevPBP)
+                    } else {
+                        // Create new play by play for new batter
+                        pbp := players.MLBPlayByPlay{
+                            Game: gameId,
+                            BatterIndex: pMap[batterName].Index,
+                            PitcherIndex: pMap[pitcherName].Index,
+                            Inning: inning,
+                            Appearance: batterAppearances[batterName][inning],
+                        }
+                        pbp = parseMLBPPlayByPlay(pbp, s)
+                        prevPBP = pbp
+                        prevBatterName = batterName
+                        
+                        // Add new entry
+                        pbpSlice = append(pbpSlice, pbp)
+                    }
+                }
+            })
+        }
+
     }
 
-    return pSlice, battingGames, pitchingGames
+    var pSlice []players.Player
+    for _, p := range pMap {
+        pSlice = append(pSlice, p)
+    }
+    log.Printf("Players: %v", pSlice)
+    log.Printf("Batting games: %v", battingGames)
+    log.Printf("Pitching games: %v", pitchingGames)
+    log.Printf("PBP: %v", pbpSlice)
+    return pSlice, battingGames, pitchingGames, pbpSlice
+}
+
+func parseMLBPPlayByPlay(pbp players.MLBPlayByPlay, row *goquery.Selection) players.MLBPlayByPlay {
+    row.Find("td").Each(func(i int, td *goquery.Selection) {
+        dataStat := td.AttrOr("data-stat", "")
+        switch dataStat {
+        case "outs":
+            pbp.Outs, _ = strconv.Atoi(td.Text())
+        case "pitches_pbp":
+            pitch_text := td.Text()
+            pbp.Pitches, _ = strconv.Atoi(strings.Split(pitch_text, ",")[0])
+        case "play_desc":
+            playDesc := strings.ToLower(td.Text())
+            pbp.RawResult = playDesc
+            if strings.HasPrefix(playDesc, "walk") || strings.HasPrefix(playDesc, "intentional walk") || strings.HasPrefix(playDesc, "hit by pitch") {
+                pbp.Result = "Walk"
+            } else if strings.HasPrefix(playDesc, "strikeout") {
+                pbp.Result = "SO"
+            } else if strings.HasPrefix(playDesc, "single") {
+                pbp.Result = "1B"
+            } else if strings.HasPrefix(playDesc, "double") {
+                pbp.Result = "2B"
+            } else if strings.HasPrefix(playDesc, "triple") {
+                pbp.Result = "3B"
+            } else if strings.HasPrefix(playDesc, "home run") {
+                pbp.Result = "HR"
+            } else if strings.Contains(playDesc, "out") || strings.Contains(playDesc, "flyball") || strings.Contains(playDesc, "popfly") || strings.Contains(playDesc, "double play") {
+                pbp.Result = "Out"
+            } else if strings.Contains(playDesc, "reached on") {
+                pbp.Result = "Reached on Error"
+            } else if strings.Contains(playDesc, "caught stealing") || strings.Contains(playDesc, "picked off") || strings.Contains(playDesc, "wild pitch") {
+                pbp.Result = "Not Completed"
+            } else {
+                pbp.Result = "Parse Error"
+                log.Printf("Parse Error: %s", playDesc)
+            }
+        }
+    })
+
+    return pbp
 }
 
 func parseMLBPlayerGameBatting(pGame players.MLBPlayerGameBatting, s *goquery.Selection) players.MLBPlayerGameBatting {
