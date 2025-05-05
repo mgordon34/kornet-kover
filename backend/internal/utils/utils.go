@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"strings"
 	"unicode"
 
 	"golang.org/x/text/runes"
@@ -14,6 +15,9 @@ func NormalizeString(s string) (string, error) {
     if err != nil {
         return "", err
     }
+
+    // Replace non-breaking space with regular space
+    result = strings.ReplaceAll(result, "\u00a0", " ")
 
     return result, nil
 }
