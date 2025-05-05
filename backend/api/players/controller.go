@@ -335,6 +335,78 @@ func AddMLBPlayerGamesPitching(pGames []MLBPlayerGamePitching) {
 
 }
 
+func AddMLBPlayByPlays(pbp []MLBPlayByPlay) {
+	db := storage.GetDB()
+	txn, _ := db.Begin(context.Background())
+
+	_, err := txn.Exec(
+		context.Background(),
+		`CREATE TEMPORARY TABLE IF NOT EXISTS play_by_play_temp (
+			batter_index VARCHAR(20),
+			pitcher_index VARCHAR(20),
+			game INT,
+			inning INT,
+			outs INT,
+			appearance INT,
+			pitches INT,
+			result VARCHAR(50),
+			raw_result VARCHAR(200)
+		) ON COMMIT DROP`,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	playersInterface := make([][]interface{}, len(pbp))
+	for i, play := range pbp {
+		playersInterface[i] = []interface{}{
+			play.BatterIndex,
+			play.PitcherIndex,
+			play.Game,
+			play.Inning,
+			play.Outs,
+			play.Appearance,
+			play.Pitches,
+			play.Result,
+			play.RawResult,
+		}
+	}
+
+	_, err = txn.CopyFrom(
+		context.Background(),
+		pgx.Identifier{"play_by_play_temp"},
+		[]string{
+			"batter_index",
+			"pitcher_index",
+			"game",
+			"inning",
+			"outs",
+			"appearance",
+			"pitches",
+			"result",
+			"raw_result",
+		},
+		pgx.CopyFromRows(playersInterface),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = txn.Exec(
+		context.Background(),
+		`INSERT INTO mlb_play_by_plays (batter_index, pitcher_index, game, inning, outs, appearance, pitches, result, raw_result)
+		SELECT batter_index, pitcher_index, game, inning, outs, appearance, pitches, result, raw_result FROM play_by_play_temp
+		ON CONFLICT DO NOTHING`,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := txn.Commit(context.Background()); err != nil {
+		panic(err)
+	}
+}
+
 func GetPlayerStats(player string, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
 	db := storage.GetDB()
 	sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
