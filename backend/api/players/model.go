@@ -65,6 +65,18 @@ type MLBPlayerGamePitching struct {
     WPA             float32     `json:"wpa"`
 }
 
+type MLBPlayByPlay struct {
+    BatterIndex     string      `json:"batter_index"`
+    PitcherIndex    string      `json:"pitcher_index"`
+    Game            int         `json:"game"`
+    Inning          int         `json:"inning"`
+    Outs            int         `json:"outs"`
+    Appearance      int         `json:"appearance"`
+    Pitches         int         `json:"pitches"`
+    Result          string      `json:"result"`
+    RawResult       string      `json:"raw_result"`
+}
+
 type PIPFactor struct {
     PlayerIndex     string      `json:"player_index"`
     OtherIndex      string      `json:"other_index"`
