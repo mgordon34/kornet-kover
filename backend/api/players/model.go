@@ -3,9 +3,10 @@ package players
 import "time"
 
 type Player struct {
-    Index       string    `json:"index"`
-    Sport       string    `json:"sport"`
-    Name        string    `json:"name"`
+    Index       string              `json:"index"`
+    Sport       string              `json:"sport"` 
+    Name        string              `json:"name"`
+    Details     map[string]string   `json:"details,omitempty"`
 }
 
 type Roster struct {

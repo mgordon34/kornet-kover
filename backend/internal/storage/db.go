@@ -64,6 +64,7 @@ func InitTables() {
             index VARCHAR(20) UNIQUE,
             sport VARCHAR(255) NOT NULL,
             name VARCHAR(255),
+            details JSONB,
             CONSTRAINT uq_players UNIQUE(index, sport)
         )`,
 		`CREATE TABLE IF NOT EXISTS nba_player_games (
