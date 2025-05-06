@@ -290,7 +290,6 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
             } else {
                 teamIndex = game.HomeIndex
             }
-            log.Printf("Team index: %s", teamIndex)
 
             tableDoc.Find("tbody").Find("tr").Each(func(i int, s *goquery.Selection) {
                 if s.AttrOr("class", "") != "spacer" {
@@ -403,10 +402,6 @@ func scrapeMLBPlayerStats(commentTables []*goquery.Document, gameId int, game ga
     for _, p := range pMap {
         pSlice = append(pSlice, p)
     }
-    log.Printf("Players: %v", pSlice)
-    log.Printf("Batting games: %v", battingGames)
-    log.Printf("Pitching games: %v", pitchingGames)
-    log.Printf("PBP: %v", pbpSlice)
     return pSlice, battingGames, pitchingGames, pbpSlice
 }
 
@@ -426,19 +421,30 @@ func parseMLBPPlayByPlay(pbp players.MLBPlayByPlay, row *goquery.Selection) play
                 pbp.Result = "Walk"
             } else if strings.HasPrefix(playDesc, "strikeout") {
                 pbp.Result = "SO"
-            } else if strings.HasPrefix(playDesc, "single") {
+            } else if strings.HasPrefix(playDesc, "single") || strings.Contains(playDesc, "ground-rule single") {
                 pbp.Result = "1B"
-            } else if strings.HasPrefix(playDesc, "double") {
+            } else if strings.HasPrefix(playDesc, "double") || strings.Contains(playDesc, "ground-rule double") {
                 pbp.Result = "2B"
-            } else if strings.HasPrefix(playDesc, "triple") {
+            } else if strings.Contains(playDesc, "triple") {
                 pbp.Result = "3B"
-            } else if strings.HasPrefix(playDesc, "home run") {
+            } else if strings.HasPrefix(playDesc, "home run") || strings.Contains(playDesc, "inside-the-park home run") {
                 pbp.Result = "HR"
-            } else if strings.Contains(playDesc, "out") || strings.Contains(playDesc, "flyball") || strings.Contains(playDesc, "popfly") || strings.Contains(playDesc, "double play") {
+            } else if strings.Contains(playDesc, "out") ||
+                strings.Contains(playDesc, "flyball") ||
+                strings.Contains(playDesc, "popfly") ||
+                strings.Contains(playDesc, "double play") ||
+                strings.Contains(playDesc, "fielder's choice") || 
+                strings.Contains(playDesc, "defensive indifference") || 
+                strings.Contains(playDesc, "interference by batter") {
                 pbp.Result = "Out"
             } else if strings.Contains(playDesc, "reached on") {
                 pbp.Result = "Reached on Error"
-            } else if strings.Contains(playDesc, "caught stealing") || strings.Contains(playDesc, "picked off") || strings.Contains(playDesc, "wild pitch") {
+            } else if strings.Contains(playDesc, "caught stealing") ||
+                strings.Contains(playDesc, "steals") ||
+                strings.Contains(playDesc, "picked off") ||
+                strings.Contains(playDesc, "wild pitch") ||
+                strings.Contains(playDesc, "passed ball") ||
+                strings.Contains(playDesc, "balk") {
                 pbp.Result = "Not Completed"
             } else {
                 pbp.Result = "Parse Error"
