@@ -466,6 +466,27 @@ func GetPlayersForGame(gameId int, homeIndex string) (map[string][]Player, error
 	return playerMap, nil
 }
 
+func GetMLBPlayersMissingHandedness() ([]Player, error) {
+	var playerSlice []Player
+	db := storage.GetDB()
+	sql := `SELECT pl.index, pl.name, pl.details FROM players pl WHERE pl.sport='mlb' AND (pl.details IS NULL OR NOT pl.details ? 'handedness')`
+	rows, err := db.Query(context.Background(), sql)
+	if err != nil {
+		log.Fatal("Error querying for no handedness players: ", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var player Player
+		err = rows.Scan(&player.Index, &player.Name, &player.Details)
+		if err != nil {
+			log.Fatal("Error converting rows to player: ", err)
+		}
+		playerSlice = append(playerSlice, player)
+	}
+
+	return playerSlice, nil
+}
+
 type PlayerStatInfo struct {
 	PlayerIndex string `json:"player_index"`
 	NBAAvg
