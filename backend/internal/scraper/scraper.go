@@ -71,6 +71,10 @@ func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) erro
     c.OnHTML("td.gamelink", func(e *colly.HTMLElement) {
         games := e.ChildAttrs("a", "href")
         for _, gameString := range games {
+            if sport == utils.MLB && strings.Contains(strings.ToLower(gameString), "allstar") {
+                log.Println("Skipping All-Star game: ", gameString)
+                continue
+            }
             time.Sleep(4 * time.Second)
             scrapeGame(sport, gameString)
         }
