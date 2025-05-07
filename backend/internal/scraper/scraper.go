@@ -976,35 +976,26 @@ func GetInjuredPlayers() map[string]string {
     return injuredPlayers
 }
 
-func ScrapeMLBPlayerHandedness(playerIndex string) (string, error) {
+func ScrapeMLBPlayerHandedness(playerIndex string) (string, string, error) {
     log.Println("Scraping MLB player handedness for ", playerIndex)
     url := fmt.Sprintf("https://www.baseball-reference.com/players/%c/%s.shtml", playerIndex[0], playerIndex)
     c := colly.NewCollector()
-    var handedness string
-    var isPitcher bool
+    var bats, throws string
 
     c.OnHTML("div#info", func(e *colly.HTMLElement) {
-        // Check if player is a pitcher
-        e.ForEach("p", func(_ int, p *colly.HTMLElement) {
-            if strings.Contains(p.Text, "Positions:") && strings.Contains(p.Text, "Pitcher") {
-                isPitcher = true
-            }
-        })
-
         // Get handedness
         e.ForEach("p", func(_ int, p *colly.HTMLElement) {
             if strings.Contains(p.Text, "Bats:") && strings.Contains(p.Text, "Throws:") {
                 text := p.Text
-                if isPitcher {
-                    // Extract throws
-                    if idx := strings.Index(text, "Throws:"); idx != -1 {
-                        handedness = strings.TrimSpace(strings.Split(text[idx+8:], "•")[0])
-                    }
-                } else {
-                    // Extract bats
-                    if idx := strings.Index(text, "Bats:"); idx != -1 {
-                        handedness = strings.TrimSpace(strings.Split(text[idx+6:], "•")[0])
-                    }
+
+                // Extract bats
+                if idx := strings.Index(text, "Bats:"); idx != -1 {
+                    bats = strings.TrimSpace(strings.Split(text[idx+6:], "•")[0])
+                }
+
+                // Extract throws 
+                if idx := strings.Index(text, "Throws:"); idx != -1 {
+                    throws = strings.TrimSpace(strings.Split(text[idx+8:], "•")[0])
                 }
             }
         })
@@ -1012,12 +1003,12 @@ func ScrapeMLBPlayerHandedness(playerIndex string) (string, error) {
 
     err := c.Visit(url)
     if err != nil {
-        return "", err
+        return "", "", err
     }
 
-    if handedness == "" {
-        return "", fmt.Errorf("could not find handedness for player %s", playerIndex)
+    if bats == "" || throws == "" {
+        return "", "", fmt.Errorf("could not find handedness for player %s", playerIndex)
     }
 
-    return handedness, nil
+    return bats, throws, nil
 }
