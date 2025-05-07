@@ -469,7 +469,11 @@ func GetPlayersForGame(gameId int, homeIndex string) (map[string][]Player, error
 func GetMLBPlayersMissingHandedness() ([]Player, error) {
 	var playerSlice []Player
 	db := storage.GetDB()
-	sql := `SELECT pl.index, pl.name, pl.details FROM players pl WHERE pl.sport='mlb' AND (pl.details IS NULL OR NOT pl.details ? 'handedness')`
+	sql := `SELECT pl.index, pl.name, pl.details 
+			FROM players pl 
+			WHERE pl.sport='mlb' AND 
+			(pl.details IS NULL OR 
+			NOT (pl.details ? 'batting_handedness' AND pl.details ? 'pitching_handedness'))`
 	rows, err := db.Query(context.Background(), sql)
 	if err != nil {
 		log.Fatal("Error querying for no handedness players: ", err)
