@@ -495,7 +495,7 @@ func AddMLBPlayerHandedness(playerIndex string, bats string, throws string) erro
 	db := storage.GetDB()
 	sql := `UPDATE players 
 			SET details = COALESCE(details, '{}'::jsonb) || 
-				jsonb_build_object('batting_handedness', $1, 'pitching_handedness', $2)
+				jsonb_build_object('batting_handedness', $1::text, 'pitching_handedness', $2::text)
 			WHERE index = $3`
 
 	_, err := db.Exec(context.Background(), sql, bats, throws, playerIndex)
