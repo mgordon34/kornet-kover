@@ -68,6 +68,27 @@ func runUpdateLines() {
     sportsbook.UpdateLines()
 }
 
+func runUpdateMLBPlayerHandedness() {
+    log.Println("Updating MLB player handedness...")
+    missingPlayers, err := players.GetMLBPlayersMissingHandedness()
+    if err != nil {
+        log.Fatal("Error getting players: ", err)
+    }
+    log.Printf("%d players missing handedness", len(missingPlayers))
+    for _, player := range missingPlayers {
+        time.Sleep(4 * time.Second)
+        bats, throws, err := scraper.ScrapeMLBPlayerHandedness(player.Index)
+        if err != nil {
+            log.Fatal("Error getting player handedness: ", err)
+        }
+        err = players.AddMLBPlayerHandedness(player.Index, bats, throws)
+        if err != nil {
+            log.Printf("Error adding handedness for player %s: %v", player.Index, err)
+            continue
+        }
+    }
+}
+
 func runGetPIPPredictions() {
     log.Println("Updating PIPPredictions...")
     date, _ := time.Parse("2006-01-02", "2023-10-30")
