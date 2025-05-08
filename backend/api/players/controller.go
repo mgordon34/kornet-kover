@@ -491,6 +491,21 @@ func GetMLBPlayersMissingHandedness() ([]Player, error) {
 	return playerSlice, nil
 }
 
+func AddMLBPlayerHandedness(playerIndex string, bats string, throws string) error {
+	db := storage.GetDB()
+	sql := `UPDATE players 
+			SET details = COALESCE(details, '{}'::jsonb) || 
+				jsonb_build_object('batting_handedness', $1, 'pitching_handedness', $2)
+			WHERE index = $3`
+
+	_, err := db.Exec(context.Background(), sql, bats, throws, playerIndex)
+	if err != nil {
+		return fmt.Errorf("error updating player handedness: %v", err)
+	}
+
+	return nil
+}
+
 type PlayerStatInfo struct {
 	PlayerIndex string `json:"player_index"`
 	NBAAvg
