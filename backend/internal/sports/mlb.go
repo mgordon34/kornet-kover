@@ -1,13 +1,13 @@
 package sports
 
-type MLB struct {
+type MLBConfig struct {
     sportbook *SportsbookConfig
     scraper   *ScraperConfig
     analysis  *AnalysisConfig
 }
 
-func NewMLB() *MLB {
-    return &MLB{
+func NewMLB() *MLBConfig {
+    return &MLBConfig{
         sportbook: &SportsbookConfig{
             Markets: map[string]string{
                 "player_hits": "hits",
@@ -41,14 +41,14 @@ func NewMLB() *MLB {
 }
 
 // Implement Config interface
-func (c *MLB) GetSportsbookConfig() *SportsbookConfig {
+func (c *MLBConfig) GetSportsbookConfig() *SportsbookConfig {
     return c.sportbook
 }
 
-func (c *MLB) GetScraperConfig() *ScraperConfig {
+func (c *MLBConfig) GetScraperConfig() *ScraperConfig {
     return c.scraper
 }
 
-func (c *MLB) GetAnalysisConfig() *AnalysisConfig {
+func (c *MLBConfig) GetAnalysisConfig() *AnalysisConfig {
     return c.analysis
 } 

@@ -1,15 +1,38 @@
 package sports
 
-import "github.com/mgordon34/kornet-kover/internal/utils"
+// You could add caching if needed
+var configCache = make(map[Sport]Config)
 
-// New returns the appropriate sport configuration
-func New(sport utils.Sport) Config {
+// Main config getter (kept for cases where full config is needed)
+func New(sport Sport) Config {
+    if cached, ok := configCache[sport]; ok {
+        return cached
+    }
+
+    var config Config
     switch sport {
-    case utils.NBA:
-        return NewNBA()
-    case utils.MLB:
-        return NewMLB()
+    case NBA:
+        config = NewNBA()
+    case MLB:
+        config = NewMLB()
     default:
         return nil
     }
+
+    // Store in cache before returning
+    configCache[sport] = config
+    return config
+}
+
+// Convenience getters
+func GetSportsbook(sport Sport) *SportsbookConfig {
+    return New(sport).GetSportsbookConfig()
+}
+
+func GetScraper(sport Sport) *ScraperConfig {
+    return New(sport).GetScraperConfig()
+}
+
+func GetAnalysis(sport Sport) *AnalysisConfig {
+    return New(sport).GetAnalysisConfig()
 } 

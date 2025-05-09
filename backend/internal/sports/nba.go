@@ -1,13 +1,13 @@
 package sports
 
-type NBA struct {
+type NBAConfig struct {
     sportbook *SportsbookConfig
     scraper   *ScraperConfig
     analysis  *AnalysisConfig
 }
 
-func NewNBA() *NBA {
-    return &NBA{
+func NewNBA() *NBAConfig {
+    return &NBAConfig{
         sportbook: &SportsbookConfig{
             Markets: map[string]string{
                 "player_points": "points",
@@ -42,14 +42,14 @@ func NewNBA() *NBA {
     }
 }
 
-func (c *NBA) GetSportsbookConfig() *SportsbookConfig {
+func (c *NBAConfig) GetSportsbookConfig() *SportsbookConfig {
     return c.sportbook
 }
 
-func (c *NBA) GetScraperConfig() *ScraperConfig {
+func (c *NBAConfig) GetScraperConfig() *ScraperConfig {
     return c.scraper
 }
 
-func (c *NBA) GetAnalysisConfig() *AnalysisConfig {
+func (c *NBAConfig) GetAnalysisConfig() *AnalysisConfig {
     return c.analysis
 } 

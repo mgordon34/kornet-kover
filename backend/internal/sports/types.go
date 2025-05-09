@@ -1,5 +1,12 @@
 package sports
 
+type Sport string
+
+const (
+    NBA Sport = "nba"
+    MLB Sport = "mlb"
+)
+
 // Config defines the interface that all sport configurations must implement
 type Config interface {
     GetSportsbookConfig() *SportsbookConfig
