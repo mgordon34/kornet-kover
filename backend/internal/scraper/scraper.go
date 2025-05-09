@@ -17,6 +17,7 @@ import (
 	"github.com/mgordon34/kornet-kover/api/games"
 	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/api/teams"
+	"github.com/mgordon34/kornet-kover/internal/sports"
 	"github.com/mgordon34/kornet-kover/internal/utils"
 )
 
@@ -39,7 +40,7 @@ func ScrapeNbaTeams() {
         })
     })
 
-    c.Visit(utils.SportConfigs[utils.NBA].Domain + "/leagues/NBA_2024_standings.html")
+    c.Visit(sports.SportConfigs[sports.NBA].Domain + "/leagues/NBA_2024_standings.html")
 
     teams.AddTeams(nbaTeams)
 }
@@ -56,13 +57,13 @@ func ScrapeMLBTeams() {
         })
     })
 
-    c.Visit(utils.SportConfigs[utils.MLB].Domain + "/leagues/majors/2024-standings.shtml")
+    c.Visit(sports.SportConfigs[sports.MLB].Domain + "/leagues/majors/2024-standings.shtml")
 
     teams.AddTeams(mlbTeams)
 }
 
-func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) error {
-    config, ok := utils.SportConfigs[sport]
+func ScrapeGames(sport sports.Sport, startDate time.Time, endDate time.Time) error {
+    config, ok := sports.SportConfigs[sport]
     if !ok {
         return fmt.Errorf("unsupported sport: %s", sport)
     }
@@ -71,7 +72,7 @@ func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) erro
     c.OnHTML("td.gamelink", func(e *colly.HTMLElement) {
         games := e.ChildAttrs("a", "href")
         for _, gameString := range games {
-            if sport == utils.MLB && strings.Contains(strings.ToLower(gameString), "allstar") {
+            if sport == sports.MLB && strings.Contains(strings.ToLower(gameString), "allstar") {
                 log.Println("Skipping All-Star game: ", gameString)
                 continue
             }
@@ -97,7 +98,7 @@ func ScrapeGames(sport utils.Sport, startDate time.Time, endDate time.Time) erro
     return nil
 }
 
-func getDate(gameString string, sport utils.Sport) (time.Time, error) {
+func getDate(gameString string, sport sports.Sport) (time.Time, error) {
     parts := strings.Split(gameString, "/")
     if len(parts) < 3 {
         return time.Time{}, fmt.Errorf("invalid game string format: %s", gameString)
@@ -105,10 +106,10 @@ func getDate(gameString string, sport utils.Sport) (time.Time, error) {
 
     var dateStr string
     switch sport {
-    case utils.NBA:
+    case sports.NBA:
         // Format: /boxscores/202503010CHO.html
         dateStr = parts[2][:8]
-    case utils.MLB:
+    case sports.MLB:
         // Format: /boxes/PHI/PHI202310240.shtml
         dateStr = parts[3][3:11]
     default:
@@ -126,9 +127,9 @@ func getDate(gameString string, sport utils.Sport) (time.Time, error) {
     return date, nil
 }
 
-func scrapeGame(sport utils.Sport, gameString string) {
+func scrapeGame(sport sports.Sport, gameString string) {
     log.Printf("Scraping %s game: %s", sport, gameString)
-    config, ok := utils.SportConfigs[sport]
+    config, ok := sports.SportConfigs[sport]
     if !ok {
         log.Printf("Unsupported sport: %s", sport)
         return
@@ -145,9 +146,9 @@ func scrapeGame(sport utils.Sport, gameString string) {
             if i < 2 {
                 team := e.ChildAttr("a", "href")
                 teams[i] = strings.Split(team, "/")[2]
-                if sport == utils.NBA {
+                if sport == sports.NBA {
                     teams[i] = strings.ReplaceAll(teams[i], "BKN", "BRK")
-                } else if sport == utils.MLB {
+                } else if sport == sports.MLB {
                     teams[i] = "MLB_" + teams[i]
                 }
             }
@@ -195,11 +196,11 @@ func scrapeGame(sport utils.Sport, gameString string) {
     }
 
     switch sport {
-    case utils.NBA:
+    case sports.NBA:
         pSlice, pGames := scrapeNBAPlayerStats(playerTables, gameId)
         players.AddPlayers(pSlice)
         players.AddPlayerGames(pGames)
-    case utils.MLB:
+    case sports.MLB:
         pSlice, battingGames, pitchingGames, pbpSlice := scrapeMLBPlayerStats(commentTables, gameId, game)
         players.AddPlayers(pSlice)
         players.AddMLBPlayerGamesBatting(battingGames)
@@ -646,7 +647,7 @@ func fixPlayerStats(gameId int, pMap map[string]players.PlayerGame) []players.Pl
 }
 
 func GetUpdateGames(c *gin.Context) {
-    err := UpdateGames(utils.NBA)
+    err := UpdateGames(sports.NBA)
     if err != nil {
         c.JSON(http.StatusInternalServerError, err)
     }
@@ -667,7 +668,7 @@ func GetUpdateActiveRosters(c *gin.Context) {
 // This is done by utilizing GetLastGame to determine the date window to perform game scraping
 // Returns the number of new games added or error
 // TODO: Optimizations for offseason could be made here
-func UpdateGames(sport utils.Sport) error {
+func UpdateGames(sport sports.Sport) error {
     lastGame, err := games.GetLastGame()
     if err != nil {
         return err
@@ -708,7 +709,7 @@ func UpdateActiveRosters() error {
 func scrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
     var roster []players.PlayerRoster
 
-    url := fmt.Sprintf("%s/teams/%v/2025.html", utils.SportConfigs[utils.NBA].Domain, teamIndex)
+    url := fmt.Sprintf("%s/teams/%v/2025.html", sports.SportConfigs[sports.NBA].Domain, teamIndex)
     c := colly.NewCollector()
     log.Println("Visiting team page for ", teamIndex)
     time.Sleep(4 * time.Second)
@@ -842,7 +843,7 @@ func ScrapeTodaysRosters() [][]players.Roster {
         })
     })
 
-    str := fmt.Sprintf(baseUrl, utils.SportConfigs[utils.NBA].Domain, month)
+    str := fmt.Sprintf(baseUrl, sports.SportConfigs[sports.NBA].Domain, month)
     c.Visit(str)
 
     return games
@@ -875,7 +876,7 @@ func ScrapeTodaysGames() [][]string {
         })
     })
 
-    str := fmt.Sprintf(baseUrl, utils.SportConfigs[utils.NBA].Domain, month)
+    str := fmt.Sprintf(baseUrl, sports.SportConfigs[sports.NBA].Domain, month)
     c.Visit(str)
 
     return games
@@ -883,7 +884,7 @@ func ScrapeTodaysGames() [][]string {
 
 func getRosterForTeam(teamIndex string, missingPlayers map[string]string) players.Roster {
     var roster = players.Roster{}
-    url := fmt.Sprintf("%s/teams/%v/2025.html", utils.SportConfigs[utils.NBA].Domain, teamIndex)
+    url := fmt.Sprintf("%s/teams/%v/2025.html", sports.SportConfigs[sports.NBA].Domain, teamIndex)
     c := colly.NewCollector()
     log.Println("Visiting team page for ", teamIndex)
     time.Sleep(4 * time.Second)
@@ -941,7 +942,7 @@ func GetMissingPlayers() map[string]string {
         })
     })
 
-    c.Visit(utils.SportConfigs[utils.NBA].Domain + "/friv/injuries.fcgi")
+    c.Visit(sports.SportConfigs[sports.NBA].Domain + "/friv/injuries.fcgi")
     return players
 }
 
