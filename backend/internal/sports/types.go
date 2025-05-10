@@ -9,6 +9,7 @@ const (
 
 // Config defines the interface that all sport configurations must implement
 type Config interface {
+    GetSport() Sport
     GetSportsbookConfig() *SportsbookConfig
     GetScraperConfig() *ScraperConfig
     GetAnalysisConfig() *AnalysisConfig
@@ -35,3 +36,27 @@ type AnalysisConfig struct {
     DefaultStats []string
     StatWeights map[string]float64
 } 
+
+type SportConfig struct {
+    sport            Sport
+    sportsbookConfig *SportsbookConfig
+    scraperConfig    *ScraperConfig
+    analysisConfig   *AnalysisConfig
+}
+
+// These methods are implemented once and inherited by all sports
+func (c *SportConfig) GetSport() Sport {
+    return c.sport
+}
+
+func (c *SportConfig) GetSportsbookConfig() *SportsbookConfig {
+    return c.sportsbookConfig
+}
+
+func (c *SportConfig) GetScraperConfig() *ScraperConfig {
+    return c.scraperConfig
+}
+
+func (c *SportConfig) GetAnalysisConfig() *AnalysisConfig {
+    return c.analysisConfig
+}
