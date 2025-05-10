@@ -14,27 +14,6 @@ type Config interface {
     GetAnalysisConfig() *AnalysisConfig
 }
 
-// SportConfig holds basic sport configuration
-type SportConfig struct {
-    Domain      string
-    BoxScoreURL string
-    OddsName    string
-}
-
-// Map of basic sport configurations
-var SportConfigs = map[Sport]SportConfig{
-    NBA: {
-        Domain:      "https://www.basketball-reference.com",
-        BoxScoreURL: "/boxscores",
-        OddsName:    "basketball_nba",
-    },
-    MLB: {
-        Domain:      "https://www.baseball-reference.com",
-        BoxScoreURL: "/boxes",
-        OddsName:    "baseball_mlb",
-    },
-}
-
 type SportsbookConfig struct {
     Markets          map[string]string
     MainlineConfig   MarketConfig
