@@ -60,7 +60,7 @@ func startServer() {
 
 func runUpdateGames() {
     log.Println("Updating games...")
-    scraper.UpdateGames(utils.NBA)
+    scraper.UpdateGames(sports.NBA)
 }
 
 func runUpdateLines() {
