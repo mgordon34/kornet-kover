@@ -40,7 +40,7 @@ func ScrapeNbaTeams() {
         })
     })
 
-    c.Visit(sports.SportConfigs[sports.NBA].Domain + "/leagues/NBA_2024_standings.html")
+    c.Visit(sports.GetScraper(sports.NBA).Domain + "/leagues/NBA_2024_standings.html")
 
     teams.AddTeams(nbaTeams)
 }
@@ -57,16 +57,13 @@ func ScrapeMLBTeams() {
         })
     })
 
-    c.Visit(sports.SportConfigs[sports.MLB].Domain + "/leagues/majors/2024-standings.shtml")
+    c.Visit(sports.GetScraper(sports.MLB).Domain + "/leagues/majors/2024-standings.shtml")
 
     teams.AddTeams(mlbTeams)
 }
 
 func ScrapeGames(sport sports.Sport, startDate time.Time, endDate time.Time) error {
-    config := sports.SportConfigs[sport]
-    if !ok {
-        return fmt.Errorf("unsupported sport: %s", sport)
-    }
+    config := sports.GetScraper(sport)
 
     c := colly.NewCollector()
     c.OnHTML("td.gamelink", func(e *colly.HTMLElement) {
@@ -129,11 +126,8 @@ func getDate(gameString string, sport sports.Sport) (time.Time, error) {
 
 func scrapeGame(sport sports.Sport, gameString string) {
     log.Printf("Scraping %s game: %s", sport, gameString)
-    config, ok := sports.SportConfigs[sport]
-    if !ok {
-        log.Printf("Unsupported sport: %s", sport)
-        return
-    }
+    config := sports.GetScraper(sport)
+    
     baseUrl := config.Domain
     
     c := colly.NewCollector()
@@ -709,7 +703,7 @@ func UpdateActiveRosters() error {
 func scrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
     var roster []players.PlayerRoster
 
-    url := fmt.Sprintf("%s/teams/%v/2025.html", sports.SportConfigs[sports.NBA].Domain, teamIndex)
+    url := fmt.Sprintf("%s/teams/%v/2025.html", sports.GetScraper(sports.NBA).Domain, teamIndex)
     c := colly.NewCollector()
     log.Println("Visiting team page for ", teamIndex)
     time.Sleep(4 * time.Second)
@@ -843,7 +837,7 @@ func ScrapeTodaysRosters() [][]players.Roster {
         })
     })
 
-    str := fmt.Sprintf(baseUrl, sports.SportConfigs[sports.NBA].Domain, month)
+    str := fmt.Sprintf(baseUrl, sports.GetScraper(sports.NBA).Domain, month)
     c.Visit(str)
 
     return games
@@ -876,7 +870,7 @@ func ScrapeTodaysGames() [][]string {
         })
     })
 
-    str := fmt.Sprintf(baseUrl, sports.SportConfigs[sports.NBA].Domain, month)
+    str := fmt.Sprintf(baseUrl, sports.GetScraper(sports.NBA).Domain, month)
     c.Visit(str)
 
     return games
@@ -884,7 +878,7 @@ func ScrapeTodaysGames() [][]string {
 
 func getRosterForTeam(teamIndex string, missingPlayers map[string]string) players.Roster {
     var roster = players.Roster{}
-    url := fmt.Sprintf("%s/teams/%v/2025.html", sports.SportConfigs[sports.NBA].Domain, teamIndex)
+    url := fmt.Sprintf("%s/teams/%v/2025.html", sports.GetScraper(sports.NBA).Domain, teamIndex)
     c := colly.NewCollector()
     log.Println("Visiting team page for ", teamIndex)
     time.Sleep(4 * time.Second)
@@ -942,7 +936,7 @@ func GetMissingPlayers() map[string]string {
         })
     })
 
-    c.Visit(sports.SportConfigs[sports.NBA].Domain + "/friv/injuries.fcgi")
+    c.Visit(sports.GetScraper(sports.NBA).Domain + "/friv/injuries.fcgi")
     return players
 }
 
