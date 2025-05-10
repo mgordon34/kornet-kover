@@ -63,7 +63,7 @@ func ScrapeMLBTeams() {
 }
 
 func ScrapeGames(sport sports.Sport, startDate time.Time, endDate time.Time) error {
-    config, ok := sports.SportConfigs[sport]
+    config := sports.SportConfigs[sport]
     if !ok {
         return fmt.Errorf("unsupported sport: %s", sport)
     }
