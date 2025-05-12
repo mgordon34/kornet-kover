@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
+	"github.com/mgordon34/kornet-kover/internal/sports"
 )
 
 type SportsbookPullType int
@@ -318,6 +319,14 @@ func GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
         }
 
         odds.AddPlayerLines(lines)
+    }
+}
+
+func GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate time.Time, oddsType string) {
+    log.Printf("Getting historical %s sportsbook odds for %v...", oddsType, sport)
+    sportsbookConfig := sports.GetSportsbook(sport)
+    for _, market := range sportsbookConfig.MainlineConfig.Markets {
+        GetOdds(startDate, endDate, market)
     }
 }
 
