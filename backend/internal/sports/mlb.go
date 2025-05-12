@@ -9,17 +9,15 @@ func NewMLB() *MLBConfig {
         SportConfig: SportConfig{
             sport: MLB,
             sportsbookConfig: &SportsbookConfig{
-                Markets: map[string]string{
-                    "player_hits": "hits",
-                    "player_strikeouts": "strikeouts",
-                },
-                MainlineConfig: MarketConfig{
-                    Markets: []string{"player_hits", "player_strikeouts"},
-                    Bookmaker: "williamhill_us",
-                },
-                AlternateConfig: MarketConfig{
-                    Markets: []string{"player_hits_alternate", "player_strikeouts_alternate"},
-                    Bookmaker: "fanduel",
+                Markets: map[string]MarketConfig{
+                    "mainline": {
+                        Markets: []string{"player_hits", "player_strikeouts"},
+                        Bookmaker: "williamhill_us",
+                    },
+                    "alternate": {
+                        Markets: []string{"player_hits_alternate", "player_strikeouts_alternate"},
+                        Bookmaker: "fanduel",
+                    },
                 },
             },
             scraperConfig: &ScraperConfig{

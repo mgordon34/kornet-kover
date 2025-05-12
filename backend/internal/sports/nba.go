@@ -9,19 +9,15 @@ func NewNBA() *NBAConfig {
         SportConfig: SportConfig{
             sport: NBA,
             sportsbookConfig: &SportsbookConfig{
-                Markets: map[string]string{
-                    "player_points": "points",
-                    "player_rebounds": "rebounds",
-                    "player_assists": "assists",
-                    "player_threes": "threes",
-                },
-                MainlineConfig: MarketConfig{
-                    Markets: []string{"player_points", "player_rebounds"},
-                    Bookmaker: "williamhill_us",
-                },
-                AlternateConfig: MarketConfig{
-                    Markets: []string{"player_points_alternate", "player_rebounds_alternate"},
-                    Bookmaker: "fanduel",
+                Markets: map[string]MarketConfig{
+                    "mainline": {
+                        Markets: []string{"player_points", "player_rebounds"},
+                        Bookmaker: "williamhill_us",
+                    },
+                    "alternate": {
+                        Markets: []string{"player_points_alternate", "player_rebounds_alternate"},
+                        Bookmaker: "fanduel",
+                    },
                 },
             },
             scraperConfig: &ScraperConfig{

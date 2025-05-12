@@ -16,9 +16,7 @@ type Config interface {
 }
 
 type SportsbookConfig struct {
-    Markets          map[string]string
-    MainlineConfig   MarketConfig
-    AlternateConfig  MarketConfig
+    Markets          map[string]MarketConfig
 }
 
 type MarketConfig struct {
