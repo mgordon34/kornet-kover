@@ -322,11 +322,12 @@ func GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
     }
 }
 
-func GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate time.Time, oddsType string) {
-    log.Printf("Getting historical %s sportsbook odds for %v...", oddsType, sport)
+func GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate time.Time) {
+    log.Printf("Getting historical %s sportsbook odds...", sport)
     sportsbookConfig := sports.GetSportsbook(sport)
-    for _, market := range sportsbookConfig.MainlineConfig.Markets {
-        GetOdds(startDate, endDate, market)
+
+    for market, config := range sportsbookConfig.Markets {
+        log.Printf("Getting %s %s sportsbook odds using %s...", market, sport, config.Bookmaker)
     }
 }
 
