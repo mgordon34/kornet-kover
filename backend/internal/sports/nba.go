@@ -9,6 +9,7 @@ func NewNBA() *NBAConfig {
         SportConfig: SportConfig{
             sport: NBA,
             sportsbookConfig: &SportsbookConfig{
+                LeagueName: "basketball_nba",
                 Markets: map[string]MarketConfig{
                     "mainline": {
                         Markets: []string{"player_points", "player_rebounds"},
