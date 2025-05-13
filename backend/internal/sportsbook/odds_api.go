@@ -97,7 +97,7 @@ type EventInfo struct {
     AwayTeam     string    `json:"away_team"`
 }
 
-func GetGamesForDate(date time.Time, apiGetter APIGetter) []EventInfo {
+func GetGamesForDate(date time.Time, config *sports.SportsbookConfig) []EventInfo {
     var games []EventInfo
 
     endpont := "historical/sports/%s/events/"
@@ -106,7 +106,7 @@ func GetGamesForDate(date time.Time, apiGetter APIGetter) []EventInfo {
         "commenceTimeFrom=" + date.UTC().Format("2006-01-02T15:04:05Z"),
         "commenceTimeTo=" + date.AddDate(0,0,1).UTC().Format("2006-01-02T15:04:05Z"),
     }
-    res, err := requestOddsAPI(fmt.Sprintf(endpont, "basketball_nba"), addlArgs)
+    res, err := requestOddsAPI(fmt.Sprintf(endpont, config.LeagueName), addlArgs)
     if err != nil {
         log.Fatal("Error getting odds api: ", err)
     }
@@ -173,30 +173,21 @@ type OddsInfo struct {
     } `json:"bookmakers"`
 }
 
-func GetOddsForGame(game EventInfo, oddsType string, apiGetter APIGetter) []odds.PlayerLine {
+func GetOddsForGame(game EventInfo, config *sports.SportsbookConfig) []odds.PlayerLine {
     log.Printf("Getting odds for %s vs %s", game.HomeTeam, game.AwayTeam)
     var lines []odds.PlayerLine
     nameMap := make(map[string]string)
-
-	var markets, bookmakers string
-	if oddsType == "alternate" {
-		bookmakers = "fanduel"
-		markets = "player_points_alternate,player_rebounds_alternate,player_assists_alternate,player_threes_alternate"
-	} else {
-		bookmakers = "williamhill_us"
-        markets = "player_points,player_rebounds,player_assists,player_threes"
-	}
 
     endpont := "historical/sports/%s/events/%s/odds"
     addlArgs := []string {
         "date=" + game.CommenceTime.UTC().Format("2006-01-02T15:04:05Z"),
 		"regions=us",
-        "bookmakers=" + bookmakers,
-        "markets=" + markets,
+        "bookmakers=" + config.Markets["mainline"].Bookmaker,
+        "markets=" + strings.Join(config.Markets["mainline"].Markets, ","),
         "oddsFormat=" + "american",
         "includeLinks=" + "true",
     }
-    res, err := requestOddsAPI(fmt.Sprintf(endpont, "basketball_nba", game.ID), addlArgs)
+    res, err := requestOddsAPI(fmt.Sprintf(endpont, config.LeagueName, game.ID), addlArgs)
     if err != nil {
         log.Fatal("Error getting odds api: ", err)
     }
@@ -313,9 +304,9 @@ func GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
         log.Printf("Getting historical %s sportsbook odds for %v...", oddsType, d)
         var lines []odds.PlayerLine
 
-        games := GetGamesForDate(d, requestOddsAPI)
+        games := GetGamesForDate(d, sports.GetSportsbook(sports.NBA))
         for _, game := range games {
-            lines = append(lines, GetOddsForGame(game, oddsType, requestOddsAPI)...)
+            lines = append(lines, GetOddsForGame(game, sports.GetSportsbook(sports.NBA))...)
         }
 
         odds.AddPlayerLines(lines)
@@ -326,8 +317,16 @@ func GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate 
     log.Printf("Getting historical %s sportsbook odds...", sport)
     sportsbookConfig := sports.GetSportsbook(sport)
 
-    for market, config := range sportsbookConfig.Markets {
-        log.Printf("Getting %s %s sportsbook odds using %s...", market, sport, config.Bookmaker)
+    for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
+        log.Printf("Getting historical %s sportsbook odds for %v...", sport, d)
+
+        var lines []odds.PlayerLine
+        games := GetGamesForDate(d, sportsbookConfig)
+        for _, game := range games {
+            lines = append(lines, GetOddsForGame(game, sportsbookConfig)...)
+        }
+
+        odds.AddPlayerLines(lines)
     }
 }
 
@@ -340,5 +339,5 @@ func GetLiveOdds(date time.Time, oddsType string) {
         lines = append(lines, GetLiveOddsForGame(game, oddsType, requestOddsAPI)...)
     }
 
-    odds.AddPlayerLines(lines)
+    // odds.AddPlayerLines(lines)
 }
