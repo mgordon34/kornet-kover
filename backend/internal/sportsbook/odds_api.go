@@ -173,7 +173,7 @@ type OddsInfo struct {
     } `json:"bookmakers"`
 }
 
-func GetOddsForGame(game EventInfo, config *sports.SportsbookConfig) []odds.PlayerLine {
+func GetOddsForGame(sport sports.Sport, game EventInfo, config *sports.SportsbookConfig) []odds.PlayerLine {
     log.Printf("Getting odds for %s vs %s", game.HomeTeam, game.AwayTeam)
     var lines []odds.PlayerLine
     nameMap := make(map[string]string)
@@ -212,7 +212,7 @@ func GetOddsForGame(game EventInfo, config *sports.SportsbookConfig) []odds.Play
                 continue
             }
             line := odds.PlayerLine{
-                Sport: "nba",
+                Sport: string(sport),
                 PlayerIndex: playerIndex,
                 Timestamp: market.LastUpdate,
                 Stat: stat,
@@ -306,7 +306,7 @@ func GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
 
         games := GetGamesForDate(d, sports.GetSportsbook(sports.NBA))
         for _, game := range games {
-            lines = append(lines, GetOddsForGame(game, sports.GetSportsbook(sports.NBA))...)
+            lines = append(lines, GetOddsForGame(sports.NBA, game, sports.GetSportsbook(sports.NBA))...)
         }
 
         odds.AddPlayerLines(lines)
@@ -323,10 +323,10 @@ func GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate 
         var lines []odds.PlayerLine
         games := GetGamesForDate(d, sportsbookConfig)
         for _, game := range games {
-            lines = append(lines, GetOddsForGame(game, sportsbookConfig)...)
+            lines = append(lines, GetOddsForGame(sport, game, sportsbookConfig)...)
         }
 
-        odds.AddPlayerLines(lines)
+        // odds.AddPlayerLines(lines)
     }
 }
 
