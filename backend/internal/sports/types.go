@@ -18,6 +18,7 @@ type Config interface {
 type SportsbookConfig struct {
     LeagueName       string
     Markets          map[string]MarketConfig
+    StatMapping      map[string]string
 }
 
 type MarketConfig struct {
