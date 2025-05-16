@@ -178,51 +178,53 @@ func GetOddsForGame(sport sports.Sport, game EventInfo, config *sports.Sportsboo
     var lines []odds.PlayerLine
     nameMap := make(map[string]string)
 
-    endpont := "historical/sports/%s/events/%s/odds"
-    addlArgs := []string {
-        "date=" + game.CommenceTime.UTC().Format("2006-01-02T15:04:05Z"),
-		"regions=us",
-        "bookmakers=" + config.Markets["mainline"].Bookmaker,
-        "markets=" + strings.Join(config.Markets["mainline"].Markets, ","),
-        "oddsFormat=" + "american",
-        "includeLinks=" + "true",
-    }
-    res, err := requestOddsAPI(fmt.Sprintf(endpont, config.LeagueName, game.ID), addlArgs)
-    if err != nil {
-        log.Fatal("Error getting odds api: ", err)
-    }
+    for _, marketConfig := range config.Markets {
+        endpont := "historical/sports/%s/events/%s/odds"
+        addlArgs := []string {
+            "date=" + game.CommenceTime.UTC().Format("2006-01-02T15:04:05Z"),
+            "regions=us",
+            "bookmakers=" + marketConfig.Bookmaker,
+            "markets=" + strings.Join(marketConfig.Markets, ","),
+            "oddsFormat=" + "american",
+            "includeLinks=" + "true",
+        }
+        res, err := requestOddsAPI(fmt.Sprintf(endpont, config.LeagueName, game.ID), addlArgs)
+        if err != nil {
+            log.Fatal("Error getting odds api: ", err)
+        }
 
-    var oddResponse OddResponse
-    if err := json.Unmarshal([]byte(res), &oddResponse); err != nil {
-        panic(err)
-    }
+        var oddResponse OddResponse
+        if err := json.Unmarshal([]byte(res), &oddResponse); err != nil {
+            panic(err)
+        }
 
-    if len(oddResponse.Data.Bookmakers) == 0 {
-        log.Printf("Could not find odds for %s vs %s", game.HomeTeam, game.AwayTeam)
-        return lines
-    }
-    for _, market := range oddResponse.Data.Bookmakers[0].Markets {
-		truncated_string := strings.ReplaceAll(market.Key, "_alternate", "")
-        stat := odds_markets[truncated_string]
-        for _, line := range market.Outcomes {
-            playerName := strings.Join(strings.Split(line.Description, " ")[:2], " ")
-            playerIndex, err := players.PlayerNameToIndex(nameMap, playerName)
-            if err != nil {
-                log.Printf("Error finding player name: %s", line.Description)
-                continue
+        if len(oddResponse.Data.Bookmakers) == 0 {
+            log.Printf("Could not find odds for %s vs %s", game.HomeTeam, game.AwayTeam)
+            return lines
+        }
+        for _, market := range oddResponse.Data.Bookmakers[0].Markets {
+            truncated_string := strings.ReplaceAll(market.Key, "_alternate", "")
+            stat := config.StatMapping[truncated_string]
+            for _, line := range market.Outcomes {
+                playerName := strings.Join(strings.Split(line.Description, " ")[:2], " ")
+                playerIndex, err := players.PlayerNameToIndex(nameMap, playerName)
+                if err != nil {
+                    log.Printf("Error finding player name: %s", line.Description)
+                    continue
+                }
+                line := odds.PlayerLine{
+                    Sport: string(sport),
+                    PlayerIndex: playerIndex,
+                    Timestamp: market.LastUpdate,
+                    Stat: stat,
+                    Side: line.Name,
+                    Line: line.Point,
+                    Type: getMarketType(market.Key),
+                    Odds: line.Price,
+                    Link: line.Link,
+                }
+                lines = append(lines, line)
             }
-            line := odds.PlayerLine{
-                Sport: string(sport),
-                PlayerIndex: playerIndex,
-                Timestamp: market.LastUpdate,
-                Stat: stat,
-                Side: line.Name,
-                Line: line.Point,
-				Type: getMarketType(market.Key),
-                Odds: line.Price,
-                Link: line.Link,
-            }
-            lines = append(lines, line)
         }
     }
 
@@ -327,6 +329,9 @@ func GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate 
         }
 
         // odds.AddPlayerLines(lines)
+        for _, line := range lines {
+            log.Printf("Line: %v", line)
+        }
     }
 }
 
