@@ -9,6 +9,11 @@ func NewMLB() *MLBConfig {
         SportConfig: SportConfig{
             sport: MLB,
             sportsbookConfig: &SportsbookConfig{
+                StatMapping: map[string]string{
+                    "batter_home_runs": "home_runs",
+                    "batter_hits": "hits",
+                    "batter_rbis": "rbis",
+                },
                 LeagueName: "baseball_mlb",
                 Markets: map[string]MarketConfig{
                     "mainline": {
@@ -17,7 +22,7 @@ func NewMLB() *MLBConfig {
                     },
                     "alternate": {
                         Markets: []string{"batter_home_runs_alternate", "batter_hits_alternate", "batter_rbis_alternate"},
-                        Bookmaker: "fanduel",
+                        Bookmaker: "draftkings",
                     },
                 },
             },
