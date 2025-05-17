@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/mgordon34/kornet-kover/internal/sports"
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
@@ -48,15 +49,15 @@ func GetLastGame() (Game, error) {
     return game, nil
 }
 
-func GetGamesForDate(date time.Time) ([]Game, error) {
+func GetGamesForDate(sport sports.Sport, date time.Time) ([]Game, error) {
     db := storage.GetDB()
 
     sql := `
 	SELECT * from games
-    WHERE date = ($1)
+    WHERE date = ($1) AND sport = ($2)
     ORDER BY date ASC`
 
-    row, _ := db.Query(context.Background(), sql, date)
+    row, _ := db.Query(context.Background(), sql, date, sport)
     games, err := pgx.CollectRows(row, pgx.RowToStructByName[Game])
     if err != nil {
         return games, errors.New(fmt.Sprintf("Error getting last game: %v", err))
