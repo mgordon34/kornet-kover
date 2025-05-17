@@ -156,6 +156,68 @@ func runGetPlayerPip() {
     log.Println(prediction)
 }
 
+func backtestMLB() {
+    loc, _ := time.LoadLocation("America/New_York")
+    startDate, _ := time.ParseInLocation("2006-01-02", "2019-05-03", loc)
+    endDate, _ := time.ParseInLocation("2006-01-02", "2019-05-03", loc)
+
+    for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
+        log.Printf("Date: %v", date)
+
+        todayGames, err := games.GetGamesForDate(sports.MLB, date)
+        if err != nil {
+            log.Fatal("Error getting games: ", err)
+        }
+        if len(todayGames) == 0 {
+            log.Printf("No games for %v", date)
+            continue
+        }
+
+        gameIds := make([]string, len(todayGames))
+        for i, game := range todayGames {
+            gameIds[i] = strconv.Itoa(game.Id)
+        }
+        // statMap, err := players.GetMLBBattingStatsForGames(gameIds)
+        // if err != nil {
+        //     log.Fatal("Error getting historical stats: ", err)
+        // }
+        // oddsMap, err := odds.GetPlayerOddsForDate(sports.MLB, date)
+        // if err != nil {
+        //     log.Fatal("Error getting player odds: ", err)
+        // }
+        // for playerIndex, odds := range oddsMap {
+        //     for stat, lines := range odds {
+        //         log.Printf("Player: %v, Stat: %v, Lines: %v", playerIndex, stat, lines)
+        //     }
+        // }
+
+        // var results []analysis.Analysis
+        for _, game := range todayGames {
+            log.Printf("Analyzing %v vs. %v", game.HomeIndex, game.AwayIndex)
+            playerMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex, "mlb_player_games_batting", "pas")
+            if err != nil {
+                log.Fatal("Error getting players for game: ", err)
+            }
+            for i, player := range playerMap["home"] {
+                log.Printf("%d Player: %v", i, player.Name)
+            }
+            for i, player := range playerMap["away"] {
+                log.Printf("%d Player: %v", i, player.Name)
+            }
+            // TODO: make this more intelligent by getting player's avg minutes for this point in the season
+            // homeRoster := convertPlayerMaptoPlayerRosters(playerMap["home"][:8])
+            // awayRoster := convertPlayerMaptoPlayerRosters(playerMap["away"][:8])
+
+            // results = append(results, analysis.RunAnalysisOnGame(homeRoster, awayRoster, date, false, true)...)
+            // results = append(results, analysis.RunAnalysisOnGame(awayRoster, homeRoster, date, false, true)...)
+        }
+        // for playerIndex, stat := range statMap {
+        //     log.Printf("Player: %v, Stats: %v", playerIndex, stat)
+        // }
+
+    }
+}
+
 func runBacktest() {
     loc, _ := time.LoadLocation("America/New_York")
     startDate, _ := time.ParseInLocation("2006-01-02", "2023-12-01", loc)
