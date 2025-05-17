@@ -18,7 +18,7 @@ func NewMLB() *MLBConfig {
                 Markets: map[string]MarketConfig{
                     "mainline": {
                         Markets: []string{"batter_home_runs", "batter_hits", "batter_rbis"},
-                        Bookmaker: "fanatics",
+                        Bookmaker: "draftkings",
                     },
                     "alternate": {
                         Markets: []string{"batter_home_runs_alternate", "batter_hits_alternate", "batter_rbis_alternate"},
