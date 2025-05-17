@@ -328,10 +328,7 @@ func GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate 
             lines = append(lines, GetOddsForGame(sport, game, sportsbookConfig)...)
         }
 
-        // odds.AddPlayerLines(lines)
-        for _, line := range lines {
-            log.Printf("Line: %v", line)
-        }
+        odds.AddPlayerLines(lines)
     }
 }
 
