@@ -13,6 +13,7 @@ import (
 	"github.com/mgordon34/kornet-kover/api/picks"
 	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/scraper"
+	"github.com/mgordon34/kornet-kover/internal/sports"
 )
 
 type PropSelector struct {
@@ -310,7 +311,7 @@ func runPickProps() ([]PropPick, error) {
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
 
     // Gather player Odds map for upcoming games
-    oddsMap, err := odds.GetPlayerOddsForDate(today, []string{"points, rebounds, assists, threes"})
+    oddsMap, err := odds.GetPlayerOddsForDate(sports.NBA, today)
     if err != nil {
         return picks, err
     }
@@ -432,7 +433,7 @@ func runPickProps() ([]PropPick, error) {
         log.Printf("%v: Selected %v %v Predicted %.2f vs. Line %.2f. Diff: %.2f, ID: %v", pick.Analysis.PlayerIndex, pick.Side, pick.Stat, pick.Prediction.GetStats()[pick.Stat], pick.Over.Line, pick.Diff, pick.LineId)
     }
 
-    altOddsMap, err := odds.GetAlternatePlayerOddsForDate(today, []string{"points, rebounds, assists, threes"})
+    altOddsMap, err := odds.GetAlternatePlayerOddsForDate(sports.NBA, today)
     if err != nil {
         return picks, err
     }

@@ -279,7 +279,7 @@ func (b Backtester) backtestDate(date time.Time) {
     var results []analysis.Analysis
     for _, game := range todayGames {
         log.Printf("Analyzing %v vs. %v", game.HomeIndex, game.AwayIndex)
-        playerMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex)
+        playerMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex, "nba_player_games", "minutes")
         if err != nil {
             log.Fatal("Error getting players for game: ", err)
         }

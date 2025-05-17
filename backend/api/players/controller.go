@@ -443,17 +443,17 @@ const (
 	Opponent
 )
 
-func GetPlayersForGame(gameId int, homeIndex string) (map[string][]Player, error) {
+func GetPlayersForGame(gameId int, homeIndex string, playerGameTable string, sortString string) (map[string][]Player, error) {
 	playerMap := make(map[string][]Player)
 	db := storage.GetDB()
 	sql := `SELECT pl.index, pl.name, pg.team_index FROM players pl
-                 LEFT JOIN nba_player_games pg ON pg.player_index=pl.index
+                 LEFT JOIN ` + playerGameTable + ` pg ON pg.player_index=pl.index
                  LEFT JOIN games gg ON gg.id=pg.game
                  WHERE gg.id=($1)
-                 ORDER BY pg.minutes DESC`
+                 ORDER BY pg.` + sortString + ` DESC`
 	rows, err := db.Query(context.Background(), sql, gameId)
 	if err != nil {
-		log.Fatal("Error querying for player lines: ", err)
+		log.Fatal("Error querying for player games: ", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
