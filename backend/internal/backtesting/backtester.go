@@ -10,6 +10,7 @@ import (
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
 	"github.com/mgordon34/kornet-kover/internal/analysis"
+	"github.com/mgordon34/kornet-kover/internal/sports"
 )
 
 type Strategy struct {
@@ -247,7 +248,7 @@ func (b Backtester) backtestDate(date time.Time) {
     date = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
     log.Printf("Running for date %v", date)
 
-    todayGames, err := games.GetGamesForDate(date)
+    todayGames, err := games.GetGamesForDate(sports.NBA, date)
     if err != nil {
         log.Fatal("Error getting games for date: ", err)
     }
