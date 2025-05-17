@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/mgordon34/kornet-kover/internal/sports"
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
@@ -80,16 +81,16 @@ func AddPlayerLines(playerLines []PlayerLine) {
     log.Println("success adding player_lines")
 }
 
-func GetPlayerLinesForDate(date time.Time, lineType string) ([]PlayerLine, error) {
+func GetPlayerLinesForDate(sport sports.Sport, date time.Time, lineType string) ([]PlayerLine, error) {
     date = date.UTC()
     endDate := date.AddDate(0, 0, 1)
 
     db := storage.GetDB()
     sql := `SELECT pl.id, pl.sport, pl.player_index, pl.timestamp, pl.stat, pl.side, pl.type, pl.line, pl.odds, pl.link FROM player_lines pl INNER JOIN
-                (select player_index, stat, side, line, max(timestamp) as latest from player_lines where (timestamp between ($1) and ($2)) and type = ($3) group by player_index, stat, side, line) mpl 
+                (select player_index, stat, side, line, max(timestamp) as latest from player_lines where (timestamp between ($1) and ($2)) and type = ($3) and sport = ($4) group by player_index, stat, side, line) mpl 
                 on pl.timestamp = mpl.latest and pl.player_index = mpl.player_index and pl.stat = mpl.stat and pl.side = mpl.side and pl.line = mpl.line;`
 
-    rows, err := db.Query(context.Background(), sql, date, endDate, lineType)
+    rows, err := db.Query(context.Background(), sql, date, endDate, lineType, sport)
     if err != nil {
         log.Fatal("Error querying for player lines: ", err)
     }
@@ -126,10 +127,10 @@ func GetLastLine(oddsType string) (PlayerLine, error) {
     return pLine, nil
 }
 
-func GetPlayerOddsForDate(date time.Time, stats []string) (map[string]map[string]PlayerOdds, error) {
+func GetPlayerOddsForDate(sport sports.Sport, date time.Time) (map[string]map[string]PlayerOdds, error) {
     oddsMap := make(map[string]map[string]PlayerOdds)
 
-    lines, err := GetPlayerLinesForDate(date, "mainline")
+    lines, err := GetPlayerLinesForDate(sport, date, "mainline")
     if err != nil {
         return oddsMap, err
     }
@@ -140,10 +141,10 @@ func GetPlayerOddsForDate(date time.Time, stats []string) (map[string]map[string
     return oddsMap, nil
 }
 
-func GetAlternatePlayerOddsForDate(date time.Time, stats []string) (map[string]map[string][]PlayerLine, error) {
+func GetAlternatePlayerOddsForDate(sport sports.Sport, date time.Time) (map[string]map[string][]PlayerLine, error) {
     oddsMap := make(map[string]map[string][]PlayerLine)
 
-    lines, err := GetPlayerLinesForDate(date, "alternate")
+    lines, err := GetPlayerLinesForDate(sport, date, "alternate")
     if err != nil {
         return oddsMap, err
     }

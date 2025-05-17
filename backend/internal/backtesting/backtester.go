@@ -234,7 +234,7 @@ type Backtester struct {
 }
 
 func (b Backtester) RunBacktest() {
-    for d := b.StartDate; d.After(b.EndDate) == false; d = d.AddDate(0, 0, 1) {
+    for d := b.StartDate; !d.After(b.EndDate); d = d.AddDate(0, 0, 1) {
         b.backtestDate(d)
     }
 
@@ -267,7 +267,7 @@ func (b Backtester) backtestDate(date time.Time) {
     }
 
     // todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists", "threes"})
-    todaysOdds, err := odds.GetAlternatePlayerOddsForDate(date, []string{"points", "rebounds", "assists", "threes"})
+    todaysOdds, err := odds.GetAlternatePlayerOddsForDate(sports.NBA, date)
     if err != nil {
         log.Fatal("Error getting historical odds: ", err)
     }
