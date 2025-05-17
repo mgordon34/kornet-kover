@@ -208,6 +208,7 @@ func AddMLBPlayerGamesBatting(pGames []MLBPlayerGameBatting) {
 				pGame.Runs,
 				pGame.Hits,
 				pGame.RBIs,
+				pGame.HomeRuns,
 				pGame.Walks,
 				pGame.Strikeouts,
 				pGame.PAs,
@@ -217,6 +218,7 @@ func AddMLBPlayerGamesBatting(pGames []MLBPlayerGameBatting) {
 				pGame.SLG,
 				pGame.OPS,
 				pGame.WPA,
+				pGame.Details,
 			},
 		)
 	}
@@ -232,6 +234,7 @@ func AddMLBPlayerGamesBatting(pGames []MLBPlayerGameBatting) {
 			"runs",
 			"hits",
 			"rbis",
+			"home_runs",
 			"walks",
 			"strikeouts",
 			"pas",
@@ -241,6 +244,7 @@ func AddMLBPlayerGamesBatting(pGames []MLBPlayerGameBatting) {
 			"slg",
 			"ops",
 			"wpa",
+			"details",
 		},
 		pgx.CopyFromRows(playersInterface),
 	)
@@ -250,8 +254,8 @@ func AddMLBPlayerGamesBatting(pGames []MLBPlayerGameBatting) {
 
 	_, err = txn.Exec(
 		context.Background(),
-		` INSERT INTO mlb_player_games_batting (player_index, game, team_index, at_bats, runs, hits, rbis, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa)
-        SELECT player_index, game, team_index, at_bats, runs, hits, rbis, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa FROM player_games_temp
+		` INSERT INTO mlb_player_games_batting (player_index, game, team_index, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa, details)
+        SELECT player_index, game, team_index, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa, details FROM player_games_temp
         ON CONFLICT DO NOTHING`,
 	)
 	if err != nil {
@@ -538,6 +542,39 @@ func GetPlayerStatsForGames(gameIds []string) (map[string]PlayerAvg, error) {
 
 	for _, stat := range stats {
 		playerMap[stat.PlayerIndex] = stat.NBAAvg
+	}
+
+	return playerMap, nil
+}
+
+type MLBPlayerStatInfo struct {
+	PlayerIndex string `json:"player_index"`
+	MLBBattingAvg
+}
+
+func GetMLBBattingStatsForGames(gameIds []string) (map[string]MLBBattingAvg, error) {
+	playerMap := make(map[string]MLBBattingAvg)
+	db := storage.GetDB()
+	sql := `SELECT player_index, 1 as num_games, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa FROM mlb_player_games_batting
+                left join games gg on gg.id = mlb_player_games_batting.game
+                where gg.id IN (%s)`
+
+	param := strings.Join(gameIds, ",")
+	sql = fmt.Sprintf(sql, param)
+
+	rows, err := db.Query(context.Background(), sql)
+	if err != nil {
+		log.Fatal("Error querying for player stats: ", err)
+	}
+	defer rows.Close()
+
+	stats, err := pgx.CollectRows(rows, pgx.RowToStructByName[MLBPlayerStatInfo])
+	if err != nil {
+		return playerMap, err
+	}
+
+	for _, stat := range stats {
+		playerMap[stat.PlayerIndex] = stat.MLBBattingAvg
 	}
 
 	return playerMap, nil
