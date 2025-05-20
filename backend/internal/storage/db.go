@@ -97,6 +97,7 @@ func InitTables() {
             pas INT NOT NULL,
             pitches INT NOT NULL,
             strikes INT NOT NULL,
+            ba REAL NOT NULL,
             obp REAL NOT NULL,
             slg REAL NOT NULL,
             ops REAL NOT NULL,

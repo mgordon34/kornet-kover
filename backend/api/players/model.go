@@ -43,6 +43,7 @@ type MLBPlayerGameBatting struct {
     PAs             int         `json:"pas"`
     Pitches         int         `json:"pitches"`
     Strikes         int         `json:"strikes"`
+    BA              float32     `json:"ba"`
     OBP             float32     `json:"obp"`
     SLG             float32     `json:"slg"`
     OPS             float32     `json:"ops"`

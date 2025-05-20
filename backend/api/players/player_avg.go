@@ -145,6 +145,7 @@ type MLBBattingAvg struct {
     PAs             float32     `json:"avg_pas"`
     Pitches         float32     `json:"avg_pitches"`
     Strikes         float32     `json:"avg_strikes"`
+    BA              float32     `json:"avg_ba"`
     OBP             float32     `json:"avg_obp"`
     SLG             float32     `json:"avg_slg"`
     OPS             float32     `json:"avg_ops"`
@@ -167,6 +168,7 @@ func (m MLBBattingAvg) GetStats() map[string]float32 {
         "pas": m.PAs,
         "pitches": m.Pitches,
         "strikes": m.Strikes,
+        "ba": m.BA,
         "obp": m.OBP,
         "slg": m.SLG,
         "ops": m.OPS,
@@ -192,6 +194,7 @@ func (m MLBBattingAvg) AddAvg(a PlayerAvg) PlayerAvg {
         PAs: (m.PAs * float32(m.NumGames) + mlb.PAs * float32(mlb.NumGames)) / total_games,
         Pitches: (m.Pitches * float32(m.NumGames) + mlb.Pitches * float32(mlb.NumGames)) / total_games,
         Strikes: (m.Strikes * float32(m.NumGames) + mlb.Strikes * float32(mlb.NumGames)) / total_games,
+        BA: (m.BA * float32(m.NumGames) + mlb.BA * float32(mlb.NumGames)) / total_games,
         OBP: (m.OBP * float32(m.NumGames) + mlb.OBP * float32(mlb.NumGames)) / total_games,
         SLG: (m.SLG * float32(m.NumGames) + mlb.SLG * float32(mlb.NumGames)) / total_games,
         OPS: (m.OPS * float32(m.NumGames) + mlb.OPS * float32(mlb.NumGames)) / total_games,
@@ -228,6 +231,7 @@ func (m MLBBattingAvg) ConvertToPer() PlayerAvg {
         // For baseball, "per" is usually per plate appearance (PA)
         return MLBBattingAvg{
             NumGames: m.NumGames,
+            PAs: m.PAs,
             AtBats: m.AtBats / m.PAs,
             Runs: m.Runs / m.PAs,
             Hits: m.Hits / m.PAs,
@@ -235,7 +239,6 @@ func (m MLBBattingAvg) ConvertToPer() PlayerAvg {
             HomeRuns: m.HomeRuns / m.PAs,
             Walks: m.Walks / m.PAs,
             Strikeouts: m.Strikeouts / m.PAs,
-            PAs: 1.0, // normalized to 1 PA
             Pitches: m.Pitches / m.PAs,
             Strikes: m.Strikes / m.PAs,
             OBP: m.OBP,        // OBP, SLG, OPS are already rate stats
