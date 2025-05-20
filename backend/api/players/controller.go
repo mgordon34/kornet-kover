@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/mgordon34/kornet-kover/internal/sports"
 	"github.com/mgordon34/kornet-kover/internal/storage"
 	"github.com/mgordon34/kornet-kover/internal/utils"
 )
@@ -436,6 +437,26 @@ func GetPlayerStats(player string, startDate time.Time, endDate time.Time) (Play
 	return stats, nil
 }
 
+func GetMLBStats(player string, startDate time.Time, endDate time.Time) (MLBBattingAvg, error) {
+	db := storage.GetDB()
+	sql := `SELECT count(*) as num_games, avg(at_bats) as at_bats, avg(runs) as runs, avg(hits) as hits, avg(rbis) as rbis, avg(home_runs) as home_runs, avg(walks) as walks, avg(strikeouts) as strikeouts, avg(pas) as pas, avg(pitches) as pitches, avg(strikes) as strikes, avg(ba) as ba, avg(obp) as obp, avg(slg) as slg, avg(ops) as ops, avg(wpa) as wpa FROM mlb_player_games_batting
+                left join games on games.id = mlb_player_games_batting.game
+                where mlb_player_games_batting.player_index = ($1) and games.date between ($2) and ($3)`
+
+	rows, err := db.Query(context.Background(), sql, player, startDate.Format(time.DateOnly), endDate.AddDate(0, 0, -1).Format(time.DateOnly))
+	if err != nil {
+		log.Fatal("Error querying for player stats: ", err)
+	}
+	defer rows.Close()
+
+	stats, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[MLBBattingAvg])
+	if err != nil {
+		return MLBBattingAvg{}, err
+	}
+
+	return stats, nil
+}
+
 type Relationship int
 
 const (
@@ -580,7 +601,7 @@ func GetMLBBattingStatsForGames(gameIds []string) (map[string]MLBBattingAvg, err
 	return playerMap, nil
 }
 
-func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
+func GetPlayerPerByYear(sport sports.Sport, player string, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
 	playerStats := make(map[int]PlayerAvg)
 
 	for d := startDate; !d.After(endDate); d = d.AddDate(1, 0, 0) {
@@ -589,9 +610,17 @@ func GetPlayerPerByYear(player string, startDate time.Time, endDate time.Time) m
 			useDate = endDate
 		}
 
-		yearlyStats, _ := GetPlayerStats(player, d, useDate)
-		if yearlyStats.IsValid() {
-			playerStats[utils.DateToNBAYear(d)] = yearlyStats.ConvertToPer()
+		switch sport {
+		case sports.NBA:
+			yearlyStats, _ := GetPlayerStats(player, d, useDate)
+			if yearlyStats.IsValid() {
+				playerStats[utils.DateToNBAYear(d)] = yearlyStats.ConvertToPer()
+			}
+		case sports.MLB:
+			yearlyStats, _ := GetMLBStats(player, d, useDate)
+			if yearlyStats.IsValid() {
+				playerStats[d.Year()] = yearlyStats.ConvertToPer()
+			}
 		}
 	}
 

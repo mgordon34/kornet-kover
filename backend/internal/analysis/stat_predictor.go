@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/mgordon34/kornet-kover/api/players"
+	"github.com/mgordon34/kornet-kover/internal/sports"
 	"github.com/mgordon34/kornet-kover/internal/utils"
 )
 
@@ -23,7 +24,7 @@ func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Player
     prunedOpponents := prunePlayers(opponents)
 
     for _, player := range prunedPlayers[:min(len(prunedPlayers),5)] {
-        controlMap := players.GetPlayerPerByYear(player, startDate, endDate)
+        controlMap := players.GetPlayerPerByYear(sports.NBA, player, startDate, endDate)
 
         currYear := utils.DateToNBAYear(endDate)
         _, ok := controlMap[currYear]; if !ok {
@@ -65,12 +66,26 @@ func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Player
 }
 
 func RunMLBAnalysisOnGame(roster []players.PlayerRoster, opponents []players.PlayerRoster, endDate time.Time, forceUpdate bool, storePIP bool) []Analysis {
-    // startDate, _ := time.Parse("2006-01-02", "2019-10-01")
+    startDate, _ := time.Parse("2006-01-02", "2019-03-01")
     var predictedStats []Analysis
 
-	for _, rosterSpot := range roster {
-		log.Printf("Analyzing player: %s", rosterSpot.PlayerIndex)
-	}
+    prunedPlayers := prunePlayers(roster)
+    // prunedOpponents := prunePlayers(opponents)
+
+    for _, player := range prunedPlayers[:min(len(prunedPlayers),9)] {
+        controlMap := players.GetPlayerPerByYear(sports.MLB, player, startDate, endDate)
+
+        _, ok := controlMap[endDate.Year()]; if !ok {
+            log.Printf("Player %v has no stats for current year. Skipping...", player)
+            continue
+        }
+        yearlyStats := controlMap[endDate.Year()].(players.MLBBattingAvg)
+        log.Printf("Player: %v, Num Games: %v, PA: %v, AB: %v, Hits: %v, Home Runs: %v, BA: %v, OBP: %v, SLG: %v", player, yearlyStats.NumGames, yearlyStats.PAs, yearlyStats.AtBats, yearlyStats.Hits, yearlyStats.HomeRuns, yearlyStats.BA, yearlyStats.OBP, yearlyStats.SLG)
+    }
+
+    if storePIP {
+        CreateAndStorePIPPrediction(predictedStats, endDate)
+    }
 
     return predictedStats
 }
