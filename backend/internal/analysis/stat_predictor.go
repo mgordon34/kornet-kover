@@ -64,6 +64,17 @@ func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Player
     return predictedStats
 }
 
+func RunMLBAnalysisOnGame(roster []players.PlayerRoster, opponents []players.PlayerRoster, endDate time.Time, forceUpdate bool, storePIP bool) []Analysis {
+    // startDate, _ := time.Parse("2006-01-02", "2019-10-01")
+    var predictedStats []Analysis
+
+	for _, rosterSpot := range roster {
+		log.Printf("Analyzing player: %s", rosterSpot.PlayerIndex)
+	}
+
+    return predictedStats
+}
+
 func prunePlayers(roster []players.PlayerRoster) []string {
     var activePlayers []string
 
