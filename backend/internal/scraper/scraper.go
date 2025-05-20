@@ -477,6 +477,9 @@ func parseMLBPlayerGameBatting(pGame players.MLBPlayerGameBatting, s *goquery.Se
             pGame.Pitches, _ = strconv.Atoi(td.Text())
         case "strikes_total":
             pGame.Strikes, _ = strconv.Atoi(td.Text())
+        case "batting_avg":
+            avg, _ := strconv.ParseFloat(strings.TrimSpace(td.Text()), 32)
+            pGame.BA = float32(avg)
         case "onbase_perc":
             obp, _ := strconv.ParseFloat(strings.TrimSpace(td.Text()), 32)
             pGame.OBP = float32(obp)
