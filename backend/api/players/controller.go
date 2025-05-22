@@ -215,6 +215,7 @@ func AddMLBPlayerGamesBatting(pGames []MLBPlayerGameBatting) {
 				pGame.PAs,
 				pGame.Pitches,
 				pGame.Strikes,
+				pGame.BA,
 				pGame.OBP,
 				pGame.SLG,
 				pGame.OPS,
@@ -241,6 +242,7 @@ func AddMLBPlayerGamesBatting(pGames []MLBPlayerGameBatting) {
 			"pas",
 			"pitches",
 			"strikes",
+			"ba",
 			"obp",
 			"slg",
 			"ops",
@@ -255,8 +257,8 @@ func AddMLBPlayerGamesBatting(pGames []MLBPlayerGameBatting) {
 
 	_, err = txn.Exec(
 		context.Background(),
-		` INSERT INTO mlb_player_games_batting (player_index, game, team_index, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa, details)
-        SELECT player_index, game, team_index, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa, details FROM player_games_temp
+		` INSERT INTO mlb_player_games_batting (player_index, game, team_index, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, ba, obp, slg, ops, wpa, details)
+        SELECT player_index, game, team_index, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, ba, obp, slg, ops, wpa, details FROM player_games_temp
         ON CONFLICT DO NOTHING`,
 	)
 	if err != nil {
