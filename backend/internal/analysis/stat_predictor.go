@@ -70,7 +70,7 @@ func RunMLBAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Pla
     var predictedStats []Analysis
 
     prunedPlayers := prunePlayers(roster)
-    // prunedOpponents := prunePlayers(opponents)
+    prunedOpponents := prunePlayers(opponents)
 
     for _, player := range prunedPlayers[:min(len(prunedPlayers),9)] {
         controlMap := players.GetPlayerPerByYear(sports.MLB, player, startDate, endDate)
@@ -79,8 +79,11 @@ func RunMLBAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Pla
             log.Printf("Player %v has no stats for current year. Skipping...", player)
             continue
         }
-        yearlyStats := controlMap[endDate.Year()].(players.MLBBattingAvg)
-        log.Printf("Player: %v, Num Games: %v, PA: %v, AB: %v, Hits: %v, Home Runs: %v, BA: %v, OBP: %v, SLG: %v", player, yearlyStats.NumGames, yearlyStats.PAs, yearlyStats.AtBats, yearlyStats.Hits, yearlyStats.HomeRuns, yearlyStats.BA, yearlyStats.OBP, yearlyStats.SLG)
+
+        pipPred := CreateMLBPrediction(player, prunedOpponents[:1], players.Opponent, controlMap, startDate, endDate)
+        log.Printf("PIPPred: %v", pipPred)
+        
+        // yearlyStats := controlMap[endDate.Year()].(players.MLBBattingAvg)
     }
 
     if storePIP {
@@ -174,6 +177,25 @@ func CreateAndStorePIPPrediction(analyses []Analysis, date time.Time) {
     }
 
     players.AddPIPPrediction(pPreds)
+}
+
+func CreateMLBPrediction(playerIndex string, opponents []string, relationship players.Relationship, controlMap map[int]players.PlayerAvg, startDate time.Time, endDate time.Time) players.MLBBattingAvg {
+    var totalPip players.PlayerAvg
+
+    for _, defender := range opponents {
+        affectedMap := players.GetPlayerPerWithPlayerByYear(playerIndex, defender, players.Opponent, startDate, endDate)
+        pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
+
+        if totalPip == nil {
+            totalPip = pipFactor
+        } else {
+            totalPip = totalPip.AddAvg(pipFactor)
+        }
+    }
+
+    pred := controlMap[endDate.Year()].PredictStats(totalPip).(players.MLBBattingAvg)
+
+    return pred
 }
 
 func GetOutliers(baseStats players.PlayerAvg, predictedStats players.PlayerAvg) map[string]float32 {
