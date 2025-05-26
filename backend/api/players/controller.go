@@ -629,6 +629,32 @@ func GetPlayerPerByYear(sport sports.Sport, player string, startDate time.Time, 
 	return playerStats
 }
 
+func GetMLBPlayerStatsWithPlayer(player string, defender string, startDate time.Time, endDate time.Time) (MLBBattingAvg, error) {
+	db := storage.GetDB()
+	sql := `SELECT 
+            COUNT(*) FILTER (WHERE result != 'Not Completed') as pas,
+            COUNT(*) FILTER (WHERE result = 'HR') as home_runs,
+            COUNT(*) FILTER (WHERE result IN ('1B','2B','3B','HR')) as hits,
+            COUNT(*) FILTER (WHERE result IN ('Out','SO','Reached on Error')) as outs
+            FROM mlb_play_by_plays
+                left join games gg on gg.id = mlb_play_by_plays.game
+                where mlb_play_by_plays.batter_index = ($1) and mlb_play_by_plays.pitcher_index = ($2) and gg.date between ($3) and ($4)`
+
+	rows, err := db.Query(context.Background(), sql, player, defender, startDate.Format(time.DateOnly), endDate.AddDate(0, 0, -1).Format(time.DateOnly))
+	if err != nil {
+		log.Fatal("Error querying for player stats: ", err)
+	}
+
+	stats, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[MLBBattingAvg])
+	log.Printf("Stats: %v", stats)
+	if err != nil {
+		log.Printf("Error collecting one row: %v", err)
+		return MLBBattingAvg{}, err
+	}
+
+	return stats, nil
+}
+
 func GetPlayerStatsWithPlayer(player string, defender string, relationship Relationship, startDate time.Time, endDate time.Time) (PlayerAvg, error) {
 	db := storage.GetDB()
 	sql := `SELECT count(*) as num_games, avg(minutes) as minutes, avg(points) as points, avg(rebounds) as rebounds, 
@@ -685,6 +711,22 @@ func GetPlayerPerWithPlayerByYear(player string, defender string, relationship R
 
 		yearlyStats, _ := GetPlayerStatsWithPlayer(player, defender, relationship, d, useDate)
 		playerStats[utils.DateToNBAYear(d)] = yearlyStats.ConvertToPer()
+	}
+
+	return playerStats
+}
+
+func GetMLBPlayerPerWithPlayerByYear(player string, defender string, startDate time.Time, endDate time.Time) map[int]PlayerAvg {
+	playerStats := make(map[int]PlayerAvg)
+
+	for d := startDate; !d.After(endDate); d = d.AddDate(1, 0, 0) {
+		useDate := d.AddDate(1, 0, 0)
+		if useDate.After(endDate) {
+			useDate = endDate
+		}
+
+		yearlyStats, _ := GetMLBPlayerStatsWithPlayer(player, defender, d, useDate)
+		playerStats[d.Year()] = yearlyStats.ConvertToPer()
 	}
 
 	return playerStats

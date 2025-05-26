@@ -183,8 +183,11 @@ func CreateMLBPrediction(playerIndex string, opponents []string, relationship pl
     var totalPip players.PlayerAvg
 
     for _, defender := range opponents {
-        affectedMap := players.GetPlayerPerWithPlayerByYear(playerIndex, defender, players.Opponent, startDate, endDate)
+        log.Printf("Batter: %v, Defender: %v", playerIndex, defender)
+        affectedMap := players.GetMLBPlayerPerWithPlayerByYear(playerIndex, defender, startDate, endDate)
+        log.Printf("AffectedMap: %v", affectedMap)
         pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
+        log.Printf("PipFactor: %v", pipFactor)
 
         if totalPip == nil {
             totalPip = pipFactor
