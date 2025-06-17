@@ -635,7 +635,7 @@ func GetMLBPlayerStatsWithPlayer(player string, defender string, startDate time.
             COUNT(*) FILTER (WHERE result != 'Not Completed') as pas,
             COUNT(*) FILTER (WHERE result = 'HR') as home_runs,
             COUNT(*) FILTER (WHERE result IN ('1B','2B','3B','HR')) as hits,
-            COUNT(*) FILTER (WHERE result IN ('Out','SO','Reached on Error')) as outs
+            COUNT(*) FILTER (WHERE result = 'SO') as strikeouts
             FROM mlb_play_by_plays
                 left join games gg on gg.id = mlb_play_by_plays.game
                 where mlb_play_by_plays.batter_index = ($1) and mlb_play_by_plays.pitcher_index = ($2) and gg.date between ($3) and ($4)`
@@ -644,12 +644,18 @@ func GetMLBPlayerStatsWithPlayer(player string, defender string, startDate time.
 	if err != nil {
 		log.Fatal("Error querying for player stats: ", err)
 	}
+	defer rows.Close()
 
-	stats, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[MLBBattingAvg])
-	log.Printf("Stats: %v", stats)
-	if err != nil {
-		log.Printf("Error collecting one row: %v", err)
-		return MLBBattingAvg{}, err
+	var stats MLBBattingAvg
+	if rows.Next() {
+		err = rows.Scan(&stats.PAs, &stats.HomeRuns, &stats.Hits, &stats.Strikeouts)
+		if err != nil {
+			log.Printf("Error scanning row: %v", err)
+			return MLBBattingAvg{}, err
+		}
+	} else {
+		log.Printf("No rows returned")
+		return MLBBattingAvg{}, nil
 	}
 
 	return stats, nil
