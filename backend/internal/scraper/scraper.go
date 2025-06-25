@@ -45,6 +45,30 @@ func ScrapeNbaTeams() {
     teams.AddTeams(nbaTeams)
 }
 
+func ScrapeWNBATeams() {
+    c := colly.NewCollector()
+    var wnbaTeams []teams.Team
+
+    c.OnHTML("table#standings_e > tbody", func(t *colly.HTMLElement) {
+        t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            index := "WNBA_" + strings.Split(tr.ChildAttr("a", "href"), "/")[3]
+            name := tr.ChildText("a")
+            wnbaTeams = append(wnbaTeams, teams.Team{Index: index, Name: name})
+        })
+    })
+    c.OnHTML("table#standings_w > tbody", func(t *colly.HTMLElement) {
+        t.ForEach("tr", func(i int, tr *colly.HTMLElement) {
+            index := "WNBA_" + strings.Split(tr.ChildAttr("a", "href"), "/")[3]
+            name := tr.ChildText("a")
+            wnbaTeams = append(wnbaTeams, teams.Team{Index: index, Name: name})
+        })
+    })
+
+    c.Visit(sports.GetScraper(sports.WNBA).Domain + "/years/2025.html")
+
+    teams.AddTeams(wnbaTeams)
+}
+
 func ScrapeMLBTeams() {
     c := colly.NewCollector()
     var mlbTeams []teams.Team
