@@ -13,6 +13,8 @@ func New(sport Sport) Config {
     switch sport {
     case NBA:
         config = NewNBA()
+    case WNBA:
+        config = NewWNBA()
     case MLB:
         config = NewMLB()
     default:

@@ -106,6 +106,9 @@ func getDate(gameString string, sport sports.Sport) (time.Time, error) {
     case sports.NBA:
         // Format: /boxscores/202503010CHO.html
         dateStr = parts[2][:8]
+    case sports.WNBA:
+        // Format: wnba/boxscores/202503010CHO.html
+        dateStr = parts[3][:8]
     case sports.MLB:
         // Format: /boxes/PHI/PHI202310240.shtml
         dateStr = parts[3][3:11]
@@ -194,6 +197,16 @@ func scrapeGame(sport sports.Sport, gameString string) {
         pSlice, pGames := scrapeNBAPlayerStats(playerTables, gameId)
         players.AddPlayers(pSlice)
         players.AddPlayerGames(pGames)
+    case sports.WNBA:
+        pSlice, pGames := scrapeWNBAPlayerStats(playerTables, gameId)
+		for _, p := range pSlice {
+			log.Println(p)
+		}
+		for _, p := range pGames {
+			log.Println(p)
+		}
+        // players.AddPlayers(pSlice)
+        // players.AddPlayerGames(pGames)
     case sports.MLB:
         pSlice, battingGames, pitchingGames, pbpSlice := scrapeMLBPlayerStats(commentTables, gameId, game)
         players.AddPlayers(pSlice)
@@ -249,6 +262,32 @@ func scrapeNBAPlayerStats(playerTables []*colly.HTMLElement, gameId int) ([]play
         id := t.Attr("id")
         if strings.Contains(id, "game-basic") {
             pSlice = append(pSlice, getPlayers(t)...)
+
+            teamIndex := strings.Split(id, "-")[1]
+            collectStats(t, playerGames, teamIndex)
+        }
+        if strings.Contains(id, "game-advanced") {
+            teamIndex := strings.Split(id, "-")[1]
+            collectStats(t, playerGames, teamIndex)
+        }
+    }
+
+    pGames := fixPlayerStats(gameId, playerGames)
+
+    log.Printf("Players: %v", pSlice)
+    log.Printf("Player games: %v", pGames)
+    return pSlice, pGames
+}
+
+func scrapeWNBAPlayerStats(playerTables []*colly.HTMLElement, gameId int) ([]players.Player, []players.PlayerGame) {
+    var pSlice []players.Player
+    playerGames := make(map[string]players.PlayerGame)
+
+    for _, t := range playerTables {
+
+        id := t.Attr("id")
+        if strings.Contains(id, "game-basic") {
+            pSlice = append(pSlice, getWNBAPlayers(t)...)
 
             teamIndex := strings.Split(id, "-")[1]
             collectStats(t, playerGames, teamIndex)
@@ -589,6 +628,24 @@ func getPlayers(t *colly.HTMLElement) []players.Player {
         name := tr.ChildText("a")
 
         pSlice = append(pSlice, players.Player{Index: index, Sport: "nba", Name: name})
+    })
+
+    return pSlice
+}
+
+func getWNBAPlayers(t *colly.HTMLElement) []players.Player {
+    var pSlice []players.Player
+
+    t.ForEach("tbody > tr", func(i int, tr *colly.HTMLElement) {
+        if i == 5 {
+            return
+        }
+
+        index := strings.Split(tr.ChildAttr("a", "href"), "/")[3]
+        index = strings.TrimSuffix(index, ".html")
+        name := tr.ChildText("a")
+
+        pSlice = append(pSlice, players.Player{Index: index, Sport: "wnba", Name: name})
     })
 
     return pSlice

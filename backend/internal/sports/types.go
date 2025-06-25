@@ -4,6 +4,7 @@ type Sport string
 
 const (
     NBA Sport = "nba"
+    WNBA Sport = "wnba"
     MLB Sport = "mlb"
 )
 

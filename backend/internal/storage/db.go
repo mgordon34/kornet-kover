@@ -82,6 +82,21 @@ func InitTables() {
             drtg INT NOT NULL,
             CONSTRAINT uq_player_games UNIQUE(player_index, game)
         )`,
+		`CREATE TABLE IF NOT EXISTS wnba_player_games (
+            id SERIAL PRIMARY KEY,
+            player_index VARCHAR(20) REFERENCES players(index),
+            game INT REFERENCES games(id),
+            team_index VARCHAR(255) REFERENCES teams(index),
+            minutes REAL NOT NULL,
+            points INT NOT NULL,
+            rebounds INT NOT NULL,
+            assists INT NOT NULL,
+            threes INT NOT NULL,
+            usg REAL NOT NULL,
+            ortg INT NOT NULL,
+            drtg INT NOT NULL,
+            CONSTRAINT uq_wnba_player_games UNIQUE(player_index, game)
+        )`,
 		`CREATE TABLE IF NOT EXISTS mlb_player_games_batting (
             id SERIAL PRIMARY KEY,
             player_index VARCHAR(20) REFERENCES players(index),
@@ -179,6 +194,22 @@ func InitTables() {
             ortg REAL NOT NULL,
             drtg REAL NOT NULL,
             CONSTRAINT uq_pip_predictions UNIQUE(player_index, date, version)
+        )`,
+		`CREATE TABLE IF NOT EXISTS wnba_pip_predictions (
+            id SERIAL PRIMARY KEY,
+            player_index VARCHAR(20) REFERENCES players(index),
+            date DATE NOT NULL,
+            version INT NOT NULL,
+            num_games INT NOT NULL,
+            minutes REAL NOT NULL,
+            points REAL NOT NULL,
+            rebounds REAL NOT NULL,
+            assists REAL NOT NULL,
+            threes REAL NOT NULL,
+            usg REAL NOT NULL,
+            ortg REAL NOT NULL,
+            drtg REAL NOT NULL,
+            CONSTRAINT uq_wnba_pip_predictions UNIQUE(player_index, date, version)
         )`,
 		`CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
