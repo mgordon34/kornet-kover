@@ -28,8 +28,8 @@ func NewWNBA() *WNBAConfig {
                 },
             },
             scraperConfig: &ScraperConfig{
-                Domain: "https://www.basketball-reference.com/wnba",
-                BoxScoreURL: "/boxscores",
+                Domain: "https://www.basketball-reference.com",
+                BoxScoreURL: "/wnba/boxscores",
                 StatMapping: map[string]string{
                     "pts": "points",
                     "ast": "assists",

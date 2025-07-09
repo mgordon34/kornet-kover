@@ -169,7 +169,9 @@ func scrapeGame(sport sports.Sport, gameString string) {
                 teams[i] = strings.Split(team, "/")[2]
                 if sport == sports.NBA {
                     teams[i] = strings.ReplaceAll(teams[i], "BKN", "BRK")
-                } else if sport == sports.MLB {
+                } else if sport == sports.WNBA {
+					teams[i] = "WNBA_" + strings.Split(team, "/")[3]
+				} else if sport == sports.MLB {
                     teams[i] = "MLB_" + teams[i]
                 }
             }
