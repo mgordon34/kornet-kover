@@ -213,7 +213,9 @@ func scrapeGame(sport sports.Sport, gameString string) {
         AwayScore: scores[0],
         Date:      date,
     }
-    gameId, err := games.AddGame(game)
+	log.Printf("Adding game: %v", game)
+    // gameId, err := games.AddGame(game)
+	gameId := 0
     if err != nil {
         log.Printf("Error adding game: %v", err)
     }
@@ -316,11 +318,11 @@ func scrapeWNBAPlayerStats(playerTables []*colly.HTMLElement, gameId int) ([]pla
             pSlice = append(pSlice, getWNBAPlayers(t)...)
 
             teamIndex := strings.Split(id, "-")[1]
-            collectStats(t, playerGames, teamIndex)
+            collectWNBAStats(t, playerGames, teamIndex)
         }
         if strings.Contains(id, "game-advanced") {
             teamIndex := strings.Split(id, "-")[1]
-            collectStats(t, playerGames, teamIndex)
+            collectWNBAStats(t, playerGames, teamIndex)
         }
     }
 
@@ -640,6 +642,25 @@ func collectStats(t *colly.HTMLElement, playerGames map[string]players.PlayerGam
         })
     })
 }
+func collectWNBAStats(t *colly.HTMLElement, playerGames map[string]players.PlayerGame, tIndex string) {
+    t.ForEach("tbody > tr", func(i int, tr *colly.HTMLElement) {
+        if i == 5 {
+            return
+        }
+        index := strings.Split(tr.ChildAttr("a", "href"), "/")[4]
+        index = strings.TrimSuffix(index, ".html")
+
+        _, exists := playerGames[index]
+        if !exists {
+            playerGames[index] = players.PlayerGame{PlayerIndex: index, TeamIndex: tIndex}
+        }
+        tr.ForEach("td", func(i int, td *colly.HTMLElement) {
+            stat := td.Attr("data-stat")
+            value := td.Text
+            playerGames[index] = addPlayerStat(stat, value, playerGames[index])
+        })
+    })
+}
 
 func getPlayers(t *colly.HTMLElement) []players.Player {
     var pSlice []players.Player
@@ -667,7 +688,7 @@ func getWNBAPlayers(t *colly.HTMLElement) []players.Player {
             return
         }
 
-        index := strings.Split(tr.ChildAttr("a", "href"), "/")[3]
+        index := strings.Split(tr.ChildAttr("a", "href"), "/")[4]
         index = strings.TrimSuffix(index, ".html")
         name := tr.ChildText("a")
 
