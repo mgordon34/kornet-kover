@@ -64,7 +64,7 @@ func ScrapeWNBATeams() {
         })
     })
 
-    c.Visit(sports.GetScraper(sports.WNBA).Domain + "/years/2025.html")
+    c.Visit(sports.GetScraper(sports.WNBA).Domain + "/years/2026.html")
 
     teams.AddTeams(wnbaTeams)
 }
@@ -128,10 +128,10 @@ func getDate(gameString string, sport sports.Sport) (time.Time, error) {
     var dateStr string
     switch sport {
     case sports.NBA:
-        // Format: /boxscores/202503010CHO.html
+        // Format: /boxscores/202603010CHO.html
         dateStr = parts[2][:8]
     case sports.WNBA:
-        // Format: wnba/boxscores/202503010CHO.html
+        // Format: wnba/boxscores/202603010CHO.html
         dateStr = parts[3][:8]
     case sports.MLB:
         // Format: /boxes/PHI/PHI202310240.shtml
@@ -810,7 +810,7 @@ func UpdateActiveRosters() error {
 func scrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
     var roster []players.PlayerRoster
 
-    url := fmt.Sprintf("%s/teams/%v/2025.html", sports.GetScraper(sports.NBA).Domain, teamIndex)
+    url := fmt.Sprintf("%s/teams/%v/2026.html", sports.GetScraper(sports.NBA).Domain, teamIndex)
     c := colly.NewCollector()
     log.Println("Visiting team page for ", teamIndex)
     time.Sleep(4 * time.Second)
@@ -915,7 +915,7 @@ func pruneActiveRoster(activeRoster []players.PlayerRoster) []players.PlayerRost
 }
 
 func ScrapeTodaysRosters() [][]players.Roster {
-    baseUrl := "%s/leagues/NBA_2025_games-%v.html"
+    baseUrl := "%s/leagues/NBA_2026_games-%v.html"
     c := colly.NewCollector()
     var games [][]players.Roster
     now := time.Now()
@@ -951,7 +951,7 @@ func ScrapeTodaysRosters() [][]players.Roster {
 }
 
 func ScrapeTodaysGames() [][]string {
-    baseUrl := "%s/leagues/NBA_2025_games-%v.html"
+    baseUrl := "%s/leagues/NBA_2026_games-%v.html"
     c := colly.NewCollector()
     var games [][]string
 
@@ -985,7 +985,7 @@ func ScrapeTodaysGames() [][]string {
 
 func getRosterForTeam(teamIndex string, missingPlayers map[string]string) players.Roster {
     var roster = players.Roster{}
-    url := fmt.Sprintf("%s/teams/%v/2025.html", sports.GetScraper(sports.NBA).Domain, teamIndex)
+    url := fmt.Sprintf("%s/teams/%v/2026.html", sports.GetScraper(sports.NBA).Domain, teamIndex)
     c := colly.NewCollector()
     log.Println("Visiting team page for ", teamIndex)
     time.Sleep(4 * time.Second)
