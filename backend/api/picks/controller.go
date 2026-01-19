@@ -131,6 +131,18 @@ func getPropPicks(userId int, date time.Time) ([]PropPickFormatted, error) {
     }
     defer row.Close()
 
+	for i, pick := range picks {
+		if math.IsNaN(float64(pick.Threes)) {
+			picks[i].Threes = 0.0
+		}
+		if math.IsNaN(float64(pick.Assists)) {
+			picks[i].Assists = 0.0
+		}
+		if math.IsNaN(float64(pick.Rebounds)) {
+			picks[i].Rebounds = 0.0
+		}
+	}
+
     return picks, nil
 }
 
