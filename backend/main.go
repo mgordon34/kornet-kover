@@ -32,17 +32,17 @@ func main() {
 
     // runBacktest()
 
-    // startServer()
+    startServer()
 
     // runUpdateMLBPlayerHandedness()
 
     // backtestMLB()
 
-    loc, _ := time.LoadLocation("America/New_York")
-    startDate, _ := time.ParseInLocation("2006-01-02", "2025-05-16", loc)
-    endDate, _ := time.ParseInLocation("2006-01-02", "2025-05-16", loc)
+    // loc, _ := time.LoadLocation("America/New_York")
+    // startDate, _ := time.ParseInLocation("2006-01-02", "2025-10-20", loc)
+    // endDate, _ := time.ParseInLocation("2006-01-02", "2025-10-21", loc)
 
-    scraper.ScrapeGames(sports.WNBA, startDate, endDate)
+    // scraper.ScrapeGames(sports.NBA, startDate, endDate)
     // sportsbook.GetHistoricalOddsForSport(sports.MLB, startDate, endDate)
 }
 
