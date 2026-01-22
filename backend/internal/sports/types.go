@@ -45,7 +45,6 @@ type SportConfig struct {
     analysisConfig   *AnalysisConfig
 }
 
-// These methods are implemented once and inherited by all sports
 func (c *SportConfig) GetSport() Sport {
     return c.sport
 }
