@@ -214,8 +214,7 @@ func scrapeGame(sport sports.Sport, gameString string) {
         Date:      date,
     }
 	log.Printf("Adding game: %v", game)
-    // gameId, err := games.AddGame(game)
-	gameId := 0
+    gameId, err := games.AddGame(game)
     if err != nil {
         log.Printf("Error adding game: %v", err)
     }
