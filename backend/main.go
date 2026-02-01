@@ -27,12 +27,12 @@ func main() {
     storage.InitTables()
     log.Println("Initialized DB")
 
-    // runUpdateGames()
-    // runUpdateLines()
+    runUpdateGames()
+    runUpdateLines()
 
     // runBacktest()
 
-    startServer()
+    // startServer()
 
     // runUpdateMLBPlayerHandedness()
 
@@ -43,6 +43,7 @@ func main() {
     // endDate, _ := time.ParseInLocation("2006-01-02", "2025-10-21", loc)
 
     // scraper.ScrapeGames(sports.NBA, startDate, endDate)
+
     // sportsbook.GetHistoricalOddsForSport(sports.MLB, startDate, endDate)
 }
 
