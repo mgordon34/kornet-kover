@@ -54,8 +54,8 @@ func startServer() {
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: false, // If using cookies or credentials
-		MaxAge:           12 * time.Hour, // Cache preflight response for 12 hours
+		AllowCredentials: false,
+		MaxAge:           12 * time.Hour,
 	}
 
     r.Use(cors.New(config))
