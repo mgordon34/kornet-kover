@@ -341,5 +341,5 @@ func GetLiveOdds(date time.Time, oddsType string) {
         lines = append(lines, GetLiveOddsForGame(game, oddsType, requestOddsAPI)...)
     }
 
-    // odds.AddPlayerLines(lines)
+    odds.AddPlayerLines(lines)
 }
