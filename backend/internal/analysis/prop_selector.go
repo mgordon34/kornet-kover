@@ -315,7 +315,6 @@ func runPickProps() ([]PropPick, error) {
     if err != nil {
         return picks, err
     }
-	log.Print(oddsMap)
 
     var results []Analysis
     rosterMap, err := players.GetActiveRosters()
