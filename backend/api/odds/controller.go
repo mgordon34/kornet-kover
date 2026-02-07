@@ -82,7 +82,7 @@ func AddPlayerLines(playerLines []PlayerLine) {
 }
 
 func GetPlayerLinesForDate(sport sports.Sport, date time.Time, lineType string) ([]PlayerLine, error) {
-    date = date.UTC()
+    // date = date.UTC()
     endDate := date.AddDate(0, 0, 1)
 
     db := storage.GetDB()
