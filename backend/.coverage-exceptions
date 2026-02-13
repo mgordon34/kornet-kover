@@ -3,16 +3,16 @@
 # Owner: backend
 # Expiration: 2026-06-30
 
-github.com/mgordon34/kornet-kover/api/games 0.0
+github.com/mgordon34/kornet-kover/api/games 80.0
 github.com/mgordon34/kornet-kover/api/odds 27.0
 github.com/mgordon34/kornet-kover/api/picks 25.0
 github.com/mgordon34/kornet-kover/api/players 12.0
 github.com/mgordon34/kornet-kover/api/sports 0.0
-github.com/mgordon34/kornet-kover/api/strategies 0.0
+github.com/mgordon34/kornet-kover/api/strategies 70.0
 github.com/mgordon34/kornet-kover/api/teams 2.0
 github.com/mgordon34/kornet-kover/internal/analysis 15.0
 github.com/mgordon34/kornet-kover/internal/backtesting 14.0
 github.com/mgordon34/kornet-kover/internal/scraper 9.0
-github.com/mgordon34/kornet-kover/internal/sportsbook 7.0
-github.com/mgordon34/kornet-kover/internal/storage 0.0
+github.com/mgordon34/kornet-kover/internal/sportsbook 20.0
+github.com/mgordon34/kornet-kover/internal/storage 75.0
 github.com/mgordon34/kornet-kover/internal/utils 88.0
