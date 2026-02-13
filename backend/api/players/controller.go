@@ -100,12 +100,12 @@ func PlayerNameToIndex(nameMap map[string]string, playerName string) (string, er
 	}
 
 	db := storage.GetDB()
-	sql := `SELECT index FROM players WHERE UPPER(name) ILIKE ($1);`
+	sql := `SELECT index FROM players WHERE UPPER(name) = UPPER($1);`
 	if playerName == "Alexandre Sarr" {
 		playerName = "Alex Sarr"
 	}
 
-	row := db.QueryRow(context.Background(), sql, playerName+"%")
+	row := db.QueryRow(context.Background(), sql, playerName)
 	if err := row.Scan(&index); err != nil {
 		log.Printf("Error finding player index for %s", playerName)
 		return "", err

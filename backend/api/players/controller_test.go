@@ -1,12 +1,16 @@
 package players
 
 import (
+	"os"
 	"testing"
 
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
 func TestPlayerNameToIndex(t *testing.T) {
+	if os.Getenv("DB_URL") == "" {
+		t.Skip("DB_URL not set; skipping integration-style test")
+	}
 	storage.InitTables()
 
 	nameMap := map[string]string{}
@@ -22,6 +26,9 @@ func TestPlayerNameToIndex(t *testing.T) {
 }
 
 func TestPlayerNameToIndexWithBadName(t *testing.T) {
+	if os.Getenv("DB_URL") == "" {
+		t.Skip("DB_URL not set; skipping integration-style test")
+	}
 	storage.InitTables()
 
 	nameMap := map[string]string{}

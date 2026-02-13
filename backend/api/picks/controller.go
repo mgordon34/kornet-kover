@@ -21,7 +21,7 @@ func addPropPick(pick PropPick) (int, error) {
 
 	sqlStmt := `
     INSERT INTO prop_picks (strat_id, line_id, valid, date)
-    VALUES ($1, $2)
+    VALUES ($1, $2, $3, $4)
     ON CONFLICT DO NOTHING
     RETURNING ID`
 	var resId int
