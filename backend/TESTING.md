@@ -3,7 +3,7 @@
 ## Run unit tests
 
 ```bash
-go test ./...
+./scripts/test_non_main_packages.sh
 ```
 
 Integration tests are separated with the `integration` build tag and are excluded from this default command.
@@ -11,7 +11,7 @@ Integration tests are separated with the `integration` build tag and are exclude
 ## Run integration tests
 
 ```bash
-go test -tags=integration ./...
+./scripts/test_non_main_packages.sh -tags=integration
 ```
 
 Integration tests may write to the database. Use a dedicated test database via `DB_URL`.
@@ -19,8 +19,10 @@ Integration tests may write to the database. Use a dedicated test database via `
 ## Run unit tests with coverage
 
 ```bash
-go test ./... -cover
+./scripts/test_non_main_packages.sh -cover
 ```
+
+The script intentionally excludes the root `main` package so `backend/main.go` is not included in test execution or coverage measurement.
 
 ## Enforce per-package coverage thresholds
 

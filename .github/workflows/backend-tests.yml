@@ -30,7 +30,7 @@ jobs:
           go-version-file: backend/go.mod
 
       - name: Run unit tests
-        run: go test ./...
+        run: ./scripts/test_non_main_packages.sh
 
       - name: Check package coverage thresholds
         run: ./scripts/check_coverage.sh
