@@ -100,7 +100,13 @@ func PlayerNameToIndex(nameMap map[string]string, playerName string) (string, er
 	}
 
 	db := storage.GetDB()
-	sql := `SELECT index FROM players WHERE UPPER(name) = UPPER($1);`
+	sql := `
+    SELECT index
+    FROM players
+    WHERE UPPER(name) = UPPER($1)
+       OR UPPER(name) LIKE UPPER($1) || ' %'
+    ORDER BY CASE WHEN UPPER(name) = UPPER($1) THEN 0 ELSE 1 END
+    LIMIT 1;`
 	if playerName == "Alexandre Sarr" {
 		playerName = "Alex Sarr"
 	}

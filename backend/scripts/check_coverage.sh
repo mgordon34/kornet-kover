@@ -33,7 +33,11 @@ while IFS= read -r pkg; do
   fi
 
   threshold="${THRESHOLDS[$pkg]:-$DEFAULT_THRESHOLD}"
-  output="$(go test "$pkg" -cover 2>/dev/null || true)"
+  if ! output="$(go test "$pkg" -cover 2>/dev/null)"; then
+    echo "FAIL $pkg tests failed"
+    failed=1
+    continue
+  fi
   line="${output##*$'\n'}"
   percent="${line##*coverage: }"
   percent="${percent%%% of statements*}"

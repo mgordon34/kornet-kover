@@ -4,6 +4,7 @@
 package players
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -44,6 +45,32 @@ func TestPlayerNameToIndexWithBadName(t *testing.T) {
 	index, err := PlayerNameToIndex(nameMap, badName)
 	if err == nil {
 		t.Fatalf(`PlayerNameToIndex incorrectly found result: %v`, index)
+	}
+}
+
+func TestPlayerNameToIndex_SuffixTolerantLookup(t *testing.T) {
+	if os.Getenv("DB_URL") == "" {
+		t.Skip("DB_URL not set; skipping integration-style test")
+	}
+	storage.InitTables()
+
+	db := storage.GetDB()
+	suffix := fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
+	fullName := "Player " + suffix + " Jr."
+	shortName := "Player " + suffix
+	index := "sfx" + suffix
+
+	_, err := db.Exec(context.Background(), `INSERT INTO players (index, sport, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, index, "nba", fullName)
+	if err != nil {
+		t.Fatalf("failed to insert suffix player: %v", err)
+	}
+
+	got, err := PlayerNameToIndex(map[string]string{}, shortName)
+	if err != nil {
+		t.Fatalf("PlayerNameToIndex() suffix lookup error = %v", err)
+	}
+	if got != index {
+		t.Fatalf("PlayerNameToIndex() = %q, want %q", got, index)
 	}
 }
 
