@@ -6,6 +6,7 @@ const (
     NBA Sport = "nba"
     WNBA Sport = "wnba"
     MLB Sport = "mlb"
+    NHL Sport = "nhl"
 )
 
 // Config defines the interface that all sport configurations must implement

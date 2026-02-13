@@ -1,25 +1,25 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"strconv"
-	"time"
+    "fmt"
+    "log"
+    "strconv"
+    "time"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+    "github.com/gin-contrib/cors"
+    "github.com/gin-gonic/gin"
 
-	"github.com/mgordon34/kornet-kover/api/games"
-	"github.com/mgordon34/kornet-kover/api/odds"
-	"github.com/mgordon34/kornet-kover/api/picks"
-	"github.com/mgordon34/kornet-kover/api/players"
-	"github.com/mgordon34/kornet-kover/api/strategies"
-	"github.com/mgordon34/kornet-kover/internal/analysis"
-	"github.com/mgordon34/kornet-kover/internal/backtesting"
-	"github.com/mgordon34/kornet-kover/internal/scraper"
-	"github.com/mgordon34/kornet-kover/internal/sports"
-	"github.com/mgordon34/kornet-kover/internal/sportsbook"
-	"github.com/mgordon34/kornet-kover/internal/storage"
+    "github.com/mgordon34/kornet-kover/api/games"
+    "github.com/mgordon34/kornet-kover/api/odds"
+    "github.com/mgordon34/kornet-kover/api/picks"
+    "github.com/mgordon34/kornet-kover/api/players"
+    "github.com/mgordon34/kornet-kover/api/strategies"
+    "github.com/mgordon34/kornet-kover/internal/analysis"
+    "github.com/mgordon34/kornet-kover/internal/backtesting"
+    "github.com/mgordon34/kornet-kover/internal/scraper"
+    "github.com/mgordon34/kornet-kover/internal/sports"
+    "github.com/mgordon34/kornet-kover/internal/sportsbook"
+    "github.com/mgordon34/kornet-kover/internal/storage"
 )
 
 func main() {
@@ -50,13 +50,13 @@ func startServer() {
     r := gin.Default()
 
     config := cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"}, // Replace with your frontend domain
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: false,
-		MaxAge:           12 * time.Hour,
-	}
+        AllowOrigins:     []string{"http://localhost:3000"}, // Replace with your frontend domain
+        AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowHeaders:     []string{"Origin", "Content-Type"},
+        ExposeHeaders:    []string{"Content-Length"},
+        AllowCredentials: false,
+        MaxAge:           12 * time.Hour,
+    }
 
     r.Use(cors.New(config))
 
@@ -67,6 +67,7 @@ func startServer() {
 
     r.GET("/strategies", strategies.GetStrategies)
     r.GET("/prop-picks", picks.GetPropPicks)
+    r.GET("/prop-picks/bettor", picks.GetBettorPropPicks)
 
     r.Run(":8080")
 }
@@ -128,7 +129,7 @@ func runGetPlayerOdds() {
     }
 
     oddsMap, err := odds.GetPlayerOddsForDate(sports.NBA, startDate)
-    if err  != nil {
+    if err != nil {
         log.Fatal("Error getting player odds", err)
     }
     for i, pOdds := range oddsMap {
@@ -141,7 +142,7 @@ func runGetPlayerOddsForToday() map[string]map[string]odds.PlayerOdds {
     today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 
     pOdds, err := odds.GetPlayerOddsForDate(sports.NBA, today)
-    if err  != nil {
+    if err != nil {
         log.Fatal("Error getting player odds", err)
     }
 
@@ -160,7 +161,7 @@ func runGetPlayerPip() {
     index := "tatumja01"
     pindex := "daniedy01"
 
-    controlMap := players.GetPlayerPerByYear(sports.NBA,index, startDate, endDate)
+    controlMap := players.GetPlayerPerByYear(sports.NBA, index, startDate, endDate)
     affectedMap := players.GetPlayerPerWithPlayerByYear(index, pindex, players.Opponent, startDate, endDate)
     pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
     prediction := controlMap[2024].PredictStats(pipFactor)
@@ -236,7 +237,7 @@ func backtestMLB() {
             )
         }
 
-		for _, result := range results {
+        for _, result := range results {
             log.Printf("Result: %v", result)
         }
         // for playerIndex, stat := range statMap {
@@ -251,8 +252,8 @@ func convertPlayerMaptoPlayerRosters(p []players.Player) []players.PlayerRoster 
     for _, player := range p {
         playerRosters = append(playerRosters, players.PlayerRoster{
             PlayerIndex: player.Index,
-            Status: "Available",
-            AvgMins: 21,
+            Status:      "Available",
+            AvgMins:     21,
         })
     }
 
@@ -270,306 +271,306 @@ func runBacktest() {
     pPicker := analysis.PropSelector{
         StratName: "Points Raw",
         Thresholds: map[string]float32{
-            "points": -100,
+            "points":   -100,
             "rebounds": 100,
-            "assists": 100,
+            "assists":  100,
         },
-        TresholdType: analysis.Raw,
+        TresholdType:   analysis.Raw,
         RequireOutlier: false,
-        MinOdds: 200,
-        MaxOdds: 1200,
-        MaxLine: 20,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 1000,
-        MaxUnder: 0,
-        TotalMax: 200,
+        MinOdds:        200,
+        MaxOdds:        1200,
+        MaxLine:        20,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        1000,
+        MaxUnder:       0,
+        TotalMax:       200,
     }
     rPicker := analysis.PropSelector{
         StratName: "Rebounds Raw",
         Thresholds: map[string]float32{
-            "points": 100,
+            "points":   100,
             "rebounds": -100,
-            "assists": 100,
+            "assists":  100,
         },
-        TresholdType: analysis.Raw,
+        TresholdType:   analysis.Raw,
         RequireOutlier: false,
-        MinOdds: 300,
-        MaxOdds: 1200,
-        MaxLine: 10,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 1000,
-        MaxUnder: 0,
-        TotalMax: 200,
+        MinOdds:        300,
+        MaxOdds:        1200,
+        MaxLine:        10,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        1000,
+        MaxUnder:       0,
+        TotalMax:       200,
     }
     aPicker := analysis.PropSelector{
         StratName: "Assists Raw",
         Thresholds: map[string]float32{
-            "points": 100,
+            "points":   100,
             "rebounds": 100,
-            "assists": -100,
+            "assists":  -100,
         },
-        TresholdType: analysis.Raw,
+        TresholdType:   analysis.Raw,
         RequireOutlier: false,
-        MinOdds: 300,
-        MaxOdds: 1200,
-        MaxLine: 9,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 1000,
-        MaxUnder: 0,
-        TotalMax: 200,
+        MinOdds:        300,
+        MaxOdds:        1200,
+        MaxLine:        9,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        1000,
+        MaxUnder:       0,
+        TotalMax:       200,
     }
     tPicker := analysis.PropSelector{
         StratName: "Threes Raw",
         Thresholds: map[string]float32{
-            "points": 100,
+            "points":   100,
             "rebounds": 100,
-            "assists": 100,
-            "threes": -100,
+            "assists":  100,
+            "threes":   -100,
         },
-        TresholdType: analysis.Raw,
+        TresholdType:   analysis.Raw,
         RequireOutlier: false,
-        MinOdds: 200,
-        MaxOdds: 1200,
-        MaxLine: 4,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 10000,
-        MaxUnder: 0,
-        TotalMax: 200,
+        MinOdds:        200,
+        MaxOdds:        1200,
+        MaxLine:        4,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        10000,
+        MaxUnder:       0,
+        TotalMax:       200,
     }
     pPickerP := analysis.PropSelector{
         StratName: "Points(outlier)",
         Thresholds: map[string]float32{
-            "points": -100,
+            "points":   -100,
             "rebounds": 100,
-            "assists": 100,
+            "assists":  100,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: 200,
-        MaxOdds: 1200,
-        MaxLine: 20,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 10000,
-        MaxUnder: 0,
-        TotalMax: 2000,
+        MinOdds:        200,
+        MaxOdds:        1200,
+        MaxLine:        20,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        10000,
+        MaxUnder:       0,
+        TotalMax:       2000,
     }
     rPickerP := analysis.PropSelector{
         StratName: "Rebounds(outlier)",
         Thresholds: map[string]float32{
-            "points": 100,
+            "points":   100,
             "rebounds": -100,
-            "assists": 100,
+            "assists":  100,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: 300,
-        MaxOdds: 1200,
-        MaxLine: 10,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 10000,
-        MaxUnder: 0,
-        TotalMax: 1000,
+        MinOdds:        300,
+        MaxOdds:        1200,
+        MaxLine:        10,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        10000,
+        MaxUnder:       0,
+        TotalMax:       1000,
     }
     aPickerP := analysis.PropSelector{
         StratName: "Assists(outlier)",
         Thresholds: map[string]float32{
-            "points": 100,
+            "points":   100,
             "rebounds": 100,
-            "assists": -100,
+            "assists":  -100,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: 300,
-        MaxOdds: 1200,
-        MaxLine: 9,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 10000,
-        MaxUnder: 0,
-        TotalMax: 1000,
+        MinOdds:        300,
+        MaxOdds:        1200,
+        MaxLine:        9,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        10000,
+        MaxUnder:       0,
+        TotalMax:       1000,
     }
     tPickerP := analysis.PropSelector{
         StratName: "Threes(outlier)",
         Thresholds: map[string]float32{
-            "points": 100,
+            "points":   100,
             "rebounds": 100,
-            "assists": 100,
-            "threes": -100,
+            "assists":  100,
+            "threes":   -100,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: 200,
-        MaxOdds: 1200,
-        MaxLine: 4,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 10000,
-        MaxUnder: 0,
-        TotalMax: 1000,
+        MinOdds:        200,
+        MaxOdds:        1200,
+        MaxLine:        4,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        10000,
+        MaxUnder:       0,
+        TotalMax:       1000,
     }
     fpPickerP := analysis.PropSelector{
         StratName: "Points(weighted)",
         Thresholds: map[string]float32{
-            "points": -.2,
+            "points":   -.2,
             "rebounds": 100,
-            "assists": 100,
+            "assists":  100,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: 200,
-        MaxOdds: 1200,
-        MaxLine: 20,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 10000,
-        MaxUnder: 0,
-        TotalMax: 100,
+        MinOdds:        200,
+        MaxOdds:        1200,
+        MaxLine:        20,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        10000,
+        MaxUnder:       0,
+        TotalMax:       100,
     }
     frPickerP := analysis.PropSelector{
         StratName: "Rebounds(weighted)",
         Thresholds: map[string]float32{
-            "points": 100,
+            "points":   100,
             "rebounds": -.3,
-            "assists": 100,
+            "assists":  100,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: 300,
-        MaxOdds: 1200,
-        MaxLine: 10,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 10000,
-        MaxUnder: 0,
-        TotalMax: 100,
+        MinOdds:        300,
+        MaxOdds:        1200,
+        MaxLine:        10,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        10000,
+        MaxUnder:       0,
+        TotalMax:       100,
     }
     faPickerP := analysis.PropSelector{
         StratName: "Assists(weighted)",
         Thresholds: map[string]float32{
-            "points": 100,
+            "points":   100,
             "rebounds": 100,
-            "assists": -.3,
+            "assists":  -.3,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: 300,
-        MaxOdds: 1200,
-        MaxLine: 9,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 10000,
-        MaxUnder: 0,
-        TotalMax: 100,
+        MinOdds:        300,
+        MaxOdds:        1200,
+        MaxLine:        9,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        10000,
+        MaxUnder:       0,
+        TotalMax:       100,
     }
     ftPickerP := analysis.PropSelector{
         StratName: "Threes(weighted)",
         Thresholds: map[string]float32{
-            "points": 300,
+            "points":   300,
             "rebounds": 100,
-            "assists": 100,
-            "threes": -.3,
+            "assists":  100,
+            "threes":   -.3,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: 200,
-        MaxOdds: 1200,
-        MaxLine: 4,
-        MinGames: 40,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 1000,
-        MaxUnder: 0,
-        TotalMax: 100,
+        MinOdds:        200,
+        MaxOdds:        1200,
+        MaxLine:        4,
+        MinGames:       40,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        1000,
+        MaxUnder:       0,
+        TotalMax:       100,
     }
     fsPickerP := analysis.PropSelector{
         StratName: "Final Points(Percent)",
         Thresholds: map[string]float32{
-            "points": .3,
+            "points":   .3,
             "rebounds": 1000,
-            "assists": 1000,
+            "assists":  1000,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: -135,
-        MinGames: 10,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 1000,
-        MaxUnder: 0,
-        TotalMax: 100,
+        MinOdds:        -135,
+        MinGames:       10,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        1000,
+        MaxUnder:       0,
+        TotalMax:       100,
     }
     foPickerP := analysis.PropSelector{
         StratName: "Final Points(Raw)",
         Thresholds: map[string]float32{
-            "points": 2.5,
+            "points":   2.5,
             "rebounds": 1000,
-            "assists": 1000,
+            "assists":  1000,
         },
-        TresholdType: analysis.Raw,
+        TresholdType:   analysis.Raw,
         RequireOutlier: true,
-        MinOdds: -135,
-        MinGames: 10,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 5,
-        MaxUnder: 0,
-        TotalMax: 100,
+        MinOdds:        -135,
+        MinGames:       10,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        5,
+        MaxUnder:       0,
+        TotalMax:       100,
     }
     fPickerP := analysis.PropSelector{
         StratName: "Final Rebounds",
         Thresholds: map[string]float32{
-            "points": 1000,
+            "points":   1000,
             "rebounds": 1,
-            "assists": 1000,
+            "assists":  1000,
         },
-        TresholdType: analysis.Raw,
+        TresholdType:   analysis.Raw,
         RequireOutlier: true,
-        MinOdds: -135,
-        MinGames: 10,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 5,
-        MaxUnder: 0,
-        TotalMax: 100,
+        MinOdds:        -135,
+        MinGames:       10,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        5,
+        MaxUnder:       0,
+        TotalMax:       100,
     }
     tfPicker := analysis.PropSelector{
         StratName: "Final Threes",
         Thresholds: map[string]float32{
-            "points": 1000,
+            "points":   1000,
             "rebounds": 1000,
-            "assists": 1000,
-            "threes": .6,
+            "assists":  1000,
+            "threes":   .6,
         },
-        TresholdType: analysis.Percent,
+        TresholdType:   analysis.Percent,
         RequireOutlier: true,
-        MinOdds: -135,
-        MinGames: 10,
-        MinMinutes: 0,
-        BetSize: 100,
-        MaxOver: 5,
-        MaxUnder: 0,
-        TotalMax: 100,
+        MinOdds:        -135,
+        MinGames:       10,
+        MinMinutes:     0,
+        BetSize:        100,
+        MaxOver:        5,
+        MaxUnder:       0,
+        TotalMax:       100,
     }
     b := backtesting.Backtester{
         StartDate: startDate,
-        EndDate: endDate,
+        EndDate:   endDate,
         Strategies: []backtesting.Strategy{
             {PropSelector: pPicker, BacktestResult: &backtesting.BacktestResult{}},
             {PropSelector: rPicker, BacktestResult: &backtesting.BacktestResult{}},
