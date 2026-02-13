@@ -2,6 +2,7 @@ package backtesting
 
 import (
 	"testing"
+	"time"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
@@ -62,4 +63,31 @@ func TestConvertHelpers(t *testing.T) {
 	if len(indexes) != 2 || indexes[0] != "a" {
 		t.Fatalf("unexpected indexes conversion: %+v", indexes)
 	}
+}
+
+func TestResultReportingHelpersDoNotPanic(t *testing.T) {
+	win := &analysis.PropPick{
+		Stat:       "points",
+		Side:       "Over",
+		Diff:       2.5,
+		PDiff:      0.2,
+		BetSize:    100,
+		Result:     "Win",
+		PlayerLine: odds.PlayerLine{Line: 20.5, Odds: -110},
+		Analysis:   analysis.Analysis{PlayerIndex: "p1", Prediction: players.NBAAvg{NumGames: 1, Points: 25}},
+	}
+	loss := &analysis.PropPick{
+		Stat:       "rebounds",
+		Side:       "Under",
+		Diff:       -1.0,
+		PDiff:      -0.1,
+		BetSize:    100,
+		Result:     "Loss",
+		PlayerLine: odds.PlayerLine{Line: 8.5, Odds: 250},
+		Analysis:   analysis.Analysis{PlayerIndex: "p2", Prediction: players.NBAAvg{NumGames: 1, Rebounds: 10}},
+	}
+
+	b := BacktestResult{Bets: []*analysis.PropPick{win, loss}, StartDate: time.Now(), EndDate: time.Now()}
+	b.printResults("test")
+	b.resultBreakdown()
 }

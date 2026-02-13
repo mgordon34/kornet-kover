@@ -16,6 +16,10 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
+var getPropPicksFn = getPropPicks
+var getPropPickFn = getPropPick
+var getBettorPicksFn = getBettorPicks
+
 func addPropPick(pick PropPick) (int, error) {
 	db := storage.GetDB()
 
@@ -215,16 +219,19 @@ func GetPropPicks(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("user_id"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
+		return
 	}
 	date, err := time.Parse("2006-01-02", c.Query("date"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
+		return
 	}
 
-	picks, err := getPropPicks(id, date)
+	picks, err := getPropPicksFn(id, date)
 	if err != nil {
 		log.Println("Error in GetPropPicks:", err)
 		c.JSON(http.StatusInternalServerError, err)
+		return
 	}
 	c.JSON(http.StatusOK, formatPicksByStrat(picks))
 }
@@ -250,12 +257,14 @@ func GetPropPick(c *gin.Context) {
 	pickId, err := strconv.Atoi(c.Param("strat"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
+		return
 	}
 	log.Println(pickId)
 
-	strat, err := getPropPick(pickId)
+	strat, err := getPropPickFn(pickId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
+		return
 	}
 	c.JSON(http.StatusOK, strat)
 }
@@ -456,7 +465,7 @@ func GetBettorPropPicks(c *gin.Context) {
 	today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
 
 	// Query database
-	rows, err := getBettorPicks(userId, today)
+	rows, err := getBettorPicksFn(userId, today)
 	if err != nil {
 		log.Println("Error in GetBettorPropPicks:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
