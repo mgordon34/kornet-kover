@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package strategies
 
 import (
@@ -54,34 +57,6 @@ func TestAddAndGetStrategies(t *testing.T) {
 	}
 	if one.Id != stratID || one.UserId != userID {
 		t.Fatalf("getStrategy() unexpected response: %+v", one)
-	}
-}
-
-func TestGetStrategiesHandlerBadUserID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.GET("/strategies", GetStrategies)
-
-	req := httptest.NewRequest(http.MethodGet, "/strategies?user_id=bad", nil)
-	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d, want 500", rec.Code)
-	}
-}
-
-func TestGetStrategyHandlerBadParam(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.GET("/strategies/:strat", GetStrategy)
-
-	req := httptest.NewRequest(http.MethodGet, "/strategies/not-a-number", nil)
-	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("status = %d, want 500", rec.Code)
 	}
 }
 

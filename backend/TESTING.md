@@ -6,6 +6,16 @@
 go test ./...
 ```
 
+Integration tests are separated with the `integration` build tag and are excluded from this default command.
+
+## Run integration tests
+
+```bash
+go test -tags=integration ./...
+```
+
+Integration tests may write to the database. Use a dedicated test database via `DB_URL`.
+
 ## Run unit tests with coverage
 
 ```bash
