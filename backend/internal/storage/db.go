@@ -39,6 +39,7 @@ func InitTables() {
 	GetDB()
 
 	commands := []string{
+		`ALTER TABLE IF EXISTS players ADD COLUMN IF NOT EXISTS details JSONB`,
 		`CREATE TABLE IF NOT EXISTS teams (
             index VARCHAR(255) PRIMARY KEY,
             name VARCHAR(255) NOT NULL

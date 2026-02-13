@@ -70,7 +70,7 @@ func GetPlayer(index string) (Player, error) {
 	}
 	defer rows.Close()
 
-	player, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Player])
+	player, err := pgx.CollectOneRow(rows, pgx.RowToStructByNameLax[Player])
 	if err != nil {
 		log.Println("Error converting player: ", err)
 		return Player{}, err
@@ -578,7 +578,7 @@ type MLBPlayerStatInfo struct {
 func GetMLBBattingStatsForGames(gameIds []string) (map[string]MLBBattingAvg, error) {
 	playerMap := make(map[string]MLBBattingAvg)
 	db := storage.GetDB()
-	sql := `SELECT player_index, 1 as num_games, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa FROM mlb_player_games_batting
+	sql := `SELECT player_index, 1 as num_games, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, ba, obp, slg, ops, wpa FROM mlb_player_games_batting
                 left join games gg on gg.id = mlb_player_games_batting.game
                 where gg.id IN (%s)`
 

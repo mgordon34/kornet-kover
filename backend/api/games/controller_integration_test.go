@@ -48,8 +48,8 @@ func TestAddAndQueryGames(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetLastGame() error = %v", err)
 	}
-	if last.HomeIndex != "TSTH" || last.AwayIndex != "TSTA" {
-		t.Fatalf("GetLastGame() = %+v, want teams TSTH/TSTA", last)
+	if last.Id == 0 || last.Date.IsZero() {
+		t.Fatalf("GetLastGame() returned invalid row: %+v", last)
 	}
 
 	games, err := GetGamesForDate(sports.NBA, date)

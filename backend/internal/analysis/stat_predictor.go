@@ -19,6 +19,13 @@ type Analysis struct {
 var getPlayerPIPPredictionFn = players.GetPlayerPIPPrediction
 var addPIPPredictionFn = players.AddPIPPrediction
 var createPIPPredictionFn = CreatePIPPrediction
+var getPlayerPerByYearFn = players.GetPlayerPerByYear
+var getOrCreatePredictionFn = GetOrCreatePrediction
+var createAndStorePIPPredictionFn = CreateAndStorePIPPrediction
+var createMLBPredictionFn = CreateMLBPrediction
+var getPlayerPerWithPlayerByYearFn = players.GetPlayerPerWithPlayerByYear
+var getMLBPlayerPerWithPlayerByYearFn = players.GetMLBPlayerPerWithPlayerByYear
+var calculatePIPFactorPredFn = players.CalculatePIPFactor
 
 func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.PlayerRoster, endDate time.Time, forceUpdate bool, storePIP bool) []Analysis {
 	startDate, _ := time.Parse("2006-01-02", "2018-10-01")
@@ -28,7 +35,7 @@ func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Player
 	prunedOpponents := prunePlayers(opponents)
 
 	for _, player := range prunedPlayers[:min(len(prunedPlayers), 5)] {
-		controlMap := players.GetPlayerPerByYear(sports.NBA, player, startDate, endDate)
+		controlMap := getPlayerPerByYearFn(sports.NBA, player, startDate, endDate)
 
 		currYear := utils.DateToNBAYear(endDate)
 		_, ok := controlMap[currYear]
@@ -37,7 +44,7 @@ func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Player
 			continue
 		}
 
-		pipPred := GetOrCreatePrediction(player, prunedOpponents[:min(len(prunedOpponents), 8)], players.Opponent, controlMap, startDate, endDate, forceUpdate)
+		pipPred := getOrCreatePredictionFn(player, prunedOpponents[:min(len(prunedOpponents), 8)], players.Opponent, controlMap, startDate, endDate, forceUpdate)
 		prediction := players.NBAAvg{
 			NumGames: pipPred.NumGames,
 			Minutes:  pipPred.Minutes,
@@ -64,7 +71,7 @@ func RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Player
 	}
 
 	if storePIP {
-		CreateAndStorePIPPrediction(predictedStats, endDate)
+		createAndStorePIPPredictionFn(predictedStats, endDate)
 	}
 
 	return predictedStats
@@ -78,7 +85,7 @@ func RunMLBAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Pla
 	prunedOpponents := prunePlayers(opponents)
 
 	for _, player := range prunedPlayers[:min(len(prunedPlayers), 9)] {
-		controlMap := players.GetPlayerPerByYear(sports.MLB, player, startDate, endDate)
+		controlMap := getPlayerPerByYearFn(sports.MLB, player, startDate, endDate)
 
 		_, ok := controlMap[endDate.Year()]
 		if !ok {
@@ -86,14 +93,14 @@ func RunMLBAnalysisOnGame(roster []players.PlayerRoster, opponents []players.Pla
 			continue
 		}
 
-		pipPred := CreateMLBPrediction(player, prunedOpponents[:1], players.Opponent, controlMap, startDate, endDate)
+		pipPred := createMLBPredictionFn(player, prunedOpponents[:1], players.Opponent, controlMap, startDate, endDate)
 		log.Printf("PIPPred: %v", pipPred)
 
 		// yearlyStats := controlMap[endDate.Year()].(players.MLBBattingAvg)
 	}
 
 	if storePIP {
-		CreateAndStorePIPPrediction(predictedStats, endDate)
+		createAndStorePIPPredictionFn(predictedStats, endDate)
 	}
 
 	return predictedStats
@@ -131,8 +138,8 @@ func CreatePIPPrediction(playerIndex string, opponents []string, relationship pl
 	currYear := utils.DateToNBAYear(endDate)
 
 	for _, defender := range opponents {
-		affectedMap := players.GetPlayerPerWithPlayerByYear(playerIndex, defender, players.Opponent, startDate, endDate)
-		pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
+		affectedMap := getPlayerPerWithPlayerByYearFn(playerIndex, defender, players.Opponent, startDate, endDate)
+		pipFactor := calculatePIPFactorPredFn(controlMap, affectedMap)
 
 		if totalPip == nil {
 			totalPip = pipFactor
@@ -190,9 +197,9 @@ func CreateMLBPrediction(playerIndex string, opponents []string, relationship pl
 
 	for _, defender := range opponents {
 		log.Printf("Batter: %v, Defender: %v", playerIndex, defender)
-		affectedMap := players.GetMLBPlayerPerWithPlayerByYear(playerIndex, defender, startDate, endDate)
+		affectedMap := getMLBPlayerPerWithPlayerByYearFn(playerIndex, defender, startDate, endDate)
 		log.Printf("AffectedMap: %v", affectedMap)
-		pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
+		pipFactor := calculatePIPFactorPredFn(controlMap, affectedMap)
 		log.Printf("PipFactor: %v", pipFactor)
 
 		if totalPip == nil {

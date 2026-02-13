@@ -1,11 +1,18 @@
 package scraper
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/gin-gonic/gin"
+	"github.com/gocolly/colly"
+	"github.com/mgordon34/kornet-kover/api/games"
 	"github.com/mgordon34/kornet-kover/api/players"
+	"github.com/mgordon34/kornet-kover/api/teams"
 	"github.com/mgordon34/kornet-kover/internal/sports"
 )
 
@@ -154,5 +161,202 @@ func TestParseMLBPlayerGameRows(t *testing.T) {
 	pitching := parseMLBPlayerGamePitching(players.MLBPlayerGamePitching{}, pitchDoc.Find("tr").First())
 	if pitching.Innings <= 6 || pitching.Strikeouts != 7 || pitching.BattersFaced != 25 {
 		t.Fatalf("unexpected pitching parse: %+v", pitching)
+	}
+}
+
+func TestCollyTableHelpers(t *testing.T) {
+	html := `<html><body>
+	<table class="stats_table" id="box-HOM-game-basic"><tbody>
+	<tr><th><a href="/players/j/jamesle01.html">LeBron James</a></th>
+	<td data-stat="mp">30:00</td><td data-stat="pts">25</td><td data-stat="trb">8</td><td data-stat="ast">6</td><td data-stat="fg3">2</td><td data-stat="usg_pct">24.5</td><td data-stat="off_rtg">112</td><td data-stat="def_rtg">108</td>
+	</tr>
+	</tbody></table>
+	<table class="stats_table" id="box-HOM-game-advanced"><tbody>
+	<tr><th><a href="/players/j/jamesle01.html">LeBron James</a></th>
+	<td data-stat="usg_pct">24.5</td><td data-stat="off_rtg">112</td><td data-stat="def_rtg">108</td></tr>
+	</tbody></table>
+	<table class="stats_table" id="box-WNBA_HOM-game-basic"><tbody>
+	<tr><th><a href="/wnba/players/j/jones01w.html">WNBA Player</a></th>
+	<td data-stat="mp">28:30</td><td data-stat="pts">18</td><td data-stat="trb">7</td><td data-stat="ast">5</td><td data-stat="fg3">1</td><td data-stat="usg_pct">20.0</td><td data-stat="off_rtg">105</td><td data-stat="def_rtg">102</td>
+	</tr>
+	</tbody></table>
+	<table class="stats_table" id="box-WNBA_HOM-game-advanced"><tbody>
+	<tr><th><a href="/wnba/players/j/jones01w.html">WNBA Player</a></th>
+	<td data-stat="usg_pct">20.0</td><td data-stat="off_rtg">105</td><td data-stat="def_rtg">102</td></tr>
+	</tbody></table>
+	<table id="roster" class="stats_table"><tbody>
+	<tr><td data-stat="player"><a href="/players/j/jamesle01.html">LeBron James</a></td></tr>
+	</tbody></table>
+	<table id="per_game_stats" class="stats_table"><tbody>
+	<tr><td data-stat="name_display" data-append-csv="jamesle01">LeBron James</td><td data-stat="mp_per_g">34.2</td></tr>
+	</tbody></table>
+	</body></html>`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(html))
+	}))
+	defer server.Close()
+
+	c := colly.NewCollector()
+	var tables []*colly.HTMLElement
+	c.OnHTML("table.stats_table", func(e *colly.HTMLElement) {
+		tables = append(tables, e)
+	})
+	if err := c.Visit(server.URL); err != nil {
+		t.Fatalf("colly visit error: %v", err)
+	}
+
+	nbaPlayers := getPlayers(tables[0])
+	if len(nbaPlayers) != 1 || nbaPlayers[0].Index != "jamesle01" {
+		t.Fatalf("unexpected nba players: %+v", nbaPlayers)
+	}
+
+	wnbaPlayers := getWNBAPlayers(tables[2])
+	if len(wnbaPlayers) != 1 || wnbaPlayers[0].Index != "jones01w" {
+		t.Fatalf("unexpected wnba players: %+v", wnbaPlayers)
+	}
+
+	statsMap := map[string]players.PlayerGame{}
+	collectStats(tables[0], statsMap, "HOM")
+	collectWNBAStats(tables[2], statsMap, "WNBA_HOM")
+	if statsMap["jamesle01"].Points != 25 || statsMap["jones01w"].Rebounds != 7 {
+		t.Fatalf("unexpected collected stats: %+v", statsMap)
+	}
+
+	pSlice, pGames := scrapeNBAPlayerStats([]*colly.HTMLElement{tables[0], tables[1]}, 100)
+	if len(pSlice) != 1 || len(pGames) != 1 || pGames[0].Game != 100 {
+		t.Fatalf("unexpected scrapeNBAPlayerStats output: players=%+v games=%+v", pSlice, pGames)
+	}
+
+	wP, wGames := scrapeWNBAPlayerStats([]*colly.HTMLElement{tables[2], tables[3]}, 101)
+	if len(wP) != 1 || len(wGames) != 1 || wGames[0].Game != 101 {
+		t.Fatalf("unexpected scrapeWNBAPlayerStats output: players=%+v games=%+v", wP, wGames)
+	}
+
+	rosterPlayers := getPlayersOnRoster(tables[4])
+	if len(rosterPlayers) != 1 || rosterPlayers[0] != "jamesle01" {
+		t.Fatalf("unexpected roster players: %+v", rosterPlayers)
+	}
+
+	roster := getPlayersByTime("HOM", rosterPlayers, map[string]string{"jamesle01": "Out"}, tables[5])
+	if len(roster) != 1 || roster[0].Status != "Out" {
+		t.Fatalf("unexpected roster-by-time output: %+v", roster)
+	}
+
+	_, _, _, _ = scrapeMLBPlayerStats([]*goquery.Document{}, 1, games.Game{})
+	_ = sports.NBA
+}
+
+func TestUpdateGamesAndHandlersUseSeams(t *testing.T) {
+	origUpdateGames := updateGamesFn
+	origUpdateRosters := updateActiveRostersFn
+	origGetLast := getLastGameFn
+	origScrapeGames := scrapeGamesFn
+	t.Cleanup(func() {
+		updateGamesFn = origUpdateGames
+		updateActiveRostersFn = origUpdateRosters
+		getLastGameFn = origGetLast
+		scrapeGamesFn = origScrapeGames
+	})
+
+	updateGamesFn = func(sport sports.Sport) error { return nil }
+	updateActiveRostersFn = func() error { return nil }
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.GET("/update-games", GetUpdateGames)
+	r.GET("/update-players", GetUpdateActiveRosters)
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/update-games", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("update-games status = %d", rec.Code)
+	}
+
+	rec2 := httptest.NewRecorder()
+	r.ServeHTTP(rec2, httptest.NewRequest(http.MethodGet, "/update-players", nil))
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("update-players status = %d", rec2.Code)
+	}
+
+	getLastGameFn = func() (games.Game, error) {
+		return games.Game{Date: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
+	}
+	scraped := false
+	scrapeGamesFn = func(sport sports.Sport, startDate time.Time, endDate time.Time) error {
+		scraped = true
+		if !startDate.After(time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)) {
+			t.Fatalf("expected start date after last game date")
+		}
+		return nil
+	}
+
+	if err := UpdateGames(sports.NBA); err != nil {
+		t.Fatalf("UpdateGames() error = %v", err)
+	}
+	if !scraped {
+		t.Fatalf("expected scrapeGamesFn to be called")
+	}
+}
+
+func TestUpdateActiveRostersUsesSeams(t *testing.T) {
+	origInjured := getInjuredPlayersFn
+	origGetTeams := getTeamsFn
+	origScrapePlayers := scrapePlayersForTeamFn
+	origUpdatePlayerTables := updatePlayerTablesFn
+	origUpdateRosters := updateRostersFn
+	t.Cleanup(func() {
+		getInjuredPlayersFn = origInjured
+		getTeamsFn = origGetTeams
+		scrapePlayersForTeamFn = origScrapePlayers
+		updatePlayerTablesFn = origUpdatePlayerTables
+		updateRostersFn = origUpdateRosters
+	})
+
+	getInjuredPlayersFn = func() map[string]string { return map[string]string{"p2": "Out"} }
+	getTeamsFn = func() ([]teams.Team, error) { return []teams.Team{{Index: "A"}, {Index: "B"}}, nil }
+	scrapePlayersForTeamFn = func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
+		return []players.PlayerRoster{{Sport: "nba", PlayerIndex: "p1", TeamIndex: teamIndex, Status: "Available", AvgMins: 20}}
+	}
+	updates := 0
+	updatePlayerTablesFn = func(playerIndex string) { updates++ }
+	updatedRosters := 0
+	updateRostersFn = func(rosterSlots []players.PlayerRoster) error {
+		updatedRosters = len(rosterSlots)
+		return nil
+	}
+
+	if err := UpdateActiveRosters(); err != nil {
+		t.Fatalf("UpdateActiveRosters() error = %v", err)
+	}
+	if updates == 0 || updatedRosters == 0 {
+		t.Fatalf("expected player table and roster updates to run")
+	}
+}
+
+func TestGetPlayersByTime_AvailableAndRosterFilter(t *testing.T) {
+	html := `<html><body><table id="per_game_stats" class="stats_table"><tbody>
+	<tr><td data-stat="name_display" data-append-csv="keep01">Keep Player</td><td data-stat="mp_per_g">30.0</td></tr>
+	<tr><td data-stat="name_display" data-append-csv="drop01">Drop Player</td><td data-stat="mp_per_g">10.0</td></tr>
+	</tbody></table></body></html>`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(html))
+	}))
+	defer server.Close()
+
+	c := colly.NewCollector()
+	var table *colly.HTMLElement
+	c.OnHTML("table.stats_table", func(e *colly.HTMLElement) { table = e })
+	if err := c.Visit(server.URL); err != nil {
+		t.Fatalf("visit err: %v", err)
+	}
+
+	roster := getPlayersByTime("TST", []string{"keep01"}, map[string]string{}, table)
+	if len(roster) != 1 {
+		t.Fatalf("expected one roster player after filter, got %d", len(roster))
+	}
+	if roster[0].PlayerIndex != "keep01" || roster[0].Status != "Available" {
+		t.Fatalf("unexpected roster output: %+v", roster[0])
 	}
 }

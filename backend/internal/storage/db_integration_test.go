@@ -24,4 +24,5 @@ func TestGetDBAndPingAndInitTables(t *testing.T) {
 	}
 
 	InitTables()
+	Close()
 }
