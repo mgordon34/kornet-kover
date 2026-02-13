@@ -41,6 +41,9 @@ while IFS= read -r pkg; do
   if [[ -z "$percent" || "$percent" == "$line" ]]; then
     percent="0.0"
   fi
+  if [[ "$percent" == "[no statements]" ]]; then
+    percent="0.0"
+  fi
 
   printf "%s %s %s\n" "$pkg" "$percent" "$threshold" >> "$coverage_tmp"
 done < <(go list ./...)
