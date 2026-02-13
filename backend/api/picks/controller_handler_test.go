@@ -48,6 +48,16 @@ func TestGetPropPicksHandler_UsesInjectedGetter(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rec.Code)
 	}
+
+	getPropPicksFn = func(userID int, date time.Time) ([]PropPickFormatted, error) {
+		return nil, errors.New("db down")
+	}
+	req2 := httptest.NewRequest(http.MethodGet, "/prop-picks?user_id=1&date=2026-01-01", nil)
+	rec2 := httptest.NewRecorder()
+	r.ServeHTTP(rec2, req2)
+	if rec2.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", rec2.Code)
+	}
 }
 
 func TestGetPropPickHandler(t *testing.T) {
@@ -71,6 +81,14 @@ func TestGetPropPickHandler(t *testing.T) {
 	r.ServeHTTP(rec2, req2)
 	if rec2.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rec2.Code)
+	}
+
+	getPropPickFn = func(id int) (PropPick, error) { return PropPick{}, errors.New("boom") }
+	req3 := httptest.NewRequest(http.MethodGet, "/prop-pick/3", nil)
+	rec3 := httptest.NewRecorder()
+	r.ServeHTTP(rec3, req3)
+	if rec3.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", rec3.Code)
 	}
 }
 

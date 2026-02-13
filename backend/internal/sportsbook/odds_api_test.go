@@ -57,3 +57,46 @@ func TestGetLiveOddsForGame_ParsesLinesWithInjectedDependencies(t *testing.T) {
 		t.Fatalf("unexpected line: %+v", lines[0])
 	}
 }
+
+func TestGetLiveOddsForGame_AlternateMarketType(t *testing.T) {
+	originalResolver := playerNameToIndex
+	playerNameToIndex = func(nameMap map[string]string, playerName string) (string, error) {
+		return "idx1", nil
+	}
+	t.Cleanup(func() { playerNameToIndex = originalResolver })
+
+	getter := func(endpoint string, addlArgs []string) (string, error) {
+		return `{
+			"id":"g1",
+			"bookmakers":[{
+				"key":"fanduel",
+				"markets":[{
+					"key":"player_points_alternate",
+					"last_update":"2026-01-02T00:00:00Z",
+					"outcomes":[
+						{"name":"Over","description":"Aaron Gordon","price":130,"point":23.5,"link":"x"}
+					]
+				}]
+			}]
+		}`, nil
+	}
+
+	lines := GetLiveOddsForGame(EventInfo{ID: "g1", HomeTeam: "A", AwayTeam: "B"}, "alternate", getter)
+	if len(lines) != 1 {
+		t.Fatalf("expected one alternate line, got %d", len(lines))
+	}
+	if lines[0].Type != "alternate" || lines[0].Stat != "points" || lines[0].Odds != 130 {
+		t.Fatalf("unexpected alternate line: %+v", lines[0])
+	}
+}
+
+func TestGetLiveOddsForGame_NoBookmakers(t *testing.T) {
+	getter := func(endpoint string, addlArgs []string) (string, error) {
+		return `{"id":"g1","bookmakers":[]}`, nil
+	}
+
+	lines := GetLiveOddsForGame(EventInfo{ID: "g1", HomeTeam: "A", AwayTeam: "B"}, "mainline", getter)
+	if len(lines) != 0 {
+		t.Fatalf("expected no lines when no bookmakers, got %d", len(lines))
+	}
+}

@@ -13,6 +13,9 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
+var getStrategiesFn = getStrategies
+var getStrategyFn = getStrategy
+
 func addStrategy(strat Strategy) (int, error) {
 	db := storage.GetDB()
 
@@ -57,7 +60,7 @@ func GetStrategies(c *gin.Context) {
 	}
 	log.Println(id)
 
-	strats, err := getStrategies(id)
+	strats, err := getStrategiesFn(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -92,7 +95,7 @@ func GetStrategy(c *gin.Context) {
 	}
 	log.Println(stratId)
 
-	strat, err := getStrategy(stratId)
+	strat, err := getStrategyFn(stratId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
