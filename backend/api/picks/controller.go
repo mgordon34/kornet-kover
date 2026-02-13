@@ -324,7 +324,7 @@ func getPredictedValue(stat string, points, rebounds, assists, threes float32) f
 	case "threes":
 		return threes
 	default:
-		return points
+		return 0
 	}
 }
 
@@ -353,7 +353,13 @@ func getBettorPicks(userId int, date time.Time) ([]BettorPickRow, error) {
     INNER JOIN players p ON p.index = pl.player_index
     LEFT JOIN active_rosters ar ON ar.player_index = pl.player_index AND ar.sport = pl.sport
     LEFT JOIN teams t ON t.index = ar.team_index
-    LEFT JOIN nba_pip_predictions npp ON npp.player_index = pl.player_index AND npp.date = pp.date
+    LEFT JOIN LATERAL (
+        SELECT points, rebounds, assists, threes
+        FROM nba_pip_predictions npp
+        WHERE npp.player_index = pl.player_index AND npp.date = pp.date
+        ORDER BY npp.version DESC
+        LIMIT 1
+    ) npp ON true
     WHERE pp.valid = true
         AND s.user_id = ($1)
         AND pp.date = ($2)
