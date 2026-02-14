@@ -148,7 +148,7 @@ func InitTables() {
 		`CREATE TABLE IF NOT EXISTS player_lines (
             id SERIAL PRIMARY KEY,
             sport VARCHAR(255) NOT NULL,
-            player_index VARCHAR(20) REFERENCES players(index),
+            player_index VARCHAR(20) REFERENCES players(index) UNIQUE,
             timestamp timestamp NOT NULL,
             stat VARCHAR(50),
             side VARCHAR(50),
