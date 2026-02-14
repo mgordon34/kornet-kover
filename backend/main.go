@@ -22,28 +22,9 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
-var initTablesFn = storage.InitTables
-var startServerFn = startServer
-var updateGamesFn = scraper.UpdateGames
-var updateLinesFn = sportsbook.UpdateLines
-var getMLBPlayersMissingHandednessFn = players.GetMLBPlayersMissingHandedness
-var scrapeMLBPlayerHandednessFn = scraper.ScrapeMLBPlayerHandedness
-var addMLBPlayerHandednessFn = players.AddMLBPlayerHandedness
-var getPIPPredictionsForDateFn = players.GetPIPPredictionsForDate
-var getOddsForDateFn = odds.GetPlayerOddsForDate
-var getGamesForDateFn = games.GetGamesForDate
-var getPlayersForGameFn = players.GetPlayersForGame
-var runMLBAnalysisOnGameFn = analysis.RunMLBAnalysisOnGame
-var sportsbookGetOddsFn = sportsbook.GetOdds
-var getPlayerPerByYearFn = players.GetPlayerPerByYear
-var getPlayerPerWithPlayerByYearFn = players.GetPlayerPerWithPlayerByYear
-var calculatePIPFactorFn = players.CalculatePIPFactor
-var runBacktesterFn = func(b backtesting.Backtester) { b.RunBacktest() }
-var runServerFn = func(r *gin.Engine) { r.Run(":8080") }
-
 func main() {
 	fmt.Println("Starting server")
-	initTablesFn()
+	storage.InitTables()
 	log.Println("Initialized DB")
 
 	// runUpdateGames()
@@ -51,7 +32,7 @@ func main() {
 
 	// runBacktest()
 
-	startServerFn()
+	startServer()
 
 	// runUpdateMLBPlayerHandedness()
 
@@ -66,8 +47,9 @@ func main() {
 }
 
 func startServer() {
+	log.Println("Starting server")
 	r := newRouter()
-	runServerFn(r)
+	r.Run(":8080")
 }
 
 func newRouter() *gin.Engine {
@@ -98,28 +80,28 @@ func newRouter() *gin.Engine {
 
 func runUpdateGames() {
 	log.Println("Updating games...")
-	updateGamesFn(sports.NBA)
+	scraper.UpdateGames(sports.NBA)
 }
 
 func runUpdateLines() {
 	log.Println("Updating lines...")
-	updateLinesFn()
+	sportsbook.UpdateLines()
 }
 
 func runUpdateMLBPlayerHandedness() {
 	log.Println("Updating MLB player handedness...")
-	missingPlayers, err := getMLBPlayersMissingHandednessFn()
+	missingPlayers, err := players.GetMLBPlayersMissingHandedness()
 	if err != nil {
 		log.Fatal("Error getting players: ", err)
 	}
 	log.Printf("%d players missing handedness", len(missingPlayers))
 	for _, player := range missingPlayers {
 		time.Sleep(4 * time.Second)
-		bats, throws, err := scrapeMLBPlayerHandednessFn(player.Index)
+		bats, throws, err := scraper.ScrapeMLBPlayerHandedness(player.Index)
 		if err != nil {
 			log.Fatal("Error getting player handedness: ", err)
 		}
-		err = addMLBPlayerHandednessFn(player.Index, bats, throws)
+		err = players.AddMLBPlayerHandedness(player.Index, bats, throws)
 		if err != nil {
 			log.Printf("Error adding handedness for player %s: %v", player.Index, err)
 			continue
@@ -130,7 +112,7 @@ func runUpdateMLBPlayerHandedness() {
 func runGetPIPPredictions() {
 	log.Println("Updating PIPPredictions...")
 	date, _ := time.Parse("2006-01-02", "2023-10-30")
-	preds, _ := getPIPPredictionsForDateFn(date)
+	preds, _ := players.GetPIPPredictionsForDate(date)
 	for _, pred := range preds {
 		log.Println(pred)
 	}
@@ -143,7 +125,7 @@ func runSportsbookGetGames() {
 	endDate, _ := time.ParseInLocation("2006-01-02", "2025-01-21", loc)
 	log.Printf("Finding games from %v to %v", startDate, endDate)
 
-	sportsbookGetOddsFn(startDate, endDate, "mainline")
+	sportsbook.GetOdds(startDate, endDate, "mainline")
 }
 
 func runGetPlayerOdds() {
@@ -152,7 +134,7 @@ func runGetPlayerOdds() {
 		log.Fatal("Error parsing time: ", err)
 	}
 
-	oddsMap, err := getOddsForDateFn(sports.NBA, startDate)
+	oddsMap, err := odds.GetPlayerOddsForDate(sports.NBA, startDate)
 	if err != nil {
 		log.Fatal("Error getting player odds", err)
 	}
@@ -165,7 +147,7 @@ func runGetPlayerOddsForToday() map[string]map[string]odds.PlayerOdds {
 	t := time.Now()
 	today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 
-	pOdds, err := getOddsForDateFn(sports.NBA, today)
+	pOdds, err := odds.GetPlayerOddsForDate(sports.NBA, today)
 	if err != nil {
 		log.Fatal("Error getting player odds", err)
 	}
@@ -185,9 +167,9 @@ func runGetPlayerPip() {
 	index := "tatumja01"
 	pindex := "daniedy01"
 
-	controlMap := getPlayerPerByYearFn(sports.NBA, index, startDate, endDate)
-	affectedMap := getPlayerPerWithPlayerByYearFn(index, pindex, players.Opponent, startDate, endDate)
-	pipFactor := calculatePIPFactorFn(controlMap, affectedMap)
+	controlMap := players.GetPlayerPerByYear(sports.NBA, index, startDate, endDate)
+	affectedMap := players.GetPlayerPerWithPlayerByYear(index, pindex, players.Opponent, startDate, endDate)
+	pipFactor := players.CalculatePIPFactor(controlMap, affectedMap)
 	prediction := controlMap[2024].PredictStats(pipFactor)
 	log.Println(pipFactor)
 	log.Println(controlMap[2024])
@@ -202,7 +184,7 @@ func backtestMLB() {
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
 		log.Printf("Date: %v", date)
 
-		todayGames, err := getGamesForDateFn(sports.MLB, date)
+		todayGames, err := games.GetGamesForDate(sports.MLB, date)
 		if err != nil {
 			log.Fatal("Error getting games: ", err)
 		}
@@ -232,17 +214,17 @@ func backtestMLB() {
 		var results []analysis.Analysis
 		for _, game := range todayGames {
 			log.Printf("Analyzing %v vs. %v", game.HomeIndex, game.AwayIndex)
-			batterMap, err := getPlayersForGameFn(game.Id, game.HomeIndex, "mlb_player_games_batting", "pas")
+			batterMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex, "mlb_player_games_batting", "pas")
 			if err != nil {
 				log.Fatal("Error getting players for game: ", err)
 			}
-			pitcherMap, err := getPlayersForGameFn(game.Id, game.HomeIndex, "mlb_player_games_pitching", "innings")
+			pitcherMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex, "mlb_player_games_pitching", "innings")
 			if err != nil {
 				log.Fatal("Error getting players for game: ", err)
 			}
 
 			results = append(results,
-				runMLBAnalysisOnGameFn(
+				analysis.RunMLBAnalysisOnGame(
 					convertPlayerMaptoPlayerRosters(batterMap["home"]),
 					convertPlayerMaptoPlayerRosters(pitcherMap["away"]),
 					date,
@@ -251,7 +233,7 @@ func backtestMLB() {
 				)...,
 			)
 			results = append(results,
-				runMLBAnalysisOnGameFn(
+				analysis.RunMLBAnalysisOnGame(
 					convertPlayerMaptoPlayerRosters(batterMap["away"]),
 					convertPlayerMaptoPlayerRosters(pitcherMap["home"]),
 					date,
@@ -614,5 +596,5 @@ func runBacktest() {
 			{PropSelector: tfPicker, BacktestResult: &backtesting.BacktestResult{}},
 		},
 	}
-	runBacktesterFn(b)
+	b.RunBacktest()
 }

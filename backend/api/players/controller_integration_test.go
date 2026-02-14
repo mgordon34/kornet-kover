@@ -57,7 +57,7 @@ func TestPlayerNameToIndex_SuffixTolerantLookup(t *testing.T) {
 	db := storage.GetDB()
 	suffix := fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
 	fullName := "Player " + suffix + " Jr."
-	shortName := "Player " + suffix
+	shortName := "Player " + suffix + " Jr"
 	index := "sfx" + suffix
 
 	_, err := db.Exec(context.Background(), `INSERT INTO players (index, sport, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, index, "nba", fullName)
