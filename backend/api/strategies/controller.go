@@ -13,79 +13,92 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
-func addStrategy(strat Strategy) (int, error) {
-    db := storage.GetDB()
+var getStrategiesFn = getStrategies
+var getStrategyFn = getStrategy
 
-    sqlStmt := `
+func addStrategy(strat Strategy) (int, error) {
+	db := storage.GetDB()
+
+	sqlStmt := `
 	INSERT INTO strategies (user_id, name)
 	VALUES ($1, $2)
 	ON CONFLICT DO NOTHING
     RETURNING ID`
-    var resId int
-    err := db.QueryRow(context.Background(), sqlStmt, strat.UserId, strat.Name).Scan(&resId)
+	var resId int
+	err := db.QueryRow(context.Background(), sqlStmt, strat.UserId, strat.Name).Scan(&resId)
 	if err != nil {
-        return 0, err
+		return 0, err
 	}
-    log.Printf("Added strategy: %v", strat)
-    return resId, nil
+	log.Printf("Added strategy: %v", strat)
+	return resId, nil
 }
 
 func getStrategies(userId int) ([]Strategy, error) {
-    db := storage.GetDB()
+	db := storage.GetDB()
 
-    sql := `
+	sql := `
     SELECT * from strategies
     WHERE user_id = ($1)`
 
-    row, _ := db.Query(context.Background(), sql, userId)
-    strats, err := pgx.CollectRows(row, pgx.RowToStructByName[Strategy])
-    if err != nil {
-        return strats, errors.New(fmt.Sprintf("Error getting strategies for user %d: %v", userId, err))
-    }
+	row, err := db.Query(context.Background(), sql, userId)
+	if err != nil {
+		return nil, fmt.Errorf("error querying strategies for user %d: %w", userId, err)
+	}
+	strats, err := pgx.CollectRows(row, pgx.RowToStructByName[Strategy])
+	if err != nil {
+		return strats, errors.New(fmt.Sprintf("Error getting strategies for user %d: %v", userId, err))
+	}
 
-    return strats, nil
+	return strats, nil
 }
 
 func GetStrategies(c *gin.Context) {
-    id, err := strconv.Atoi(c.Query("user_id"))
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, err)
-    }
-    log.Println(id)
+	id, err := strconv.Atoi(c.Query("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	log.Println(id)
 
-    strats, err := getStrategies(id)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, err)
-    }
-    c.JSON(http.StatusOK, strats)
+	strats, err := getStrategiesFn(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(http.StatusOK, strats)
 }
 
 func getStrategy(stratId int) (Strategy, error) {
-    db := storage.GetDB()
+	db := storage.GetDB()
 
-    sql := `
+	sql := `
     SELECT * from strategies
     WHERE id = ($1)`
 
-    row, _ := db.Query(context.Background(), sql, stratId)
-    strat, err := pgx.CollectExactlyOneRow(row, pgx.RowToStructByName[Strategy])
-    if err != nil {
-        return strat, errors.New(fmt.Sprintf("Error getting strategy %d: %v", stratId, err))
-    }
+	row, err := db.Query(context.Background(), sql, stratId)
+	if err != nil {
+		return Strategy{}, fmt.Errorf("error querying strategy %d: %w", stratId, err)
+	}
+	strat, err := pgx.CollectExactlyOneRow(row, pgx.RowToStructByName[Strategy])
+	if err != nil {
+		return strat, errors.New(fmt.Sprintf("Error getting strategy %d: %v", stratId, err))
+	}
 
-    return strat, nil
+	return strat, nil
 }
 
 func GetStrategy(c *gin.Context) {
-    stratId, err := strconv.Atoi(c.Param("strat"))
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, err)
-    }
-    log.Println(stratId)
+	stratId, err := strconv.Atoi(c.Param("strat"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	log.Println(stratId)
 
-    strat, err := getStrategy(stratId)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, err)
-    }
-    c.JSON(http.StatusOK, strat)
+	strat, err := getStrategyFn(stratId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(http.StatusOK, strat)
 }

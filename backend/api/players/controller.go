@@ -70,7 +70,7 @@ func GetPlayer(index string) (Player, error) {
 	}
 	defer rows.Close()
 
-	player, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Player])
+	player, err := pgx.CollectOneRow(rows, pgx.RowToStructByNameLax[Player])
 	if err != nil {
 		log.Println("Error converting player: ", err)
 		return Player{}, err
@@ -100,12 +100,18 @@ func PlayerNameToIndex(nameMap map[string]string, playerName string) (string, er
 	}
 
 	db := storage.GetDB()
-	sql := `SELECT index FROM players WHERE UPPER(name) ILIKE ($1);`
+	sql := `
+    SELECT index
+    FROM players
+    WHERE UPPER(name) = UPPER($1)
+       OR UPPER(name) LIKE UPPER($1) || ' %'
+    ORDER BY CASE WHEN UPPER(name) = UPPER($1) THEN 0 ELSE 1 END
+    LIMIT 1;`
 	if playerName == "Alexandre Sarr" {
 		playerName = "Alex Sarr"
 	}
 
-	row := db.QueryRow(context.Background(), sql, playerName+"%")
+	row := db.QueryRow(context.Background(), sql, playerName)
 	if err := row.Scan(&index); err != nil {
 		log.Printf("Error finding player index for %s", playerName)
 		return "", err
@@ -578,7 +584,7 @@ type MLBPlayerStatInfo struct {
 func GetMLBBattingStatsForGames(gameIds []string) (map[string]MLBBattingAvg, error) {
 	playerMap := make(map[string]MLBBattingAvg)
 	db := storage.GetDB()
-	sql := `SELECT player_index, 1 as num_games, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, obp, slg, ops, wpa FROM mlb_player_games_batting
+	sql := `SELECT player_index, 1 as num_games, at_bats, runs, hits, rbis, home_runs, walks, strikeouts, pas, pitches, strikes, ba, obp, slg, ops, wpa FROM mlb_player_games_batting
                 left join games gg on gg.id = mlb_player_games_batting.game
                 where gg.id IN (%s)`
 
