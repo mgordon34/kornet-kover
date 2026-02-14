@@ -43,7 +43,6 @@ func main() {
 	// endDate, _ := time.ParseInLocation("2006-01-02", "2025-10-21", loc)
 
 	// scraper.ScrapeGames(sports.NBA, startDate, endDate)
-	// sportsbook.GetHistoricalOddsForSport(sports.MLB, startDate, endDate)
 }
 
 func startServer() {
@@ -54,6 +53,7 @@ func startServer() {
 
 func newRouter() *gin.Engine {
 	r := gin.Default()
+	oddsService := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{})
 
 	config := cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"}, // Replace with your frontend domain
@@ -68,7 +68,7 @@ func newRouter() *gin.Engine {
 
 	r.GET("/update-games", scraper.GetUpdateGames)
 	r.GET("/update-players", scraper.GetUpdateActiveRosters)
-	r.GET("/update-lines", sportsbook.GetUpdateLines)
+	r.GET("/update-lines", sportsbook.UpdateLinesHandler(oddsService))
 	r.GET("/pick-props", analysis.GetPickProps)
 
 	r.GET("/strategies", strategies.GetStrategies)
@@ -85,7 +85,8 @@ func runUpdateGames() {
 
 func runUpdateLines() {
 	log.Println("Updating lines...")
-	sportsbook.UpdateLines()
+	service := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{})
+	service.UpdateLines()
 }
 
 func runUpdateMLBPlayerHandedness() {
@@ -125,7 +126,8 @@ func runSportsbookGetGames() {
 	endDate, _ := time.ParseInLocation("2006-01-02", "2025-01-21", loc)
 	log.Printf("Finding games from %v to %v", startDate, endDate)
 
-	sportsbook.GetOdds(startDate, endDate, "mainline")
+	service := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{})
+	service.GetOdds(startDate, endDate, "mainline")
 }
 
 func runGetPlayerOdds() {
