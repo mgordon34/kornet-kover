@@ -55,6 +55,8 @@ func newRouter() *gin.Engine {
 	r := gin.Default()
 	oddsService := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{})
 	scraperService := scraper.NewScraperService(scraper.ScraperServiceDeps{})
+	strategyService := strategies.NewStrategyService(strategies.StrategyServiceDeps{})
+	picksService := picks.NewPicksService(picks.PicksServiceDeps{})
 
 	config := cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"}, // Replace with your frontend domain
@@ -72,9 +74,9 @@ func newRouter() *gin.Engine {
 	r.GET("/update-lines", sportsbook.UpdateLinesHandler(oddsService))
 	r.GET("/pick-props", analysis.GetPickProps)
 
-	r.GET("/strategies", strategies.GetStrategies)
-	r.GET("/prop-picks", picks.GetPropPicks)
-	r.GET("/prop-picks/bettor", picks.GetBettorPropPicks)
+	r.GET("/strategies", strategyService.GetStrategiesHandler())
+	r.GET("/prop-picks", picksService.GetPropPicksHandler())
+	r.GET("/prop-picks/bettor", picksService.GetBettorPropPicksHandler())
 
 	return r
 }
@@ -216,6 +218,7 @@ func backtestMLB() {
 		// }
 
 		var results []analysis.Analysis
+		analysisService := analysis.NewAnalysisService(analysis.AnalysisServiceDeps{})
 		for _, game := range todayGames {
 			log.Printf("Analyzing %v vs. %v", game.HomeIndex, game.AwayIndex)
 			batterMap, err := players.GetPlayersForGame(game.Id, game.HomeIndex, "mlb_player_games_batting", "pas")
@@ -228,7 +231,7 @@ func backtestMLB() {
 			}
 
 			results = append(results,
-				analysis.RunMLBAnalysisOnGame(
+				analysisService.RunMLBAnalysisOnGame(
 					convertPlayerMaptoPlayerRosters(batterMap["home"]),
 					convertPlayerMaptoPlayerRosters(pitcherMap["away"]),
 					date,
@@ -237,7 +240,7 @@ func backtestMLB() {
 				)...,
 			)
 			results = append(results,
-				analysis.RunMLBAnalysisOnGame(
+				analysisService.RunMLBAnalysisOnGame(
 					convertPlayerMaptoPlayerRosters(batterMap["away"]),
 					convertPlayerMaptoPlayerRosters(pitcherMap["home"]),
 					date,
@@ -578,10 +581,10 @@ func runBacktest() {
 		MaxUnder:       0,
 		TotalMax:       100,
 	}
-	b := backtesting.Backtester{
-		StartDate: startDate,
-		EndDate:   endDate,
-		Strategies: []backtesting.Strategy{
+	b := backtesting.NewBacktester(
+		startDate,
+		endDate,
+		[]backtesting.Strategy{
 			{PropSelector: pPicker, BacktestResult: &backtesting.BacktestResult{}},
 			{PropSelector: rPicker, BacktestResult: &backtesting.BacktestResult{}},
 			{PropSelector: aPicker, BacktestResult: &backtesting.BacktestResult{}},
@@ -599,6 +602,7 @@ func runBacktest() {
 			{PropSelector: fPickerP, BacktestResult: &backtesting.BacktestResult{}},
 			{PropSelector: tfPicker, BacktestResult: &backtesting.BacktestResult{}},
 		},
-	}
+		backtesting.BacktesterDeps{},
+	)
 	b.RunBacktest()
 }
