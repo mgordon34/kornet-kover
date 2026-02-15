@@ -21,15 +21,67 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/utils"
 )
 
-var updateGamesFn = UpdateGames
-var updateActiveRostersFn = UpdateActiveRosters
-var getLastGameFn = games.GetLastGame
-var scrapeGamesFn = ScrapeGames
-var getInjuredPlayersFn = GetInjuredPlayers
-var getTeamsFn = teams.GetTeams
-var scrapePlayersForTeamFn = scrapePlayersForTeam
-var updatePlayerTablesFn = players.UpdatePlayerTables
-var updateRostersFn = players.UpdateRosters
+type ScraperServiceDeps struct {
+	GetLastGame          func() (games.Game, error)
+	ScrapeGames          func(sport sports.Sport, startDate time.Time, endDate time.Time) error
+	GetInjuredPlayers    func() map[string]string
+	GetTeams             func() ([]teams.Team, error)
+	ScrapePlayersForTeam func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster
+	UpdatePlayerTables   func(playerIndex string)
+	UpdateRosters        func(rosterSlots []players.PlayerRoster) error
+	Now                  func() time.Time
+}
+
+type ScraperService struct {
+	getLastGame          func() (games.Game, error)
+	scrapeGames          func(sport sports.Sport, startDate time.Time, endDate time.Time) error
+	getInjuredPlayers    func() map[string]string
+	getTeams             func() ([]teams.Team, error)
+	scrapePlayersForTeam func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster
+	updatePlayerTables   func(playerIndex string)
+	updateRosters        func(rosterSlots []players.PlayerRoster) error
+	now                  func() time.Time
+}
+
+func NewScraperService(deps ScraperServiceDeps) *ScraperService {
+	svc := &ScraperService{
+		getLastGame:          deps.GetLastGame,
+		scrapeGames:          deps.ScrapeGames,
+		getInjuredPlayers:    deps.GetInjuredPlayers,
+		getTeams:             deps.GetTeams,
+		scrapePlayersForTeam: deps.ScrapePlayersForTeam,
+		updatePlayerTables:   deps.UpdatePlayerTables,
+		updateRosters:        deps.UpdateRosters,
+		now:                  deps.Now,
+	}
+
+	if svc.getLastGame == nil {
+		svc.getLastGame = games.GetLastGame
+	}
+	if svc.scrapeGames == nil {
+		svc.scrapeGames = ScrapeGames
+	}
+	if svc.getInjuredPlayers == nil {
+		svc.getInjuredPlayers = GetInjuredPlayers
+	}
+	if svc.getTeams == nil {
+		svc.getTeams = teams.GetTeams
+	}
+	if svc.scrapePlayersForTeam == nil {
+		svc.scrapePlayersForTeam = scrapePlayersForTeam
+	}
+	if svc.updatePlayerTables == nil {
+		svc.updatePlayerTables = players.UpdatePlayerTables
+	}
+	if svc.updateRosters == nil {
+		svc.updateRosters = players.UpdateRosters
+	}
+	if svc.now == nil {
+		svc.now = time.Now
+	}
+
+	return svc
+}
 
 func ScrapeNbaTeams() {
 	c := colly.NewCollector()
@@ -756,59 +808,75 @@ func fixPlayerStats(gameId int, pMap map[string]players.PlayerGame) []players.Pl
 	return pSlice
 }
 
-func GetUpdateGames(c *gin.Context) {
-	err := updateGamesFn(sports.NBA)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
+func UpdateGamesHandler(service *ScraperService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if service == nil {
+			c.JSON(http.StatusInternalServerError, "scraper service is not configured")
+			return
+		}
+
+		err := service.UpdateGames(sports.NBA)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, "Done")
 	}
-	c.JSON(http.StatusOK, "Done")
 }
 
-func GetUpdateActiveRosters(c *gin.Context) {
-	err := updateActiveRostersFn()
-	if err != nil {
-		msg := fmt.Sprint("Error updating active rosters: ", err)
-		log.Println(msg)
-		c.JSON(http.StatusInternalServerError, msg)
+func UpdateActiveRostersHandler(service *ScraperService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if service == nil {
+			c.JSON(http.StatusInternalServerError, "scraper service is not configured")
+			return
+		}
+
+		err := service.UpdateActiveRosters()
+		if err != nil {
+			msg := fmt.Sprint("Error updating active rosters: ", err)
+			log.Println(msg)
+			c.JSON(http.StatusInternalServerError, msg)
+			return
+		}
+		c.JSON(http.StatusOK, "Done")
 	}
-	c.JSON(http.StatusOK, "Done")
 }
 
 // UpdateGames will add any new game and corresponding stats to the database
 // This is done by utilizing GetLastGame to determine the date window to perform game scraping
 // Returns the number of new games added or error
 // TODO: Optimizations for offseason could be made here
-func UpdateGames(sport sports.Sport) error {
-	lastGame, err := getLastGameFn()
+func (s *ScraperService) UpdateGames(sport sports.Sport) error {
+	lastGame, err := s.getLastGame()
 	if err != nil {
 		return err
 	}
 
 	lastGameDate := lastGame.Date
 	startDate := lastGameDate.AddDate(0, 0, 1)
-	endDate := time.Now()
-	return scrapeGamesFn(sport, startDate, endDate)
+	endDate := s.now()
+	return s.scrapeGames(sport, startDate, endDate)
 }
 
-func UpdateActiveRosters() error {
+func (s *ScraperService) UpdateActiveRosters() error {
 	var activeRoster []players.PlayerRoster
-	injuredPlayers := getInjuredPlayersFn()
-	tList, err := getTeamsFn()
+	injuredPlayers := s.getInjuredPlayers()
+	tList, err := s.getTeams()
 	if err != nil {
 		return err
 	}
 
 	for _, team := range tList {
-		activeRoster = append(activeRoster, scrapePlayersForTeamFn(team.Index, injuredPlayers)...)
+		activeRoster = append(activeRoster, s.scrapePlayersForTeam(team.Index, injuredPlayers)...)
 	}
 
 	activeRoster = pruneActiveRoster(activeRoster)
 
 	for _, player := range activeRoster {
-		updatePlayerTablesFn(player.PlayerIndex)
+		s.updatePlayerTables(player.PlayerIndex)
 	}
 
-	err = updateRostersFn(activeRoster)
+	err = s.updateRosters(activeRoster)
 	if err != nil {
 		return err
 	}

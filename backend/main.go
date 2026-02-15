@@ -54,6 +54,7 @@ func startServer() {
 func newRouter() *gin.Engine {
 	r := gin.Default()
 	oddsService := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{})
+	scraperService := scraper.NewScraperService(scraper.ScraperServiceDeps{})
 
 	config := cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"}, // Replace with your frontend domain
@@ -66,8 +67,8 @@ func newRouter() *gin.Engine {
 
 	r.Use(cors.New(config))
 
-	r.GET("/update-games", scraper.GetUpdateGames)
-	r.GET("/update-players", scraper.GetUpdateActiveRosters)
+	r.GET("/update-games", scraper.UpdateGamesHandler(scraperService))
+	r.GET("/update-players", scraper.UpdateActiveRostersHandler(scraperService))
 	r.GET("/update-lines", sportsbook.UpdateLinesHandler(oddsService))
 	r.GET("/pick-props", analysis.GetPickProps)
 
@@ -80,7 +81,8 @@ func newRouter() *gin.Engine {
 
 func runUpdateGames() {
 	log.Println("Updating games...")
-	scraper.UpdateGames(sports.NBA)
+	service := scraper.NewScraperService(scraper.ScraperServiceDeps{})
+	service.UpdateGames(sports.NBA)
 }
 
 func runUpdateLines() {
