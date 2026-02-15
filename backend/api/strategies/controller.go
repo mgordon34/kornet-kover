@@ -13,8 +13,60 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
-var getStrategiesFn = getStrategies
-var getStrategyFn = getStrategy
+type StrategyServiceDeps struct {
+	GetStrategies func(userID int) ([]Strategy, error)
+	GetStrategy   func(strategyID int) (Strategy, error)
+}
+
+type StrategyService struct {
+	deps StrategyServiceDeps
+}
+
+func NewStrategyService(deps StrategyServiceDeps) *StrategyService {
+	if deps.GetStrategies == nil {
+		deps.GetStrategies = getStrategies
+	}
+	if deps.GetStrategy == nil {
+		deps.GetStrategy = getStrategy
+	}
+	return &StrategyService{deps: deps}
+}
+
+func (s *StrategyService) GetStrategiesHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Query("user_id"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		log.Println(id)
+
+		strats, err := s.deps.GetStrategies(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, strats)
+	}
+}
+
+func (s *StrategyService) GetStrategyHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		stratID, err := strconv.Atoi(c.Param("strat"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		log.Println(stratID)
+
+		strat, err := s.deps.GetStrategy(stratID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, strat)
+	}
+}
 
 func addStrategy(strat Strategy) (int, error) {
 	db := storage.GetDB()
@@ -53,19 +105,7 @@ func getStrategies(userId int) ([]Strategy, error) {
 }
 
 func GetStrategies(c *gin.Context) {
-	id, err := strconv.Atoi(c.Query("user_id"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	log.Println(id)
-
-	strats, err := getStrategiesFn(id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	c.JSON(http.StatusOK, strats)
+	NewStrategyService(StrategyServiceDeps{}).GetStrategiesHandler()(c)
 }
 
 func getStrategy(stratId int) (Strategy, error) {
@@ -88,17 +128,5 @@ func getStrategy(stratId int) (Strategy, error) {
 }
 
 func GetStrategy(c *gin.Context) {
-	stratId, err := strconv.Atoi(c.Param("strat"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	log.Println(stratId)
-
-	strat, err := getStrategyFn(stratId)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	c.JSON(http.StatusOK, strat)
+	NewStrategyService(StrategyServiceDeps{}).GetStrategyHandler()(c)
 }
