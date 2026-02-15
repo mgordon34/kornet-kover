@@ -10,13 +10,9 @@ import (
 )
 
 func TestGetPickPropsHandler_Error(t *testing.T) {
-	original := pickPropsRunner
-	pickPropsRunner = func() ([]PropPick, error) { return nil, errors.New("boom") }
-	t.Cleanup(func() { pickPropsRunner = original })
-
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.GET("/pick-props", GetPickProps)
+	r.GET("/pick-props", PickPropsHandler(func() ([]PropPick, error) { return nil, errors.New("boom") }))
 
 	req := httptest.NewRequest(http.MethodGet, "/pick-props", nil)
 	rec := httptest.NewRecorder()
@@ -28,13 +24,9 @@ func TestGetPickPropsHandler_Error(t *testing.T) {
 }
 
 func TestGetPickPropsHandler_Success(t *testing.T) {
-	original := pickPropsRunner
-	pickPropsRunner = func() ([]PropPick, error) { return []PropPick{{LineId: 1}}, nil }
-	t.Cleanup(func() { pickPropsRunner = original })
-
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.GET("/pick-props", GetPickProps)
+	r.GET("/pick-props", PickPropsHandler(func() ([]PropPick, error) { return []PropPick{{LineId: 1}}, nil }))
 
 	req := httptest.NewRequest(http.MethodGet, "/pick-props", nil)
 	rec := httptest.NewRecorder()
