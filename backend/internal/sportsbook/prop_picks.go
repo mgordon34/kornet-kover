@@ -20,12 +20,10 @@ var markets = map[string]string{
 }
 
 type PropPicksServiceDeps struct {
-	Provider       OddsProvider
-	LineReader     LineReader
-	LineWriter     LineWriter
-	PlayerResolver PlayerIndexResolver
-	Now            func() time.Time
-	RunGetGames    func(startDate time.Time, endDate time.Time)
+	Sources     SportsbookSources
+	Store       SportsbookStore
+	Now         func() time.Time
+	RunGetGames func(startDate time.Time, endDate time.Time)
 }
 
 type PropPicksService struct {
@@ -33,17 +31,11 @@ type PropPicksService struct {
 }
 
 func NewPropPicksService(deps PropPicksServiceDeps) *PropPicksService {
-	if deps.Provider == nil {
-		deps.Provider = propOddsProvider{}
+	if deps.Sources == nil {
+		deps.Sources = defaultSportsbookSources{}
 	}
-	if deps.LineReader == nil {
-		deps.LineReader = lineRepository{}
-	}
-	if deps.LineWriter == nil {
-		deps.LineWriter = lineRepository{}
-	}
-	if deps.PlayerResolver == nil {
-		deps.PlayerResolver = playerRepository{}
+	if deps.Store == nil {
+		deps.Store = defaultSportsbookStore{}
 	}
 	if deps.Now == nil {
 		deps.Now = time.Now
@@ -85,7 +77,7 @@ func requestPropOdds(endpoint string, addlArgs []string) (response string, err e
 }
 
 func (s *PropPicksService) UpdateLines() error {
-	lastLine, err := s.deps.LineReader.GetLastLine("mainline")
+	lastLine, err := s.deps.Store.GetLastLine("mainline")
 	if err != nil {
 		log.Println(err)
 		return err
@@ -104,15 +96,15 @@ func (s *PropPicksService) GetGames(startDate time.Time, endDate time.Time) {
 		log.Printf("Scraping games for date: %v", d)
 
 		var lines []odds.PlayerLine
-		games := s.GetGamesForDate(d, s.deps.Provider.Get)
+		games := s.GetGamesForDate(d, s.deps.Sources.GetPropOdds)
 		for _, game := range games {
 			for stat, market := range markets {
 				log.Printf("Getting odds for %s for game %s", stat, game.ID)
-				lines = append(lines, s.GetLinesForMarket(game, market, stat, s.deps.Provider.Get)...)
+				lines = append(lines, s.GetLinesForMarket(game, market, stat, s.deps.Sources.GetPropOdds)...)
 			}
 		}
 
-		s.deps.LineWriter.AddPlayerLines(lines)
+		s.deps.Store.AddPlayerLines(lines)
 	}
 }
 
@@ -141,7 +133,7 @@ func (s *PropPicksService) GetGamesForDate(date time.Time, apiGetter APIGetter) 
 	addlArgs := []string{dateArg}
 
 	if apiGetter == nil {
-		apiGetter = s.deps.Provider.Get
+		apiGetter = s.deps.Sources.GetPropOdds
 	}
 
 	res, err := apiGetter("/beta/games/nba", addlArgs)
@@ -185,7 +177,7 @@ func (s *PropPicksService) GetLinesForMarket(game Game, market string, stat stri
 	nameMap := make(map[string]string)
 
 	if apiGetter == nil {
-		apiGetter = s.deps.Provider.Get
+		apiGetter = s.deps.Sources.GetPropOdds
 	}
 
 	res, err := apiGetter(fmt.Sprintf("/beta/odds/%s/%s", game.ID, market), nil)
@@ -203,7 +195,7 @@ func (s *PropPicksService) GetLinesForMarket(game Game, market string, stat stri
 				nameSplit := strings.Split(outcome.Name, " ")
 				playerName := strings.Join(nameSplit[:len(nameSplit)-2], " ")
 				side := nameSplit[len(nameSplit)-2]
-				playerIndex, err := s.deps.PlayerResolver.PlayerNameToIndex(nameMap, playerName)
+				playerIndex, err := s.deps.Store.PlayerNameToIndex(nameMap, playerName)
 				if err != nil {
 					log.Printf("Error finding player name: %s", playerName)
 					continue

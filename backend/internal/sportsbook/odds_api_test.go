@@ -31,12 +31,12 @@ func TestGetLiveGamesForDate_UsesInjectedGetter(t *testing.T) {
 
 func TestGetLiveOddsForGame_ParsesLinesWithInjectedDependencies(t *testing.T) {
 	svc := NewOddsService(OddsServiceDeps{
-		PlayerResolver: PlayerIndexResolverFunc(func(nameMap map[string]string, playerName string) (string, error) {
+		Store: fakeSportsbookStore{playerNameToIndexFn: func(nameMap map[string]string, playerName string) (string, error) {
 			if playerName == "Bad Player" {
 				return "", errors.New("not found")
 			}
 			return "idx1", nil
-		}),
+		}},
 	})
 
 	getter := func(endpoint string, addlArgs []string) (string, error) {
@@ -67,9 +67,9 @@ func TestGetLiveOddsForGame_ParsesLinesWithInjectedDependencies(t *testing.T) {
 
 func TestGetLiveOddsForGame_AlternateMarketType(t *testing.T) {
 	svc := NewOddsService(OddsServiceDeps{
-		PlayerResolver: PlayerIndexResolverFunc(func(nameMap map[string]string, playerName string) (string, error) {
+		Store: fakeSportsbookStore{playerNameToIndexFn: func(nameMap map[string]string, playerName string) (string, error) {
 			return "idx1", nil
-		}),
+		}},
 	})
 
 	getter := func(endpoint string, addlArgs []string) (string, error) {
@@ -112,15 +112,10 @@ func TestGetLiveOddsForGame_NoBookmakers(t *testing.T) {
 func TestUpdateLinesAndHandlersUseInjectedService(t *testing.T) {
 	calls := 0
 	svc := NewOddsService(OddsServiceDeps{
-		LineReader: LineReaderFunc(func(oddsType string) (odds.PlayerLine, error) {
+		Store: fakeSportsbookStore{getLastLineFn: func(oddsType string) (odds.PlayerLine, error) {
 			return odds.PlayerLine{Timestamp: time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)}, nil
-		}),
-		Now: func() time.Time {
-			return time.Date(2026, 1, 2, 12, 0, 0, 0, time.UTC)
-		},
-		LoadLocation: func(name string) (*time.Location, error) {
-			return time.UTC, nil
-		},
+		}},
+		Now: func() time.Time { return time.Date(2026, 1, 2, 12, 0, 0, 0, time.UTC) },
 		RunGetOdds: func(startDate time.Time, endDate time.Time, oddsType string) {
 			calls++
 		},
@@ -148,9 +143,9 @@ func TestUpdateLinesAndHandlersUseInjectedService(t *testing.T) {
 
 	r2 := gin.New()
 	r2.GET("/update-lines", UpdateLinesHandler(NewOddsService(OddsServiceDeps{
-		LineReader: LineReaderFunc(func(oddsType string) (odds.PlayerLine, error) {
+		Store: fakeSportsbookStore{getLastLineFn: func(oddsType string) (odds.PlayerLine, error) {
 			return odds.PlayerLine{}, errors.New("boom")
-		}),
+		}},
 	})))
 	req2 := httptest.NewRequest(http.MethodGet, "/update-lines", nil)
 	rec2 := httptest.NewRecorder()
@@ -170,32 +165,30 @@ func TestOddsBatchFunctionsUseInjectedDependencies(t *testing.T) {
 
 	added := 0
 	svc := NewOddsService(OddsServiceDeps{
-		Provider: OddsProviderFunc(func(endpoint string, addlArgs []string) (string, error) {
+		Sources: fakeSportsbookSources{getOddsAPIFn: func(endpoint string, addlArgs []string) (string, error) {
 			if v, ok := responses[endpoint]; ok {
 				return v, nil
 			}
 			return `{"data":{"bookmakers":[]}}`, nil
-		}),
-		PlayerResolver: PlayerIndexResolverFunc(func(nameMap map[string]string, playerName string) (string, error) {
-			return "idx1", nil
-		}),
-		LineWriter: LineWriterFunc(func(lines []odds.PlayerLine) {
-			added += len(lines)
-		}),
-		ConfigRepo: SportsbookConfigRepositoryFunc(func(sport sports.Sport) *sports.SportsbookConfig {
-			return &sports.SportsbookConfig{
-				LeagueName: "basketball_nba",
-				StatMapping: map[string]string{
-					"player_points": "points",
-				},
-				Markets: map[string]sports.MarketConfig{
-					"mainline": {
-						Bookmaker: "fanduel",
-						Markets:   []string{"player_points"},
+		}},
+		Store: fakeSportsbookStore{
+			playerNameToIndexFn: func(nameMap map[string]string, playerName string) (string, error) { return "idx1", nil },
+			addPlayerLinesFn:    func(lines []odds.PlayerLine) { added += len(lines) },
+			getSportsbookFn: func(sport sports.Sport) *sports.SportsbookConfig {
+				return &sports.SportsbookConfig{
+					LeagueName: "basketball_nba",
+					StatMapping: map[string]string{
+						"player_points": "points",
 					},
-				},
-			}
-		}),
+					Markets: map[string]sports.MarketConfig{
+						"mainline": {
+							Bookmaker: "fanduel",
+							Markets:   []string{"player_points"},
+						},
+					},
+				}
+			},
+		},
 	})
 
 	start := time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -216,15 +209,13 @@ func TestGetGamesForDateAndGetOddsForGame_WithInjectedRequester(t *testing.T) {
 	}
 
 	svc := NewOddsService(OddsServiceDeps{
-		Provider: OddsProviderFunc(func(endpoint string, addlArgs []string) (string, error) {
+		Sources: fakeSportsbookSources{getOddsAPIFn: func(endpoint string, addlArgs []string) (string, error) {
 			if v, ok := responses[endpoint]; ok {
 				return v, nil
 			}
 			return `{"data":{"bookmakers":[]}}`, nil
-		}),
-		PlayerResolver: PlayerIndexResolverFunc(func(nameMap map[string]string, playerName string) (string, error) {
-			return "idx1", nil
-		}),
+		}},
+		Store: fakeSportsbookStore{playerNameToIndexFn: func(nameMap map[string]string, playerName string) (string, error) { return "idx1", nil }},
 	})
 
 	config := &sports.SportsbookConfig{

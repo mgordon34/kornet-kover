@@ -30,13 +30,9 @@ var odds_markets = map[string]string{
 }
 
 type OddsServiceDeps struct {
-	Provider       OddsProvider
-	LineReader     LineReader
-	LineWriter     LineWriter
-	PlayerResolver PlayerIndexResolver
-	ConfigRepo     SportsbookConfigRepository
+	Sources        SportsbookSources
+	Store          SportsbookStore
 	Now            func() time.Time
-	LoadLocation   func(name string) (*time.Location, error)
 	RunGetOdds     func(startDate time.Time, endDate time.Time, oddsType string)
 	RunGetLiveOdds func(date time.Time, oddsType string)
 }
@@ -46,26 +42,14 @@ type OddsService struct {
 }
 
 func NewOddsService(deps OddsServiceDeps) *OddsService {
-	if deps.Provider == nil {
-		deps.Provider = oddsAPIProvider{}
+	if deps.Sources == nil {
+		deps.Sources = defaultSportsbookSources{}
 	}
-	if deps.LineReader == nil {
-		deps.LineReader = lineRepository{}
-	}
-	if deps.LineWriter == nil {
-		deps.LineWriter = lineRepository{}
-	}
-	if deps.PlayerResolver == nil {
-		deps.PlayerResolver = playerRepository{}
-	}
-	if deps.ConfigRepo == nil {
-		deps.ConfigRepo = sportsbookConfigRepository{}
+	if deps.Store == nil {
+		deps.Store = defaultSportsbookStore{}
 	}
 	if deps.Now == nil {
 		deps.Now = time.Now
-	}
-	if deps.LoadLocation == nil {
-		deps.LoadLocation = time.LoadLocation
 	}
 
 	svc := &OddsService{deps: deps}
@@ -124,14 +108,14 @@ func UpdateLinesHandler(service *OddsService) gin.HandlerFunc {
 }
 
 func (s *OddsService) UpdateLines() error {
-	lastLine, err := s.deps.LineReader.GetLastLine("mainline")
+	lastLine, err := s.deps.Store.GetLastLine("mainline")
 	if err != nil {
 		log.Println(err)
 		return err
 	}
 	log.Printf("Last line: %v", lastLine)
 
-	loc, _ := s.deps.LoadLocation("America/New_York")
+	loc, _ := time.LoadLocation("America/New_York")
 	d := lastLine.Timestamp.In(loc)
 	t := s.deps.Now().In(loc)
 	startDate := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, d.Location())
@@ -168,7 +152,7 @@ func (s *OddsService) GetGamesForDate(date time.Time, config *sports.SportsbookC
 		"commenceTimeFrom=" + date.UTC().Format("2006-01-02T15:04:05Z"),
 		"commenceTimeTo=" + date.AddDate(0, 0, 1).UTC().Format("2006-01-02T15:04:05Z"),
 	}
-	res, err := s.deps.Provider.Get(fmt.Sprintf(endpont, config.LeagueName), addlArgs)
+	res, err := s.deps.Sources.GetOddsAPI(fmt.Sprintf(endpont, config.LeagueName), addlArgs)
 	if err != nil {
 		log.Fatal("Error getting odds api: ", err)
 	}
@@ -191,7 +175,7 @@ func (s *OddsService) GetLiveGamesForDate(date time.Time, apiGetter APIGetter) [
 		"commenceTimeTo=" + date.AddDate(0, 0, 1).UTC().Format("2006-01-02T15:04:05Z"),
 	}
 	if apiGetter == nil {
-		apiGetter = s.deps.Provider.Get
+		apiGetter = s.deps.Sources.GetOddsAPI
 	}
 	res, err := apiGetter(fmt.Sprintf(endpont, "basketball_nba"), addlArgs)
 	if err != nil {
@@ -253,7 +237,7 @@ func (s *OddsService) GetOddsForGame(sport sports.Sport, game EventInfo, config 
 			"oddsFormat=" + "american",
 			"includeLinks=" + "true",
 		}
-		res, err := s.deps.Provider.Get(fmt.Sprintf(endpont, config.LeagueName, game.ID), addlArgs)
+		res, err := s.deps.Sources.GetOddsAPI(fmt.Sprintf(endpont, config.LeagueName, game.ID), addlArgs)
 		if err != nil {
 			log.Fatal("Error getting odds api: ", err)
 		}
@@ -272,7 +256,7 @@ func (s *OddsService) GetOddsForGame(sport sports.Sport, game EventInfo, config 
 			stat := config.StatMapping[truncated_string]
 			for _, line := range market.Outcomes {
 				playerName := strings.Join(strings.Split(line.Description, " ")[:2], " ")
-				playerIndex, err := s.deps.PlayerResolver.PlayerNameToIndex(nameMap, playerName)
+				playerIndex, err := s.deps.Store.PlayerNameToIndex(nameMap, playerName)
 				if err != nil {
 					log.Printf("Error finding player name: %s", line.Description)
 					continue
@@ -311,7 +295,7 @@ func (s *OddsService) GetLiveOddsForGame(game EventInfo, oddsType string, apiGet
 	}
 
 	if apiGetter == nil {
-		apiGetter = s.deps.Provider.Get
+		apiGetter = s.deps.Sources.GetOddsAPI
 	}
 
 	endpont := "sports/%s/events/%s/odds"
@@ -340,7 +324,7 @@ func (s *OddsService) GetLiveOddsForGame(game EventInfo, oddsType string, apiGet
 		stat := odds_markets[truncated_string]
 		for _, line := range market.Outcomes {
 			playerName := strings.Join(strings.Split(line.Description, " ")[:2], " ")
-			playerIndex, err := s.deps.PlayerResolver.PlayerNameToIndex(nameMap, playerName)
+			playerIndex, err := s.deps.Store.PlayerNameToIndex(nameMap, playerName)
 			if err != nil {
 				log.Printf("Error finding player name: %s", line.Description)
 				continue
@@ -375,18 +359,18 @@ func (s *OddsService) GetOdds(startDate time.Time, endDate time.Time, oddsType s
 		log.Printf("Getting historical %s sportsbook odds for %v...", oddsType, d)
 		var lines []odds.PlayerLine
 
-		games := s.GetGamesForDate(d, s.deps.ConfigRepo.GetSportsbook(sports.NBA))
+		games := s.GetGamesForDate(d, s.deps.Store.GetSportsbook(sports.NBA))
 		for _, game := range games {
-			lines = append(lines, s.GetOddsForGame(sports.NBA, game, s.deps.ConfigRepo.GetSportsbook(sports.NBA))...)
+			lines = append(lines, s.GetOddsForGame(sports.NBA, game, s.deps.Store.GetSportsbook(sports.NBA))...)
 		}
 
-		s.deps.LineWriter.AddPlayerLines(lines)
+		s.deps.Store.AddPlayerLines(lines)
 	}
 }
 
 func (s *OddsService) GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate time.Time) {
 	log.Printf("Getting historical %s sportsbook odds...", sport)
-	sportsbookConfig := s.deps.ConfigRepo.GetSportsbook(sport)
+	sportsbookConfig := s.deps.Store.GetSportsbook(sport)
 
 	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
 		log.Printf("Getting historical %s sportsbook odds for %v...", sport, d)
@@ -397,7 +381,7 @@ func (s *OddsService) GetHistoricalOddsForSport(sport sports.Sport, startDate ti
 			lines = append(lines, s.GetOddsForGame(sport, game, sportsbookConfig)...)
 		}
 
-		s.deps.LineWriter.AddPlayerLines(lines)
+		s.deps.Store.AddPlayerLines(lines)
 	}
 }
 
@@ -410,5 +394,5 @@ func (s *OddsService) GetLiveOdds(date time.Time, oddsType string) {
 		lines = append(lines, s.GetLiveOddsForGame(game, oddsType, nil)...)
 	}
 
-	s.deps.LineWriter.AddPlayerLines(lines)
+	s.deps.Store.AddPlayerLines(lines)
 }
