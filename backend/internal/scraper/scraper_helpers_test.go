@@ -249,21 +249,24 @@ func TestCollyTableHelpers(t *testing.T) {
 
 func TestUpdateGamesAndHandlersUseService(t *testing.T) {
 	svc := NewScraperService(ScraperServiceDeps{
-		GetLastGame: func() (games.Game, error) {
+		GameRepo: GameRepositoryFunc(func() (games.Game, error) {
 			return games.Game{Date: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
-		},
+		}),
 		Now: func() time.Time {
 			return time.Date(2099, 1, 2, 0, 0, 0, 0, time.UTC)
 		},
-		ScrapeGames: func(sport sports.Sport, startDate time.Time, endDate time.Time) error {
+		GamesProvider: GamesProviderFunc(func(sport sports.Sport, startDate time.Time, endDate time.Time) error {
 			if !startDate.After(time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)) {
 				t.Fatalf("expected start date after last game date")
 			}
 			return nil
+		}),
+		InjuryProvider: InjuryProviderFunc(func() map[string]string { return map[string]string{} }),
+		TeamRepo:       TeamRepositoryFunc(func() ([]teams.Team, error) { return []teams.Team{}, nil }),
+		PlayerRepo: playerRepositoryFuncs{
+			updatePlayerTables: func(playerIndex string) {},
+			updateRosters:      func(rosterSlots []players.PlayerRoster) error { return nil },
 		},
-		GetInjuredPlayers: func() map[string]string { return map[string]string{} },
-		GetTeams:          func() ([]teams.Team, error) { return []teams.Team{}, nil },
-		UpdateRosters:     func(rosterSlots []players.PlayerRoster) error { return nil },
 	})
 
 	gin.SetMode(gin.TestMode)
@@ -293,15 +296,17 @@ func TestUpdateActiveRostersUsesService(t *testing.T) {
 	updatedRosters := 0
 
 	svc := NewScraperService(ScraperServiceDeps{
-		GetInjuredPlayers: func() map[string]string { return map[string]string{"p2": "Out"} },
-		GetTeams:          func() ([]teams.Team, error) { return []teams.Team{{Index: "A"}, {Index: "B"}}, nil },
-		ScrapePlayersForTeam: func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
+		InjuryProvider: InjuryProviderFunc(func() map[string]string { return map[string]string{"p2": "Out"} }),
+		TeamRepo:       TeamRepositoryFunc(func() ([]teams.Team, error) { return []teams.Team{{Index: "A"}, {Index: "B"}}, nil }),
+		RosterProvider: RosterProviderFunc(func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
 			return []players.PlayerRoster{{Sport: "nba", PlayerIndex: "p1", TeamIndex: teamIndex, Status: "Available", AvgMins: 20}}
-		},
-		UpdatePlayerTables: func(playerIndex string) { updates++ },
-		UpdateRosters: func(rosterSlots []players.PlayerRoster) error {
-			updatedRosters = len(rosterSlots)
-			return nil
+		}),
+		PlayerRepo: playerRepositoryFuncs{
+			updatePlayerTables: func(playerIndex string) { updates++ },
+			updateRosters: func(rosterSlots []players.PlayerRoster) error {
+				updatedRosters = len(rosterSlots)
+				return nil
+			},
 		},
 	})
 

@@ -42,9 +42,9 @@ func TestGetGamesForDate(t *testing.T) {
 func TestPPUpdateLinesUsesInjectedService(t *testing.T) {
 	called := false
 	svc := NewPropPicksService(PropPicksServiceDeps{
-		GetLastLine: func(oddsType string) (odds.PlayerLine, error) {
+		LineReader: LineReaderFunc(func(oddsType string) (odds.PlayerLine, error) {
 			return odds.PlayerLine{Timestamp: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
-		},
+		}),
 		Now: func() time.Time {
 			return time.Date(2099, 1, 2, 0, 0, 0, 0, time.UTC)
 		},
@@ -61,9 +61,9 @@ func TestPPUpdateLinesUsesInjectedService(t *testing.T) {
 	}
 
 	svcErr := NewPropPicksService(PropPicksServiceDeps{
-		GetLastLine: func(oddsType string) (odds.PlayerLine, error) {
+		LineReader: LineReaderFunc(func(oddsType string) (odds.PlayerLine, error) {
 			return odds.PlayerLine{}, errors.New("no lines")
-		},
+		}),
 	})
 	if err := svcErr.UpdateLines(); err == nil {
 		t.Fatalf("expected error when last line lookup fails")
@@ -80,18 +80,18 @@ func TestGetGamesUsesInjectedDependencies(t *testing.T) {
 
 	added := 0
 	svc := NewPropPicksService(PropPicksServiceDeps{
-		RequestPropOdds: func(endpoint string, addlArgs []string) (string, error) {
+		Provider: OddsProviderFunc(func(endpoint string, addlArgs []string) (string, error) {
 			if v, ok := responses[endpoint]; ok {
 				return v, nil
 			}
 			return `{"game_id":"","sportsbooks":[]}`, nil
-		},
-		PlayerNameToIndex: func(nameMap map[string]string, playerName string) (string, error) {
+		}),
+		PlayerResolver: PlayerIndexResolverFunc(func(nameMap map[string]string, playerName string) (string, error) {
 			return "p1", nil
-		},
-		AddPlayerLines: func(lines []odds.PlayerLine) {
+		}),
+		LineWriter: LineWriterFunc(func(lines []odds.PlayerLine) {
 			added += len(lines)
-		},
+		}),
 	})
 
 	svc.GetGames(time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC))
@@ -102,12 +102,12 @@ func TestGetGamesUsesInjectedDependencies(t *testing.T) {
 
 func TestGetLinesForMarket_ParsesAndFiltersByTime(t *testing.T) {
 	svc := NewPropPicksService(PropPicksServiceDeps{
-		PlayerNameToIndex: func(nameMap map[string]string, playerName string) (string, error) {
+		PlayerResolver: PlayerIndexResolverFunc(func(nameMap map[string]string, playerName string) (string, error) {
 			if playerName == "Bad Name" {
 				return "", errors.New("missing")
 			}
 			return "idx1", nil
-		},
+		}),
 	})
 
 	getter := func(endpoint string, addlArgs []string) (string, error) {

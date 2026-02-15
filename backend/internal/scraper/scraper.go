@@ -22,65 +22,43 @@ import (
 )
 
 type ScraperServiceDeps struct {
-	GetLastGame          func() (games.Game, error)
-	ScrapeGames          func(sport sports.Sport, startDate time.Time, endDate time.Time) error
-	GetInjuredPlayers    func() map[string]string
-	GetTeams             func() ([]teams.Team, error)
-	ScrapePlayersForTeam func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster
-	UpdatePlayerTables   func(playerIndex string)
-	UpdateRosters        func(rosterSlots []players.PlayerRoster) error
-	Now                  func() time.Time
+	GameRepo       GameRepository
+	TeamRepo       TeamRepository
+	PlayerRepo     PlayerRepository
+	GamesProvider  GamesProvider
+	InjuryProvider InjuryProvider
+	RosterProvider RosterProvider
+	Now            func() time.Time
 }
 
 type ScraperService struct {
-	getLastGame          func() (games.Game, error)
-	scrapeGames          func(sport sports.Sport, startDate time.Time, endDate time.Time) error
-	getInjuredPlayers    func() map[string]string
-	getTeams             func() ([]teams.Team, error)
-	scrapePlayersForTeam func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster
-	updatePlayerTables   func(playerIndex string)
-	updateRosters        func(rosterSlots []players.PlayerRoster) error
-	now                  func() time.Time
+	deps ScraperServiceDeps
 }
 
 func NewScraperService(deps ScraperServiceDeps) *ScraperService {
-	svc := &ScraperService{
-		getLastGame:          deps.GetLastGame,
-		scrapeGames:          deps.ScrapeGames,
-		getInjuredPlayers:    deps.GetInjuredPlayers,
-		getTeams:             deps.GetTeams,
-		scrapePlayersForTeam: deps.ScrapePlayersForTeam,
-		updatePlayerTables:   deps.UpdatePlayerTables,
-		updateRosters:        deps.UpdateRosters,
-		now:                  deps.Now,
+	if deps.GameRepo == nil {
+		deps.GameRepo = defaultGameRepository{}
+	}
+	if deps.TeamRepo == nil {
+		deps.TeamRepo = defaultTeamRepository{}
+	}
+	if deps.PlayerRepo == nil {
+		deps.PlayerRepo = defaultPlayerRepository{}
+	}
+	if deps.GamesProvider == nil {
+		deps.GamesProvider = defaultGamesProvider{}
+	}
+	if deps.InjuryProvider == nil {
+		deps.InjuryProvider = defaultInjuryProvider{}
+	}
+	if deps.RosterProvider == nil {
+		deps.RosterProvider = defaultRosterProvider{}
+	}
+	if deps.Now == nil {
+		deps.Now = time.Now
 	}
 
-	if svc.getLastGame == nil {
-		svc.getLastGame = games.GetLastGame
-	}
-	if svc.scrapeGames == nil {
-		svc.scrapeGames = ScrapeGames
-	}
-	if svc.getInjuredPlayers == nil {
-		svc.getInjuredPlayers = GetInjuredPlayers
-	}
-	if svc.getTeams == nil {
-		svc.getTeams = teams.GetTeams
-	}
-	if svc.scrapePlayersForTeam == nil {
-		svc.scrapePlayersForTeam = scrapePlayersForTeam
-	}
-	if svc.updatePlayerTables == nil {
-		svc.updatePlayerTables = players.UpdatePlayerTables
-	}
-	if svc.updateRosters == nil {
-		svc.updateRosters = players.UpdateRosters
-	}
-	if svc.now == nil {
-		svc.now = time.Now
-	}
-
-	return svc
+	return &ScraperService{deps: deps}
 }
 
 func ScrapeNbaTeams() {
@@ -847,36 +825,36 @@ func UpdateActiveRostersHandler(service *ScraperService) gin.HandlerFunc {
 // Returns the number of new games added or error
 // TODO: Optimizations for offseason could be made here
 func (s *ScraperService) UpdateGames(sport sports.Sport) error {
-	lastGame, err := s.getLastGame()
+	lastGame, err := s.deps.GameRepo.GetLastGame()
 	if err != nil {
 		return err
 	}
 
 	lastGameDate := lastGame.Date
 	startDate := lastGameDate.AddDate(0, 0, 1)
-	endDate := s.now()
-	return s.scrapeGames(sport, startDate, endDate)
+	endDate := s.deps.Now()
+	return s.deps.GamesProvider.ScrapeGames(sport, startDate, endDate)
 }
 
 func (s *ScraperService) UpdateActiveRosters() error {
 	var activeRoster []players.PlayerRoster
-	injuredPlayers := s.getInjuredPlayers()
-	tList, err := s.getTeams()
+	injuredPlayers := s.deps.InjuryProvider.GetInjuredPlayers()
+	tList, err := s.deps.TeamRepo.GetTeams()
 	if err != nil {
 		return err
 	}
 
 	for _, team := range tList {
-		activeRoster = append(activeRoster, s.scrapePlayersForTeam(team.Index, injuredPlayers)...)
+		activeRoster = append(activeRoster, s.deps.RosterProvider.ScrapePlayersForTeam(team.Index, injuredPlayers)...)
 	}
 
 	activeRoster = pruneActiveRoster(activeRoster)
 
 	for _, player := range activeRoster {
-		s.updatePlayerTables(player.PlayerIndex)
+		s.deps.PlayerRepo.UpdatePlayerTables(player.PlayerIndex)
 	}
 
-	err = s.updateRosters(activeRoster)
+	err = s.deps.PlayerRepo.UpdateRosters(activeRoster)
 	if err != nil {
 		return err
 	}
