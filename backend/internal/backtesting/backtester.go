@@ -231,15 +231,64 @@ type Backtester struct {
 	StartDate  time.Time
 	EndDate    time.Time
 	Strategies []Strategy
+	deps       BacktesterDeps
 }
 
-var getGamesForDateBTFn = games.GetGamesForDate
-var getPlayerStatsForGamesBTFn = players.GetPlayerStatsForGames
-var getAlternatePlayerOddsForDateBTFn = odds.GetAlternatePlayerOddsForDate
-var getPlayersForGameBTFn = players.GetPlayersForGame
-var runAnalysisOnGameBTFn = analysis.RunAnalysisOnGame
+type BacktesterDataSource interface {
+	GetGamesForDate(sport sports.Sport, date time.Time) ([]games.Game, error)
+	GetPlayerStatsForGames(gameIDs []string) (map[string]players.PlayerAvg, error)
+	GetAlternatePlayerOddsForDate(sport sports.Sport, date time.Time) (map[string]map[string][]odds.PlayerLine, error)
+	GetPlayersForGame(gameID int, homeIndex string, playerGameTable string, sortString string) (map[string][]players.Player, error)
+	RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.PlayerRoster, endDate time.Time, forceUpdate bool, storePIP bool) []analysis.Analysis
+}
+
+type BacktesterDeps struct {
+	DataSource BacktesterDataSource
+}
+
+type defaultBacktesterDataSource struct{}
+
+func (d defaultBacktesterDataSource) GetGamesForDate(sport sports.Sport, date time.Time) ([]games.Game, error) {
+	return games.GetGamesForDate(sport, date)
+}
+
+func (d defaultBacktesterDataSource) GetPlayerStatsForGames(gameIDs []string) (map[string]players.PlayerAvg, error) {
+	return players.GetPlayerStatsForGames(gameIDs)
+}
+
+func (d defaultBacktesterDataSource) GetAlternatePlayerOddsForDate(sport sports.Sport, date time.Time) (map[string]map[string][]odds.PlayerLine, error) {
+	return odds.GetAlternatePlayerOddsForDate(sport, date)
+}
+
+func (d defaultBacktesterDataSource) GetPlayersForGame(gameID int, homeIndex string, playerGameTable string, sortString string) (map[string][]players.Player, error) {
+	return players.GetPlayersForGame(gameID, homeIndex, playerGameTable, sortString)
+}
+
+func (d defaultBacktesterDataSource) RunAnalysisOnGame(roster []players.PlayerRoster, opponents []players.PlayerRoster, endDate time.Time, forceUpdate bool, storePIP bool) []analysis.Analysis {
+	return analysis.NewAnalysisService(analysis.AnalysisServiceDeps{}).RunAnalysisOnGame(roster, opponents, endDate, forceUpdate, storePIP)
+}
+
+func NewBacktester(startDate time.Time, endDate time.Time, strategies []Strategy, deps BacktesterDeps) Backtester {
+	if deps.DataSource == nil {
+		deps.DataSource = defaultBacktesterDataSource{}
+	}
+
+	return Backtester{
+		StartDate:  startDate,
+		EndDate:    endDate,
+		Strategies: strategies,
+		deps:       deps,
+	}
+}
+
+func (b *Backtester) ensureDataSource() {
+	if b.deps.DataSource == nil {
+		b.deps.DataSource = defaultBacktesterDataSource{}
+	}
+}
 
 func (b Backtester) RunBacktest() {
+	b.ensureDataSource()
 	for d := b.StartDate; !d.After(b.EndDate); d = d.AddDate(0, 0, 1) {
 		b.backtestDate(d)
 	}
@@ -251,10 +300,11 @@ func (b Backtester) RunBacktest() {
 }
 
 func (b Backtester) backtestDate(date time.Time) {
+	b.ensureDataSource()
 	date = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 	log.Printf("Running for date %v", date)
 
-	todayGames, err := getGamesForDateBTFn(sports.NBA, date)
+	todayGames, err := b.deps.DataSource.GetGamesForDate(sports.NBA, date)
 	if err != nil {
 		log.Fatal("Error getting games for date: ", err)
 	}
@@ -267,13 +317,13 @@ func (b Backtester) backtestDate(date time.Time) {
 	for _, game := range todayGames {
 		strs = append(strs, strconv.FormatInt(int64(game.Id), 10))
 	}
-	statMap, err := getPlayerStatsForGamesBTFn(strs)
+	statMap, err := b.deps.DataSource.GetPlayerStatsForGames(strs)
 	if err != nil {
 		log.Fatal("Error getting historical stats: ", err)
 	}
 
 	// todaysOdds, err := odds.GetPlayerOddsForDate(date, []string{"points", "rebounds", "assists", "threes"})
-	todaysOdds, err := getAlternatePlayerOddsForDateBTFn(sports.NBA, date)
+	todaysOdds, err := b.deps.DataSource.GetAlternatePlayerOddsForDate(sports.NBA, date)
 	if err != nil {
 		log.Fatal("Error getting historical odds: ", err)
 	}
@@ -285,7 +335,7 @@ func (b Backtester) backtestDate(date time.Time) {
 	var results []analysis.Analysis
 	for _, game := range todayGames {
 		log.Printf("Analyzing %v vs. %v", game.HomeIndex, game.AwayIndex)
-		playerMap, err := getPlayersForGameBTFn(game.Id, game.HomeIndex, "nba_player_games", "minutes")
+		playerMap, err := b.deps.DataSource.GetPlayersForGame(game.Id, game.HomeIndex, "nba_player_games", "minutes")
 		if err != nil {
 			log.Fatal("Error getting players for game: ", err)
 		}
@@ -293,8 +343,8 @@ func (b Backtester) backtestDate(date time.Time) {
 		homeRoster := convertPlayerMaptoPlayerRosters(playerMap["home"][:8])
 		awayRoster := convertPlayerMaptoPlayerRosters(playerMap["away"][:8])
 
-		results = append(results, runAnalysisOnGameBTFn(homeRoster, awayRoster, date, false, true)...)
-		results = append(results, runAnalysisOnGameBTFn(awayRoster, homeRoster, date, false, true)...)
+		results = append(results, b.deps.DataSource.RunAnalysisOnGame(homeRoster, awayRoster, date, false, true)...)
+		results = append(results, b.deps.DataSource.RunAnalysisOnGame(awayRoster, homeRoster, date, false, true)...)
 	}
 
 	var picks []analysis.PropPick
