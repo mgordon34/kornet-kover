@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,6 +16,67 @@ import (
 	"github.com/mgordon34/kornet-kover/api/teams"
 	"github.com/mgordon34/kornet-kover/internal/sports"
 )
+
+type fakeScraperSources struct {
+	scrapeGamesFn          func(sport sports.Sport, startDate time.Time, endDate time.Time) error
+	getInjuredPlayersFn    func() map[string]string
+	scrapePlayersForTeamFn func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster
+}
+
+func (f fakeScraperSources) ScrapeGames(sport sports.Sport, startDate time.Time, endDate time.Time) error {
+	if f.scrapeGamesFn == nil {
+		return errors.New("ScrapeGames not configured")
+	}
+	return f.scrapeGamesFn(sport, startDate, endDate)
+}
+
+func (f fakeScraperSources) GetInjuredPlayers() map[string]string {
+	if f.getInjuredPlayersFn == nil {
+		return map[string]string{}
+	}
+	return f.getInjuredPlayersFn()
+}
+
+func (f fakeScraperSources) ScrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
+	if f.scrapePlayersForTeamFn == nil {
+		return nil
+	}
+	return f.scrapePlayersForTeamFn(teamIndex, injuredPlayers)
+}
+
+type fakeScraperStore struct {
+	getLastGameFn        func() (games.Game, error)
+	getTeamsFn           func() ([]teams.Team, error)
+	updatePlayerTablesFn func(playerIndex string)
+	updateRostersFn      func(rosterSlots []players.PlayerRoster) error
+}
+
+func (f fakeScraperStore) GetLastGame() (games.Game, error) {
+	if f.getLastGameFn == nil {
+		return games.Game{}, errors.New("GetLastGame not configured")
+	}
+	return f.getLastGameFn()
+}
+
+func (f fakeScraperStore) GetTeams() ([]teams.Team, error) {
+	if f.getTeamsFn == nil {
+		return nil, errors.New("GetTeams not configured")
+	}
+	return f.getTeamsFn()
+}
+
+func (f fakeScraperStore) UpdatePlayerTables(playerIndex string) {
+	if f.updatePlayerTablesFn != nil {
+		f.updatePlayerTablesFn(playerIndex)
+	}
+}
+
+func (f fakeScraperStore) UpdateRosters(rosterSlots []players.PlayerRoster) error {
+	if f.updateRostersFn == nil {
+		return nil
+	}
+	return f.updateRostersFn(rosterSlots)
+}
 
 func TestGetDateBySport(t *testing.T) {
 	nbaDate, err := getDate("/boxscores/202603010CHO.html", sports.NBA)
@@ -247,25 +309,32 @@ func TestCollyTableHelpers(t *testing.T) {
 	_ = sports.NBA
 }
 
-func TestUpdateGamesAndHandlersUseSeams(t *testing.T) {
-	origUpdateGames := updateGamesFn
-	origUpdateRosters := updateActiveRostersFn
-	origGetLast := getLastGameFn
-	origScrapeGames := scrapeGamesFn
-	t.Cleanup(func() {
-		updateGamesFn = origUpdateGames
-		updateActiveRostersFn = origUpdateRosters
-		getLastGameFn = origGetLast
-		scrapeGamesFn = origScrapeGames
+func TestUpdateGamesAndHandlersUseService(t *testing.T) {
+	svc := NewScraperService(ScraperServiceDeps{
+		Store: fakeScraperStore{
+			getLastGameFn: func() (games.Game, error) {
+				return games.Game{Date: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
+			},
+			getTeamsFn:           func() ([]teams.Team, error) { return []teams.Team{}, nil },
+			updatePlayerTablesFn: func(playerIndex string) {},
+			updateRostersFn:      func(rosterSlots []players.PlayerRoster) error { return nil },
+		},
+		Sources: fakeScraperSources{
+			scrapeGamesFn: func(sport sports.Sport, startDate time.Time, endDate time.Time) error {
+				if !startDate.After(time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)) {
+					t.Fatalf("expected start date after last game date")
+				}
+				return nil
+			},
+			getInjuredPlayersFn: func() map[string]string { return map[string]string{} },
+		},
+		Now: func() time.Time { return time.Date(2099, 1, 2, 0, 0, 0, 0, time.UTC) },
 	})
-
-	updateGamesFn = func(sport sports.Sport) error { return nil }
-	updateActiveRostersFn = func() error { return nil }
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.GET("/update-games", GetUpdateGames)
-	r.GET("/update-players", GetUpdateActiveRosters)
+	r.GET("/update-games", UpdateGamesHandler(svc))
+	r.GET("/update-players", UpdateActiveRostersHandler(svc))
 
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/update-games", nil))
@@ -279,54 +348,35 @@ func TestUpdateGamesAndHandlersUseSeams(t *testing.T) {
 		t.Fatalf("update-players status = %d", rec2.Code)
 	}
 
-	getLastGameFn = func() (games.Game, error) {
-		return games.Game{Date: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
-	}
-	scraped := false
-	scrapeGamesFn = func(sport sports.Sport, startDate time.Time, endDate time.Time) error {
-		scraped = true
-		if !startDate.After(time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)) {
-			t.Fatalf("expected start date after last game date")
-		}
-		return nil
-	}
-
-	if err := UpdateGames(sports.NBA); err != nil {
+	if err := svc.UpdateGames(sports.NBA); err != nil {
 		t.Fatalf("UpdateGames() error = %v", err)
-	}
-	if !scraped {
-		t.Fatalf("expected scrapeGamesFn to be called")
 	}
 }
 
-func TestUpdateActiveRostersUsesSeams(t *testing.T) {
-	origInjured := getInjuredPlayersFn
-	origGetTeams := getTeamsFn
-	origScrapePlayers := scrapePlayersForTeamFn
-	origUpdatePlayerTables := updatePlayerTablesFn
-	origUpdateRosters := updateRostersFn
-	t.Cleanup(func() {
-		getInjuredPlayersFn = origInjured
-		getTeamsFn = origGetTeams
-		scrapePlayersForTeamFn = origScrapePlayers
-		updatePlayerTablesFn = origUpdatePlayerTables
-		updateRostersFn = origUpdateRosters
+func TestUpdateActiveRostersUsesService(t *testing.T) {
+	updates := 0
+	updatedRosters := 0
+
+	svc := NewScraperService(ScraperServiceDeps{
+		Store: fakeScraperStore{
+			getLastGameFn:        func() (games.Game, error) { return games.Game{}, nil },
+			getTeamsFn:           func() ([]teams.Team, error) { return []teams.Team{{Index: "A"}, {Index: "B"}}, nil },
+			updatePlayerTablesFn: func(playerIndex string) { updates++ },
+			updateRostersFn: func(rosterSlots []players.PlayerRoster) error {
+				updatedRosters = len(rosterSlots)
+				return nil
+			},
+		},
+		Sources: fakeScraperSources{
+			getInjuredPlayersFn: func() map[string]string { return map[string]string{"p2": "Out"} },
+			scrapePlayersForTeamFn: func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
+				return []players.PlayerRoster{{Sport: "nba", PlayerIndex: "p1", TeamIndex: teamIndex, Status: "Available", AvgMins: 20}}
+			},
+		},
+		Now: func() time.Time { return time.Now() },
 	})
 
-	getInjuredPlayersFn = func() map[string]string { return map[string]string{"p2": "Out"} }
-	getTeamsFn = func() ([]teams.Team, error) { return []teams.Team{{Index: "A"}, {Index: "B"}}, nil }
-	scrapePlayersForTeamFn = func(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
-		return []players.PlayerRoster{{Sport: "nba", PlayerIndex: "p1", TeamIndex: teamIndex, Status: "Available", AvgMins: 20}}
-	}
-	updates := 0
-	updatePlayerTablesFn = func(playerIndex string) { updates++ }
-	updatedRosters := 0
-	updateRostersFn = func(rosterSlots []players.PlayerRoster) error {
-		updatedRosters = len(rosterSlots)
-		return nil
-	}
-
-	if err := UpdateActiveRosters(); err != nil {
+	if err := svc.UpdateActiveRosters(); err != nil {
 		t.Fatalf("UpdateActiveRosters() error = %v", err)
 	}
 	if updates == 0 || updatedRosters == 0 {

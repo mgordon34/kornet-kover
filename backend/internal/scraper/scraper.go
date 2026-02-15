@@ -21,15 +21,29 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/utils"
 )
 
-var updateGamesFn = UpdateGames
-var updateActiveRostersFn = UpdateActiveRosters
-var getLastGameFn = games.GetLastGame
-var scrapeGamesFn = ScrapeGames
-var getInjuredPlayersFn = GetInjuredPlayers
-var getTeamsFn = teams.GetTeams
-var scrapePlayersForTeamFn = scrapePlayersForTeam
-var updatePlayerTablesFn = players.UpdatePlayerTables
-var updateRostersFn = players.UpdateRosters
+type ScraperServiceDeps struct {
+	Sources ScraperSources
+	Store   ScraperStore
+	Now     func() time.Time
+}
+
+type ScraperService struct {
+	deps ScraperServiceDeps
+}
+
+func NewScraperService(deps ScraperServiceDeps) *ScraperService {
+	if deps.Sources == nil {
+		deps.Sources = defaultScraperSources{}
+	}
+	if deps.Store == nil {
+		deps.Store = defaultScraperStore{}
+	}
+	if deps.Now == nil {
+		deps.Now = time.Now
+	}
+
+	return &ScraperService{deps: deps}
+}
 
 func ScrapeNbaTeams() {
 	c := colly.NewCollector()
@@ -756,59 +770,75 @@ func fixPlayerStats(gameId int, pMap map[string]players.PlayerGame) []players.Pl
 	return pSlice
 }
 
-func GetUpdateGames(c *gin.Context) {
-	err := updateGamesFn(sports.NBA)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
+func UpdateGamesHandler(service *ScraperService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if service == nil {
+			c.JSON(http.StatusInternalServerError, "scraper service is not configured")
+			return
+		}
+
+		err := service.UpdateGames(sports.NBA)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, "Done")
 	}
-	c.JSON(http.StatusOK, "Done")
 }
 
-func GetUpdateActiveRosters(c *gin.Context) {
-	err := updateActiveRostersFn()
-	if err != nil {
-		msg := fmt.Sprint("Error updating active rosters: ", err)
-		log.Println(msg)
-		c.JSON(http.StatusInternalServerError, msg)
+func UpdateActiveRostersHandler(service *ScraperService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if service == nil {
+			c.JSON(http.StatusInternalServerError, "scraper service is not configured")
+			return
+		}
+
+		err := service.UpdateActiveRosters()
+		if err != nil {
+			msg := fmt.Sprint("Error updating active rosters: ", err)
+			log.Println(msg)
+			c.JSON(http.StatusInternalServerError, msg)
+			return
+		}
+		c.JSON(http.StatusOK, "Done")
 	}
-	c.JSON(http.StatusOK, "Done")
 }
 
 // UpdateGames will add any new game and corresponding stats to the database
 // This is done by utilizing GetLastGame to determine the date window to perform game scraping
 // Returns the number of new games added or error
 // TODO: Optimizations for offseason could be made here
-func UpdateGames(sport sports.Sport) error {
-	lastGame, err := getLastGameFn()
+func (s *ScraperService) UpdateGames(sport sports.Sport) error {
+	lastGame, err := s.deps.Store.GetLastGame()
 	if err != nil {
 		return err
 	}
 
 	lastGameDate := lastGame.Date
 	startDate := lastGameDate.AddDate(0, 0, 1)
-	endDate := time.Now()
-	return scrapeGamesFn(sport, startDate, endDate)
+	endDate := s.deps.Now()
+	return s.deps.Sources.ScrapeGames(sport, startDate, endDate)
 }
 
-func UpdateActiveRosters() error {
+func (s *ScraperService) UpdateActiveRosters() error {
 	var activeRoster []players.PlayerRoster
-	injuredPlayers := getInjuredPlayersFn()
-	tList, err := getTeamsFn()
+	injuredPlayers := s.deps.Sources.GetInjuredPlayers()
+	tList, err := s.deps.Store.GetTeams()
 	if err != nil {
 		return err
 	}
 
 	for _, team := range tList {
-		activeRoster = append(activeRoster, scrapePlayersForTeamFn(team.Index, injuredPlayers)...)
+		activeRoster = append(activeRoster, s.deps.Sources.ScrapePlayersForTeam(team.Index, injuredPlayers)...)
 	}
 
 	activeRoster = pruneActiveRoster(activeRoster)
 
 	for _, player := range activeRoster {
-		updatePlayerTablesFn(player.PlayerIndex)
+		s.deps.Store.UpdatePlayerTables(player.PlayerIndex)
 	}
 
-	err = updateRostersFn(activeRoster)
+	err = s.deps.Store.UpdateRosters(activeRoster)
 	if err != nil {
 		return err
 	}

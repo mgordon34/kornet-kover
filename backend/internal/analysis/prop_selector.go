@@ -66,8 +66,6 @@ type PropPick struct {
 	Analysis
 }
 
-var pickPropsRunner = runPickProps
-
 func (p PropPick) GetLine() odds.PlayerLine {
 	if p.PlayerLine.Line != 0 {
 		return p.PlayerLine
@@ -296,14 +294,24 @@ func GetBaseOddsDiff(base float32, prediction float32) (float32, float32) {
 	return diff, pDiff
 }
 
-func GetPickProps(c *gin.Context) {
-	picks, err := pickPropsRunner()
-	if err != nil {
-		log.Printf("500 for picks-props: %s", err)
-		c.JSON(http.StatusInternalServerError, err)
-		return
+func PickPropsHandler(run func() ([]PropPick, error)) gin.HandlerFunc {
+	if run == nil {
+		run = runPickProps
 	}
-	c.JSON(http.StatusOK, picks)
+
+	return func(c *gin.Context) {
+		picks, err := run()
+		if err != nil {
+			log.Printf("500 for picks-props: %s", err)
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, picks)
+	}
+}
+
+func GetPickProps(c *gin.Context) {
+	PickPropsHandler(nil)(c)
 }
 
 func runPickProps() ([]PropPick, error) {
@@ -320,6 +328,7 @@ func runPickProps() ([]PropPick, error) {
 	}
 
 	var results []Analysis
+	analysisService := NewAnalysisService(AnalysisServiceDeps{})
 	rosterMap, err := players.GetActiveRosters()
 	if err != nil {
 		return picks, err
@@ -327,8 +336,8 @@ func runPickProps() ([]PropPick, error) {
 	matchups := scraper.ScrapeTodaysGames()
 
 	for _, matchup := range matchups {
-		results = append(results, RunAnalysisOnGame(rosterMap[matchup[0]], rosterMap[matchup[1]], today, true, true)...)
-		results = append(results, RunAnalysisOnGame(rosterMap[matchup[1]], rosterMap[matchup[0]], today, true, true)...)
+		results = append(results, analysisService.RunAnalysisOnGame(rosterMap[matchup[0]], rosterMap[matchup[1]], today, true, true)...)
+		results = append(results, analysisService.RunAnalysisOnGame(rosterMap[matchup[1]], rosterMap[matchup[0]], today, true, true)...)
 	}
 
 	picker := PropSelector{

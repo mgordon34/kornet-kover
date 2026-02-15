@@ -39,18 +39,15 @@ func TestGetStrategyHandlerBadParam(t *testing.T) {
 }
 
 func TestGetStrategiesHandlerSuccessAndError(t *testing.T) {
-	original := getStrategiesFn
-	getStrategiesFn = func(userID int) ([]Strategy, error) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	svc := NewStrategyService(StrategyServiceDeps{GetStrategies: func(userID int) ([]Strategy, error) {
 		if userID == 1 {
 			return []Strategy{{Id: 1, UserId: 1, Name: "S"}}, nil
 		}
 		return nil, errors.New("boom")
-	}
-	t.Cleanup(func() { getStrategiesFn = original })
-
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.GET("/strategies", GetStrategies)
+	}})
+	r.GET("/strategies", svc.GetStrategiesHandler())
 
 	req := httptest.NewRequest(http.MethodGet, "/strategies?user_id=1", nil)
 	rec := httptest.NewRecorder()
@@ -68,18 +65,15 @@ func TestGetStrategiesHandlerSuccessAndError(t *testing.T) {
 }
 
 func TestGetStrategyHandlerSuccessAndError(t *testing.T) {
-	original := getStrategyFn
-	getStrategyFn = func(stratID int) (Strategy, error) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	svc := NewStrategyService(StrategyServiceDeps{GetStrategy: func(stratID int) (Strategy, error) {
 		if stratID == 1 {
 			return Strategy{Id: 1, UserId: 1, Name: "S"}, nil
 		}
 		return Strategy{}, fmt.Errorf("not found")
-	}
-	t.Cleanup(func() { getStrategyFn = original })
-
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.GET("/strategies/:strat", GetStrategy)
+	}})
+	r.GET("/strategies/:strat", svc.GetStrategyHandler())
 
 	req := httptest.NewRequest(http.MethodGet, "/strategies/1", nil)
 	rec := httptest.NewRecorder()

@@ -17,13 +17,6 @@ func mockPropOddsGames(endpoint string, addlArgs []string) (response string, err
 	return response, nil
 }
 
-func mockPropOddsOdds(endpoint string, addlArgs []string) (response string, err error) {
-	response = `{"game_id":"4622c02f9bd1df188631c86e04036049","sportsbooks":[{"bookie_key":"pinnacle","market":{
-        "market_key":"player_rebounds_over_under","outcomes":[{"timestamp":"2023-10-24T22:37:45","handicap":5.5,"odds":-157,
-        "participant":null,"participant_name":null,"name":"Over","description":"Aaron Gordon (Rebounds)","deep":null}]}}]}`
-	return response, nil
-}
-
 func TestGetGamesForDate(t *testing.T) {
 	startDate, _ := time.Parse("2006-01-02", "2023-10-24")
 	t1, _ := time.Parse("2006-01-02T15:04:05", "2023-10-24T23:30:00")
@@ -38,80 +31,77 @@ func TestGetGamesForDate(t *testing.T) {
 			Timestamp: t2,
 		},
 	}
-	res := PPGetGamesForDate(startDate, mockPropOddsGames)
+
+	svc := NewPropPicksService(PropPicksServiceDeps{})
+	res := svc.GetGamesForDate(startDate, mockPropOddsGames)
 	if !reflect.DeepEqual(res, want) {
 		t.Fatalf(`getgamesfordate = %q, want match for %q`, res, want)
 	}
 }
 
-func TestPPUpdateLinesUsesInjectedSeams(t *testing.T) {
-	origLast := oddsGetLastLinePropFn
-	origGetGames := ppGetGamesFn
-	t.Cleanup(func() {
-		oddsGetLastLinePropFn = origLast
-		ppGetGamesFn = origGetGames
+func TestPPUpdateLinesUsesInjectedService(t *testing.T) {
+	called := false
+	svc := NewPropPicksService(PropPicksServiceDeps{
+		Store: fakeSportsbookStore{getLastLineFn: func(oddsType string) (odds.PlayerLine, error) {
+			return odds.PlayerLine{Timestamp: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
+		}},
+		Now: func() time.Time { return time.Date(2099, 1, 2, 0, 0, 0, 0, time.UTC) },
+		RunGetGames: func(startDate, endDate time.Time) {
+			called = true
+		},
 	})
 
-	called := false
-	oddsGetLastLinePropFn = func(oddsType string) (odds.PlayerLine, error) {
-		return odds.PlayerLine{Timestamp: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
-	}
-	ppGetGamesFn = func(startDate, endDate time.Time) { called = true }
-
-	if err := PPUpdateLines(); err != nil {
-		t.Fatalf("PPUpdateLines() error = %v", err)
+	if err := svc.UpdateLines(); err != nil {
+		t.Fatalf("UpdateLines() error = %v", err)
 	}
 	if !called {
-		t.Fatalf("expected GetGames seam to be called")
+		t.Fatalf("expected injected RunGetGames to be called")
 	}
 
-	oddsGetLastLinePropFn = func(oddsType string) (odds.PlayerLine, error) {
-		return odds.PlayerLine{}, errors.New("no lines")
-	}
-	if err := PPUpdateLines(); err == nil {
+	svcErr := NewPropPicksService(PropPicksServiceDeps{
+		Store: fakeSportsbookStore{getLastLineFn: func(oddsType string) (odds.PlayerLine, error) {
+			return odds.PlayerLine{}, errors.New("no lines")
+		}},
+	})
+	if err := svcErr.UpdateLines(); err == nil {
 		t.Fatalf("expected error when last line lookup fails")
 	}
 }
 
-func TestGetGamesUsesInjectedMarketFetchers(t *testing.T) {
-	origReq := requestPropOddsFn
-	origGetGamesForDate := ppGetGamesForDateFn
-	origGetLines := getLinesForMarketFn
-	origAdd := oddsAddPlayerLinesPropFn
-	t.Cleanup(func() {
-		requestPropOddsFn = origReq
-		ppGetGamesForDateFn = origGetGamesForDate
-		getLinesForMarketFn = origGetLines
-		oddsAddPlayerLinesPropFn = origAdd
-	})
-
-	requestPropOddsFn = mockPropOddsGames
-	ppGetGamesForDateFn = func(date time.Time, apiGetter APIGetter) []Game {
-		return []Game{{ID: "g1", Timestamp: date.Add(2 * time.Hour)}}
-	}
-	getLinesForMarketFn = func(game Game, market string, stat string, apiGetter APIGetter) []odds.PlayerLine {
-		return []odds.PlayerLine{{PlayerIndex: "p1", Stat: stat, Side: "Over", Line: 20.5, Odds: -110}}
+func TestGetGamesUsesInjectedDependencies(t *testing.T) {
+	responses := map[string]string{
+		"/beta/games/nba":                          `{"league":"nba","date":"2099-1-1","games":[{"id":1,"game_id":"g1","away_team":"A","home_team":"B","start_timestamp":"2099-01-01T02:00:00Z","participants":[]}]}`,
+		"/beta/odds/g1/player_points_over_under":   `{"game_id":"g1","sportsbooks":[{"bookie_key":"fanduel","market":{"market_key":"player_points_over_under","outcomes":[{"timestamp":"2099-01-01T00:05:00","handicap":20.5,"odds":-110,"participant":0,"participant_name":"","name":"Aaron Gordon Over 20.5","description":"","deep":null}]}}]}`,
+		"/beta/odds/g1/player_rebounds_over_under": `{"game_id":"g1","sportsbooks":[{"bookie_key":"fanduel","market":{"market_key":"player_rebounds_over_under","outcomes":[{"timestamp":"2099-01-01T00:05:00","handicap":7.5,"odds":-105,"participant":0,"participant_name":"","name":"Aaron Gordon Over 7.5","description":"","deep":null}]}}]}`,
+		"/beta/odds/g1/player_assists_over_under":  `{"game_id":"g1","sportsbooks":[{"bookie_key":"fanduel","market":{"market_key":"player_assists_over_under","outcomes":[{"timestamp":"2099-01-01T00:05:00","handicap":3.5,"odds":120,"participant":0,"participant_name":"","name":"Aaron Gordon Over 3.5","description":"","deep":null}]}}]}`,
 	}
 
 	added := 0
-	oddsAddPlayerLinesPropFn = func(lines []odds.PlayerLine) { added += len(lines) }
+	svc := NewPropPicksService(PropPicksServiceDeps{
+		Sources: fakeSportsbookSources{getPropOddsFn: func(endpoint string, addlArgs []string) (string, error) {
+			if v, ok := responses[endpoint]; ok {
+				return v, nil
+			}
+			return `{"game_id":"","sportsbooks":[]}`, nil
+		}},
+		Store: fakeSportsbookStore{playerNameToIndexFn: func(nameMap map[string]string, playerName string) (string, error) { return "p1", nil }, addPlayerLinesFn: func(lines []odds.PlayerLine) { added += len(lines) }},
+	})
 
-	GetGames(time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC))
+	svc.GetGames(time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC))
 	if added != len(markets) {
 		t.Fatalf("expected one line per market, got %d", added)
 	}
 }
 
 func TestGetLinesForMarket_ParsesAndFiltersByTime(t *testing.T) {
-	origResolver := playerNameToIndexPropFn
-	t.Cleanup(func() { playerNameToIndexPropFn = origResolver })
-
-	playerNameToIndexPropFn = func(nameMap map[string]string, playerName string) (string, error) {
-		if playerName == "Bad Name" {
-			return "", errors.New("missing")
-		}
-		return "idx1", nil
-	}
+	svc := NewPropPicksService(PropPicksServiceDeps{
+		Store: fakeSportsbookStore{playerNameToIndexFn: func(nameMap map[string]string, playerName string) (string, error) {
+			if playerName == "Bad Name" {
+				return "", errors.New("missing")
+			}
+			return "idx1", nil
+		}},
+	})
 
 	getter := func(endpoint string, addlArgs []string) (string, error) {
 		return `{
@@ -130,7 +120,7 @@ func TestGetLinesForMarket_ParsesAndFiltersByTime(t *testing.T) {
 		}`, nil
 	}
 
-	lines := GetLinesForMarket(Game{ID: "g1", Timestamp: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, "player_points_over_under", "points", getter)
+	lines := svc.GetLinesForMarket(Game{ID: "g1", Timestamp: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, "player_points_over_under", "points", getter)
 	if len(lines) != 1 {
 		t.Fatalf("expected one valid filtered line, got %d", len(lines))
 	}
@@ -138,21 +128,3 @@ func TestGetLinesForMarket_ParsesAndFiltersByTime(t *testing.T) {
 		t.Fatalf("unexpected parsed line: %+v", lines[0])
 	}
 }
-
-// func testgetoddsformarket(t *testing.t) {
-//     gameid := "4622c02f9bd1df188631c86e04036049"
-//     market := "rebounds"
-//     timestamp, _ := time.parse("2006-01-02", "2023-10-24t22:37:45")
-//     want := odds.playerOdds {
-//         PlayerIndex: "Test",
-//         Date: timestamp,
-//         Stat: "rebounds",
-//         Line: 5.5,
-//         OverOdds: -157,
-//         UnderOdds: -110,
-//     }
-//     res := GetOddsForMarket(gameId, market, mockPropOddsOdds)
-//     if !reflect.DeepEqual(res, want){
-//         t.Fatalf(`GetGamesForDate = %v, want match for %v`, res, want)
-//     }
-// }
