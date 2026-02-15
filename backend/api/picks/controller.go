@@ -16,9 +16,104 @@ import (
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
-var getPropPicksFn = getPropPicks
-var getPropPickFn = getPropPick
-var getBettorPicksFn = getBettorPicks
+type PicksServiceDeps struct {
+	GetPropPicks   func(userID int, date time.Time) ([]PropPickFormatted, error)
+	GetPropPick    func(pickID int) (PropPick, error)
+	GetBettorPicks func(userID int, date time.Time) ([]BettorPickRow, error)
+	Now            func() time.Time
+	LoadLocation   func(name string) (*time.Location, error)
+}
+
+type PicksService struct {
+	deps PicksServiceDeps
+}
+
+func NewPicksService(deps PicksServiceDeps) *PicksService {
+	if deps.GetPropPicks == nil {
+		deps.GetPropPicks = getPropPicks
+	}
+	if deps.GetPropPick == nil {
+		deps.GetPropPick = getPropPick
+	}
+	if deps.GetBettorPicks == nil {
+		deps.GetBettorPicks = getBettorPicks
+	}
+	if deps.Now == nil {
+		deps.Now = time.Now
+	}
+	if deps.LoadLocation == nil {
+		deps.LoadLocation = time.LoadLocation
+	}
+	return &PicksService{deps: deps}
+}
+
+func (s *PicksService) GetPropPicksHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Query("user_id"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		date, err := time.Parse("2006-01-02", c.Query("date"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+
+		picks, err := s.deps.GetPropPicks(id, date)
+		if err != nil {
+			log.Println("Error in GetPropPicks:", err)
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, formatPicksByStrat(picks))
+	}
+}
+
+func (s *PicksService) GetPropPickHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		pickID, err := strconv.Atoi(c.Param("strat"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		log.Println(pickID)
+
+		pick, err := s.deps.GetPropPick(pickID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, pick)
+	}
+}
+
+func (s *PicksService) GetBettorPropPicksHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID, err := strconv.Atoi(c.Query("user_id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user_id"})
+			return
+		}
+
+		loc, err := s.deps.LoadLocation("America/New_York")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load timezone"})
+			return
+		}
+		t := s.deps.Now().In(loc)
+		today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
+
+		rows, err := s.deps.GetBettorPicks(userID, today)
+		if err != nil {
+			log.Println("Error in GetBettorPropPicks:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, groupBettorPicksByStrategy(rows))
+	}
+}
 
 func addPropPick(pick PropPick) (int, error) {
 	db := storage.GetDB()
@@ -216,24 +311,7 @@ func formatPicksByStrat(picks []PropPickFormatted) []PropPicksResponse {
 }
 
 func GetPropPicks(c *gin.Context) {
-	id, err := strconv.Atoi(c.Query("user_id"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	date, err := time.Parse("2006-01-02", c.Query("date"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-
-	picks, err := getPropPicksFn(id, date)
-	if err != nil {
-		log.Println("Error in GetPropPicks:", err)
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	c.JSON(http.StatusOK, formatPicksByStrat(picks))
+	NewPicksService(PicksServiceDeps{}).GetPropPicksHandler()(c)
 }
 
 func getPropPick(stratId int) (PropPick, error) {
@@ -254,19 +332,7 @@ func getPropPick(stratId int) (PropPick, error) {
 }
 
 func GetPropPick(c *gin.Context) {
-	pickId, err := strconv.Atoi(c.Param("strat"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	log.Println(pickId)
-
-	strat, err := getPropPickFn(pickId)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	c.JSON(http.StatusOK, strat)
+	NewPicksService(PicksServiceDeps{}).GetPropPickHandler()(c)
 }
 
 func MarkOldPicksInvalid(stratId int, date time.Time) {
@@ -448,31 +514,5 @@ func groupBettorPicksByStrategy(rows []BettorPickRow) []BettorStrategyPicks {
 
 // GetBettorPropPicks handles GET /prop-picks/bettor endpoint
 func GetBettorPropPicks(c *gin.Context) {
-	// Parse user_id from query
-	userId, err := strconv.Atoi(c.Query("user_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user_id"})
-		return
-	}
-
-	// Get today's date in America/New_York timezone
-	loc, err := time.LoadLocation("America/New_York")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load timezone"})
-		return
-	}
-	t := time.Now().In(loc)
-	today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, loc)
-
-	// Query database
-	rows, err := getBettorPicksFn(userId, today)
-	if err != nil {
-		log.Println("Error in GetBettorPropPicks:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Group by strategy and return
-	response := groupBettorPicksByStrategy(rows)
-	c.JSON(http.StatusOK, response)
+	NewPicksService(PicksServiceDeps{}).GetBettorPropPicksHandler()(c)
 }
