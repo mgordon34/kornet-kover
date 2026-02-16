@@ -30,7 +30,6 @@ type fakeSportsbookStore struct {
 	getLastLineFn       func(oddsType string) (odds.PlayerLine, error)
 	addPlayerLinesFn    func(playerLines []odds.PlayerLine)
 	playerNameToIndexFn func(nameMap map[string]string, playerName string) (string, error)
-	getSportsbookFn     func(sport sports.Sport) *sports.SportsbookConfig
 }
 
 func (f fakeSportsbookStore) GetLastLine(oddsType string) (odds.PlayerLine, error) {
@@ -53,9 +52,29 @@ func (f fakeSportsbookStore) PlayerNameToIndex(nameMap map[string]string, player
 	return f.playerNameToIndexFn(nameMap, playerName)
 }
 
-func (f fakeSportsbookStore) GetSportsbook(sport sports.Sport) *sports.SportsbookConfig {
+type fakeConfigProvider struct {
+	getSportsbookFn func(sport sports.Sport) (*sports.SportsbookConfig, error)
+	getScraperFn    func(sport sports.Sport) (*sports.ScraperConfig, error)
+	getAnalysisFn   func(sport sports.Sport) (*sports.AnalysisConfig, error)
+}
+
+func (f fakeConfigProvider) SportsbookConfig(sport sports.Sport) (*sports.SportsbookConfig, error) {
 	if f.getSportsbookFn == nil {
-		return nil
+		return nil, nil
 	}
 	return f.getSportsbookFn(sport)
+}
+
+func (f fakeConfigProvider) ScraperConfig(sport sports.Sport) (*sports.ScraperConfig, error) {
+	if f.getScraperFn == nil {
+		return nil, nil
+	}
+	return f.getScraperFn(sport)
+}
+
+func (f fakeConfigProvider) AnalysisConfig(sport sports.Sport) (*sports.AnalysisConfig, error) {
+	if f.getAnalysisFn == nil {
+		return nil, nil
+	}
+	return f.getAnalysisFn(sport)
 }

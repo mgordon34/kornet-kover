@@ -78,6 +78,46 @@ func (f fakeScraperStore) UpdateRosters(rosterSlots []players.PlayerRoster) erro
 	return f.updateRostersFn(rosterSlots)
 }
 
+type fakeScraperConfigProvider struct {
+	getScraperFn func(sport sports.Sport) (*sports.ScraperConfig, error)
+}
+
+func (f fakeScraperConfigProvider) SportsbookConfig(sport sports.Sport) (*sports.SportsbookConfig, error) {
+	return nil, nil
+}
+
+func (f fakeScraperConfigProvider) ScraperConfig(sport sports.Sport) (*sports.ScraperConfig, error) {
+	if f.getScraperFn == nil {
+		return nil, nil
+	}
+	return f.getScraperFn(sport)
+}
+
+func (f fakeScraperConfigProvider) AnalysisConfig(sport sports.Sport) (*sports.AnalysisConfig, error) {
+	return nil, nil
+}
+
+func TestDefaultSources_UseInjectedConfigProvider(t *testing.T) {
+	expectedErr := errors.New("missing config")
+	svc := NewScraperService(ScraperServiceDeps{
+		ConfigProvider: fakeScraperConfigProvider{getScraperFn: func(sport sports.Sport) (*sports.ScraperConfig, error) {
+			return nil, expectedErr
+		}},
+		Store: fakeScraperStore{
+			getLastGameFn: func() (games.Game, error) {
+				return games.Game{Date: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)}, nil
+			},
+			getTeamsFn: func() ([]teams.Team, error) { return []teams.Team{}, nil },
+		},
+		Now: func() time.Time { return time.Date(2099, 1, 2, 0, 0, 0, 0, time.UTC) },
+	})
+
+	err := svc.UpdateGames(sports.NBA)
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("UpdateGames() err = %v, want %v", err, expectedErr)
+	}
+}
+
 func TestGetDateBySport(t *testing.T) {
 	nbaDate, err := getDate("/boxscores/202603010CHO.html", sports.NBA)
 	if err != nil || nbaDate.Format("2006-01-02") != "2026-03-01" {

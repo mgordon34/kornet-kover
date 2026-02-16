@@ -32,6 +32,7 @@ var odds_markets = map[string]string{
 type OddsServiceDeps struct {
 	Sources        SportsbookSources
 	Store          SportsbookStore
+	ConfigProvider sports.ConfigProvider
 	Now            func() time.Time
 	RunGetOdds     func(startDate time.Time, endDate time.Time, oddsType string)
 	RunGetLiveOdds func(date time.Time, oddsType string)
@@ -47,6 +48,9 @@ func NewOddsService(deps OddsServiceDeps) *OddsService {
 	}
 	if deps.Store == nil {
 		deps.Store = defaultSportsbookStore{}
+	}
+	if deps.ConfigProvider == nil {
+		deps.ConfigProvider = sports.DefaultConfigProvider()
 	}
 	if deps.Now == nil {
 		deps.Now = time.Now
@@ -355,13 +359,19 @@ func getMarketType(market string) string {
 }
 
 func (s *OddsService) GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
+	sportsbookConfig, err := s.deps.ConfigProvider.SportsbookConfig(sports.NBA)
+	if err != nil {
+		log.Printf("failed to get sportsbook config for %s: %v", sports.NBA, err)
+		return
+	}
+
 	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
 		log.Printf("Getting historical %s sportsbook odds for %v...", oddsType, d)
 		var lines []odds.PlayerLine
 
-		games := s.GetGamesForDate(d, s.deps.Store.GetSportsbook(sports.NBA))
+		games := s.GetGamesForDate(d, sportsbookConfig)
 		for _, game := range games {
-			lines = append(lines, s.GetOddsForGame(sports.NBA, game, s.deps.Store.GetSportsbook(sports.NBA))...)
+			lines = append(lines, s.GetOddsForGame(sports.NBA, game, sportsbookConfig)...)
 		}
 
 		s.deps.Store.AddPlayerLines(lines)
@@ -370,7 +380,11 @@ func (s *OddsService) GetOdds(startDate time.Time, endDate time.Time, oddsType s
 
 func (s *OddsService) GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate time.Time) {
 	log.Printf("Getting historical %s sportsbook odds...", sport)
-	sportsbookConfig := s.deps.Store.GetSportsbook(sport)
+	sportsbookConfig, err := s.deps.ConfigProvider.SportsbookConfig(sport)
+	if err != nil {
+		log.Printf("failed to get sportsbook config for %s: %v", sport, err)
+		return
+	}
 
 	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
 		log.Printf("Getting historical %s sportsbook odds for %v...", sport, d)

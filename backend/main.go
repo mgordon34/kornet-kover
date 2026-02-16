@@ -53,8 +53,9 @@ func startServer() {
 
 func newRouter() *gin.Engine {
 	r := gin.Default()
-	oddsService := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{})
-	scraperService := scraper.NewScraperService(scraper.ScraperServiceDeps{})
+	configProvider := sports.DefaultConfigProvider()
+	oddsService := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{ConfigProvider: configProvider})
+	scraperService := scraper.NewScraperService(scraper.ScraperServiceDeps{ConfigProvider: configProvider})
 	strategyService := strategies.NewStrategyService(strategies.StrategyServiceDeps{})
 	picksService := picks.NewPicksService(picks.PicksServiceDeps{})
 
@@ -83,13 +84,13 @@ func newRouter() *gin.Engine {
 
 func runUpdateGames() {
 	log.Println("Updating games...")
-	service := scraper.NewScraperService(scraper.ScraperServiceDeps{})
+	service := scraper.NewScraperService(scraper.ScraperServiceDeps{ConfigProvider: sports.DefaultConfigProvider()})
 	service.UpdateGames(sports.NBA)
 }
 
 func runUpdateLines() {
 	log.Println("Updating lines...")
-	service := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{})
+	service := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{ConfigProvider: sports.DefaultConfigProvider()})
 	service.UpdateLines()
 }
 
@@ -130,7 +131,7 @@ func runSportsbookGetGames() {
 	endDate, _ := time.ParseInLocation("2006-01-02", "2025-01-21", loc)
 	log.Printf("Finding games from %v to %v", startDate, endDate)
 
-	service := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{})
+	service := sportsbook.NewOddsService(sportsbook.OddsServiceDeps{ConfigProvider: sports.DefaultConfigProvider()})
 	service.GetOdds(startDate, endDate, "mainline")
 }
 

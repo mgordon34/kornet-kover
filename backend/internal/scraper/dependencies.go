@@ -22,10 +22,12 @@ type ScraperStore interface {
 	UpdateRosters(rosterSlots []players.PlayerRoster) error
 }
 
-type defaultScraperSources struct{}
+type defaultScraperSources struct {
+	ConfigProvider sports.ConfigProvider
+}
 
 func (d defaultScraperSources) ScrapeGames(sport sports.Sport, startDate time.Time, endDate time.Time) error {
-	return ScrapeGames(sport, startDate, endDate)
+	return scrapeGamesWithProvider(d.ConfigProvider, sport, startDate, endDate)
 }
 
 func (d defaultScraperSources) GetInjuredPlayers() map[string]string {
@@ -33,7 +35,7 @@ func (d defaultScraperSources) GetInjuredPlayers() map[string]string {
 }
 
 func (d defaultScraperSources) ScrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
-	return scrapePlayersForTeam(teamIndex, injuredPlayers)
+	return scrapePlayersForTeam(d.ConfigProvider, teamIndex, injuredPlayers)
 }
 
 type defaultScraperStore struct{}

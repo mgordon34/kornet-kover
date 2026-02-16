@@ -174,21 +174,21 @@ func TestOddsBatchFunctionsUseInjectedDependencies(t *testing.T) {
 		Store: fakeSportsbookStore{
 			playerNameToIndexFn: func(nameMap map[string]string, playerName string) (string, error) { return "idx1", nil },
 			addPlayerLinesFn:    func(lines []odds.PlayerLine) { added += len(lines) },
-			getSportsbookFn: func(sport sports.Sport) *sports.SportsbookConfig {
-				return &sports.SportsbookConfig{
-					LeagueName: "basketball_nba",
-					StatMapping: map[string]string{
-						"player_points": "points",
-					},
-					Markets: map[string]sports.MarketConfig{
-						"mainline": {
-							Bookmaker: "fanduel",
-							Markets:   []string{"player_points"},
-						},
-					},
-				}
-			},
 		},
+		ConfigProvider: fakeConfigProvider{getSportsbookFn: func(sport sports.Sport) (*sports.SportsbookConfig, error) {
+			return &sports.SportsbookConfig{
+				LeagueName: "basketball_nba",
+				StatMapping: map[string]string{
+					"player_points": "points",
+				},
+				Markets: map[string]sports.MarketConfig{
+					"mainline": {
+						Bookmaker: "fanduel",
+						Markets:   []string{"player_points"},
+					},
+				},
+			}, nil
+		}},
 	})
 
 	start := time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC)
