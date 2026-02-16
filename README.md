@@ -21,7 +21,7 @@ This project is research-focused and intended for analysis and experimentation, 
 - `backend/internal/analysis/` prop selection logic, predictors, and analysis routines
 - `backend/internal/backtesting/` historical backtesting engine
 - `backend/internal/scraper/` data scraping and update jobs
-- `backend/internal/sports/` sport-specific logic and constants (NBA, MLB, WNBA)
+- `backend/internal/sports/` data-first sport config registry and provider interfaces (NBA, MLB, WNBA)
 - `backend/internal/sportsbook/` sportsbook odds ingestion and prop handling
 - `backend/internal/storage/` database initialization and access
 - `frontend/` Next.js app with Tailwind, Prisma, and UI components
@@ -92,6 +92,7 @@ See existing `.envrc` and example files for expected values.
 ## Development Notes
 
 - The backend is intentionally modular; most business logic lives under `backend/internal/`
+- Sport-specific config is provided through `sports.ConfigProvider`; services should take it via constructor deps instead of package-global lookups
 - Strategy definitions are code-driven via `analysis.PropSelector`
 - Backtests are reproducible by date range and strategy configuration
 - The frontend is still evolving and primarily focused on internal tooling
