@@ -1,45 +1,71 @@
 package sports
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
-func TestNew_ReturnsExpectedConfigAndCaches(t *testing.T) {
-	configCache = make(map[Sport]Config)
+func TestDefaultConfigProvider_SupportedSports(t *testing.T) {
+	provider := DefaultConfigProvider()
 
-	first := New(NBA)
-	second := New(NBA)
+	sportsToCheck := []Sport{NBA, WNBA, MLB}
+	for _, sport := range sportsToCheck {
+		t.Run(string(sport), func(t *testing.T) {
+			sportsbookConfig, err := provider.SportsbookConfig(sport)
+			if err != nil {
+				t.Fatalf("SportsbookConfig(%s) err = %v", sport, err)
+			}
+			if sportsbookConfig == nil {
+				t.Fatalf("SportsbookConfig(%s) returned nil", sport)
+			}
 
-	if first == nil || second == nil {
-		t.Fatalf("New(NBA) returned nil config")
-	}
+			scraperConfig, err := provider.ScraperConfig(sport)
+			if err != nil {
+				t.Fatalf("ScraperConfig(%s) err = %v", sport, err)
+			}
+			if scraperConfig == nil {
+				t.Fatalf("ScraperConfig(%s) returned nil", sport)
+			}
 
-	if first != second {
-		t.Fatalf("expected cached config pointer to match")
-	}
-
-	if first.GetSport() != NBA {
-		t.Fatalf("GetSport() = %s, want %s", first.GetSport(), NBA)
+			analysisConfig, err := provider.AnalysisConfig(sport)
+			if err != nil {
+				t.Fatalf("AnalysisConfig(%s) err = %v", sport, err)
+			}
+			if analysisConfig == nil {
+				t.Fatalf("AnalysisConfig(%s) returned nil", sport)
+			}
+		})
 	}
 }
 
-func TestNew_UnsupportedSport(t *testing.T) {
-	configCache = make(map[Sport]Config)
+func TestDefaultConfigProvider_UnsupportedSport(t *testing.T) {
+	provider := DefaultConfigProvider()
 
-	got := New(NHL)
-	if got != nil {
-		t.Fatalf("New(NHL) = %#v, want nil", got)
+	_, err := provider.SportsbookConfig(NHL)
+	if !errors.Is(err, ErrUnsupportedSport) {
+		t.Fatalf("expected ErrUnsupportedSport, got %v", err)
 	}
 }
 
-func TestConvenienceGetters(t *testing.T) {
-	configCache = make(map[Sport]Config)
+func TestNewConfigProvider_UsesInjectedMap(t *testing.T) {
+	provider := NewConfigProvider(map[Sport]SportConfig{
+		NBA: {
+			Sportsbook: &SportsbookConfig{LeagueName: "basketball_test"},
+			Scraper:    &ScraperConfig{Domain: "https://example.com"},
+			Analysis:   &AnalysisConfig{DefaultStats: []string{"points"}},
+		},
+	})
 
-	if GetSportsbook(MLB) == nil {
-		t.Fatalf("GetSportsbook(MLB) returned nil")
+	gotSportsbook, err := provider.SportsbookConfig(NBA)
+	if err != nil {
+		t.Fatalf("SportsbookConfig(NBA) err = %v", err)
 	}
-	if GetScraper(WNBA) == nil {
-		t.Fatalf("GetScraper(WNBA) returned nil")
+	if gotSportsbook.LeagueName != "basketball_test" {
+		t.Fatalf("LeagueName = %s, want basketball_test", gotSportsbook.LeagueName)
 	}
-	if GetAnalysis(NBA) == nil {
-		t.Fatalf("GetAnalysis(NBA) returned nil")
+
+	_, err = provider.ScraperConfig(MLB)
+	if !errors.Is(err, ErrUnsupportedSport) {
+		t.Fatalf("expected ErrUnsupportedSport for missing sport, got %v", err)
 	}
 }
