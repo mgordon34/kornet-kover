@@ -45,22 +45,6 @@ func NewScraperService(deps ScraperServiceDeps) *ScraperService {
 	return &ScraperService{deps: deps}
 }
 
-func getScraperConfig(sport sports.Sport) (sports.ScraperConfig, error) {
-	config, ok := sports.Configs[sport]
-	if !ok {
-		return sports.ScraperConfig{}, fmt.Errorf("%w: %s", sports.ErrUnsupportedSport, sport)
-	}
-	return config.Scraper, nil
-}
-
-func mustScraperConfig(sport sports.Sport) sports.ScraperConfig {
-	config, err := getScraperConfig(sport)
-	if err != nil {
-		log.Panicf("failed to get scraper config for sport %s: %v", sport, err)
-	}
-	return config
-}
-
 func ScrapeNbaTeams() {
 	c := colly.NewCollector()
 	var nbaTeams []teams.Team
@@ -80,7 +64,7 @@ func ScrapeNbaTeams() {
 		})
 	})
 
-	c.Visit(mustScraperConfig(sports.NBA).Domain + "/leagues/NBA_2024_standings.html")
+	c.Visit(sports.Configs[sports.NBA].Scraper.Domain + "/leagues/NBA_2024_standings.html")
 
 	teams.AddTeams(nbaTeams)
 }
@@ -104,7 +88,7 @@ func ScrapeWNBATeams() {
 		})
 	})
 
-	c.Visit(mustScraperConfig(sports.WNBA).Domain + "/years/2026.html")
+	c.Visit(sports.Configs[sports.WNBA].Scraper.Domain + "/years/2026.html")
 
 	teams.AddTeams(wnbaTeams)
 }
@@ -121,15 +105,19 @@ func ScrapeMLBTeams() {
 		})
 	})
 
-	c.Visit(mustScraperConfig(sports.MLB).Domain + "/leagues/majors/2024-standings.shtml")
+	c.Visit(sports.Configs[sports.MLB].Scraper.Domain + "/leagues/majors/2024-standings.shtml")
 
 	teams.AddTeams(mlbTeams)
 }
 
 func ScrapeGames(sport sports.Sport, startDate time.Time, endDate time.Time) error {
-	config, err := getScraperConfig(sport)
-	if err != nil {
-		return err
+	sportConfig, ok := sports.Configs[sport]
+	if !ok {
+		return fmt.Errorf("%w: %s", sports.ErrUnsupportedSport, sport)
+	}
+	config := sportConfig.Scraper
+	if config.Domain == "" {
+		return fmt.Errorf("%w: missing scraper domain for %s", sports.ErrUnsupportedSport, sport)
 	}
 
 	c := colly.NewCollector()
@@ -196,7 +184,12 @@ func getDate(gameString string, sport sports.Sport) (time.Time, error) {
 
 func scrapeGame(sport sports.Sport, gameString string) {
 	log.Printf("Scraping %s game: %s", sport, gameString)
-	config := mustScraperConfig(sport)
+	sportConfig, ok := sports.Configs[sport]
+	if !ok {
+		log.Printf("Skipping game for unsupported sport %s", sport)
+		return
+	}
+	config := sportConfig.Scraper
 
 	baseUrl := config.Domain
 
@@ -868,7 +861,7 @@ func (s *ScraperService) UpdateActiveRosters() error {
 func scrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
 	var roster []players.PlayerRoster
 
-	url := fmt.Sprintf("%s/teams/%v/2026.html", mustScraperConfig(sports.NBA).Domain, teamIndex)
+	url := fmt.Sprintf("%s/teams/%v/2026.html", sports.Configs[sports.NBA].Scraper.Domain, teamIndex)
 	c := colly.NewCollector()
 	log.Println("Visiting team page for ", teamIndex)
 	time.Sleep(4 * time.Second)
@@ -1002,7 +995,7 @@ func ScrapeTodaysRosters() [][]players.Roster {
 		})
 	})
 
-	str := fmt.Sprintf(baseUrl, mustScraperConfig(sports.NBA).Domain, month)
+	str := fmt.Sprintf(baseUrl, sports.Configs[sports.NBA].Scraper.Domain, month)
 	c.Visit(str)
 
 	return games
@@ -1035,7 +1028,7 @@ func ScrapeTodaysGames() [][]string {
 		})
 	})
 
-	str := fmt.Sprintf(baseUrl, mustScraperConfig(sports.NBA).Domain, month)
+	str := fmt.Sprintf(baseUrl, sports.Configs[sports.NBA].Scraper.Domain, month)
 	c.Visit(str)
 
 	return games
@@ -1043,7 +1036,7 @@ func ScrapeTodaysGames() [][]string {
 
 func getRosterForTeam(teamIndex string, missingPlayers map[string]string) players.Roster {
 	var roster = players.Roster{}
-	url := fmt.Sprintf("%s/teams/%v/2026.html", mustScraperConfig(sports.NBA).Domain, teamIndex)
+	url := fmt.Sprintf("%s/teams/%v/2026.html", sports.Configs[sports.NBA].Scraper.Domain, teamIndex)
 	c := colly.NewCollector()
 	log.Println("Visiting team page for ", teamIndex)
 	time.Sleep(4 * time.Second)
@@ -1101,7 +1094,7 @@ func GetMissingPlayers() map[string]string {
 		})
 	})
 
-	c.Visit(mustScraperConfig(sports.NBA).Domain + "/friv/injuries.fcgi")
+	c.Visit(sports.Configs[sports.NBA].Scraper.Domain + "/friv/injuries.fcgi")
 	return players
 }
 
