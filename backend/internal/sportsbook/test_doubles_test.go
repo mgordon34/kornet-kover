@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
-	"github.com/mgordon34/kornet-kover/internal/sports"
 )
 
 type fakeSportsbookSources struct {
@@ -30,7 +29,6 @@ type fakeSportsbookStore struct {
 	getLastLineFn       func(oddsType string) (odds.PlayerLine, error)
 	addPlayerLinesFn    func(playerLines []odds.PlayerLine)
 	playerNameToIndexFn func(nameMap map[string]string, playerName string) (string, error)
-	getSportsbookFn     func(sport sports.Sport) *sports.SportsbookConfig
 }
 
 func (f fakeSportsbookStore) GetLastLine(oddsType string) (odds.PlayerLine, error) {
@@ -51,11 +49,4 @@ func (f fakeSportsbookStore) PlayerNameToIndex(nameMap map[string]string, player
 		return "", errors.New("PlayerNameToIndex not configured")
 	}
 	return f.playerNameToIndexFn(nameMap, playerName)
-}
-
-func (f fakeSportsbookStore) GetSportsbook(sport sports.Sport) *sports.SportsbookConfig {
-	if f.getSportsbookFn == nil {
-		return nil
-	}
-	return f.getSportsbookFn(sport)
 }

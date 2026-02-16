@@ -355,13 +355,21 @@ func getMarketType(market string) string {
 }
 
 func (s *OddsService) GetOdds(startDate time.Time, endDate time.Time, oddsType string) {
+	sportConfig, ok := sports.Configs[sports.NBA]
+	if !ok {
+		log.Printf("failed to get sportsbook config for %s: unsupported sport", sports.NBA)
+		return
+	}
+
+	sportsbookConfig := &sportConfig.Sportsbook
+
 	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
 		log.Printf("Getting historical %s sportsbook odds for %v...", oddsType, d)
 		var lines []odds.PlayerLine
 
-		games := s.GetGamesForDate(d, s.deps.Store.GetSportsbook(sports.NBA))
+		games := s.GetGamesForDate(d, sportsbookConfig)
 		for _, game := range games {
-			lines = append(lines, s.GetOddsForGame(sports.NBA, game, s.deps.Store.GetSportsbook(sports.NBA))...)
+			lines = append(lines, s.GetOddsForGame(sports.NBA, game, sportsbookConfig)...)
 		}
 
 		s.deps.Store.AddPlayerLines(lines)
@@ -370,7 +378,12 @@ func (s *OddsService) GetOdds(startDate time.Time, endDate time.Time, oddsType s
 
 func (s *OddsService) GetHistoricalOddsForSport(sport sports.Sport, startDate time.Time, endDate time.Time) {
 	log.Printf("Getting historical %s sportsbook odds...", sport)
-	sportsbookConfig := s.deps.Store.GetSportsbook(sport)
+	sportConfig, ok := sports.Configs[sport]
+	if !ok {
+		log.Printf("failed to get sportsbook config for %s: unsupported sport", sport)
+		return
+	}
+	sportsbookConfig := &sportConfig.Sportsbook
 
 	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
 		log.Printf("Getting historical %s sportsbook odds for %v...", sport, d)

@@ -78,6 +78,13 @@ func (f fakeScraperStore) UpdateRosters(rosterSlots []players.PlayerRoster) erro
 	return f.updateRostersFn(rosterSlots)
 }
 
+func TestScrapeGames_UnsupportedSport(t *testing.T) {
+	err := ScrapeGames(sports.NHL, time.Now(), time.Now())
+	if !errors.Is(err, sports.ErrUnsupportedSport) {
+		t.Fatalf("ScrapeGames() err = %v, want ErrUnsupportedSport", err)
+	}
+}
+
 func TestGetDateBySport(t *testing.T) {
 	nbaDate, err := getDate("/boxscores/202603010CHO.html", sports.NBA)
 	if err != nil || nbaDate.Format("2006-01-02") != "2026-03-01" {

@@ -3,7 +3,6 @@ package sportsbook
 import (
 	"github.com/mgordon34/kornet-kover/api/odds"
 	"github.com/mgordon34/kornet-kover/api/players"
-	"github.com/mgordon34/kornet-kover/internal/sports"
 )
 
 type APIGetter func(url string, addlArgs []string) (response string, err error)
@@ -17,7 +16,6 @@ type SportsbookStore interface {
 	GetLastLine(oddsType string) (odds.PlayerLine, error)
 	AddPlayerLines(playerLines []odds.PlayerLine)
 	PlayerNameToIndex(nameMap map[string]string, playerName string) (string, error)
-	GetSportsbook(sport sports.Sport) *sports.SportsbookConfig
 }
 
 type defaultSportsbookSources struct{}
@@ -42,8 +40,4 @@ func (d defaultSportsbookStore) AddPlayerLines(playerLines []odds.PlayerLine) {
 
 func (d defaultSportsbookStore) PlayerNameToIndex(nameMap map[string]string, playerName string) (string, error) {
 	return players.PlayerNameToIndex(nameMap, playerName)
-}
-
-func (d defaultSportsbookStore) GetSportsbook(sport sports.Sport) *sports.SportsbookConfig {
-	return sports.GetSportsbook(sport)
 }

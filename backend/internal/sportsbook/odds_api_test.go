@@ -158,7 +158,7 @@ func TestUpdateLinesAndHandlersUseInjectedService(t *testing.T) {
 func TestOddsBatchFunctionsUseInjectedDependencies(t *testing.T) {
 	responses := map[string]string{
 		"historical/sports/basketball_nba/events/":        `{"timestamp":"2026-01-01T00:00:00Z","previous_timestamp":"2025-12-31T00:00:00Z","next_timestamp":"2026-01-02T00:00:00Z","data":[{"id":"g1","sport_key":"basketball_nba","sport_title":"NBA","commence_time":"2026-01-01T23:00:00Z","home_team":"A","away_team":"B"}]}`,
-		"historical/sports/basketball_nba/events/g1/odds": `{"timestamp":"2026-01-01T00:00:00Z","previous_timestamp":"2025-12-31T00:00:00Z","next_timestamp":"2026-01-02T00:00:00Z","data":{"id":"g1","sport_key":"basketball_nba","sport_title":"NBA","commence_time":"2026-01-01T23:00:00Z","home_team":"A","away_team":"B","bookmakers":[{"key":"fanduel","title":"FanDuel","last_update":"2026-01-01T22:00:00Z","markets":[{"key":"player_points","last_update":"2026-01-01T22:00:00Z","outcomes":[{"name":"Over","description":"Aaron Gordon","price":-110,"point":20.5,"link":"x"}]}]}]}}`,
+		"historical/sports/basketball_nba/events/g1/odds": `{"timestamp":"2026-01-01T00:00:00Z","previous_timestamp":"2025-12-31T00:00:00Z","next_timestamp":"2026-01-02T00:00:00Z","data":{"id":"g1","sport_key":"basketball_nba","sport_title":"NBA","commence_time":"2026-01-01T23:00:00Z","home_team":"A","away_team":"B","bookmakers":[{"key":"williamhill_us","title":"William Hill","last_update":"2026-01-01T22:00:00Z","markets":[{"key":"player_points","last_update":"2026-01-01T22:00:00Z","outcomes":[{"name":"Over","description":"Aaron Gordon","price":-110,"point":20.5,"link":"x"}]}]}]}}`,
 		"sports/basketball_nba/events/":                   `[{"id":"g1","sport_key":"basketball_nba","sport_title":"NBA","commence_time":"2026-01-02T00:00:00Z","home_team":"A","away_team":"B"}]`,
 		"sports/basketball_nba/events/g1/odds":            `{"id":"g1","bookmakers":[{"key":"williamhill_us","markets":[{"key":"player_points","last_update":"2026-01-02T00:00:00Z","outcomes":[{"name":"Over","description":"Aaron Gordon","price":-110,"point":20.5,"link":"x"}]}]}]}`,
 	}
@@ -174,20 +174,6 @@ func TestOddsBatchFunctionsUseInjectedDependencies(t *testing.T) {
 		Store: fakeSportsbookStore{
 			playerNameToIndexFn: func(nameMap map[string]string, playerName string) (string, error) { return "idx1", nil },
 			addPlayerLinesFn:    func(lines []odds.PlayerLine) { added += len(lines) },
-			getSportsbookFn: func(sport sports.Sport) *sports.SportsbookConfig {
-				return &sports.SportsbookConfig{
-					LeagueName: "basketball_nba",
-					StatMapping: map[string]string{
-						"player_points": "points",
-					},
-					Markets: map[string]sports.MarketConfig{
-						"mainline": {
-							Bookmaker: "fanduel",
-							Markets:   []string{"player_points"},
-						},
-					},
-				}
-			},
 		},
 	})
 

@@ -1,45 +1,26 @@
 package sports
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
-func TestNew_ReturnsExpectedConfigAndCaches(t *testing.T) {
-	configCache = make(map[Sport]Config)
-
-	first := New(NBA)
-	second := New(NBA)
-
-	if first == nil || second == nil {
-		t.Fatalf("New(NBA) returned nil config")
+func TestGetConfig_SupportedSport(t *testing.T) {
+	config, err := GetConfig(NBA)
+	if err != nil {
+		t.Fatalf("GetConfig(NBA) err = %v", err)
 	}
-
-	if first != second {
-		t.Fatalf("expected cached config pointer to match")
+	if config.Scraper.Domain == "" {
+		t.Fatalf("expected scraper domain")
 	}
-
-	if first.GetSport() != NBA {
-		t.Fatalf("GetSport() = %s, want %s", first.GetSport(), NBA)
+	if config.Sportsbook.LeagueName == "" {
+		t.Fatalf("expected sportsbook league")
 	}
 }
 
-func TestNew_UnsupportedSport(t *testing.T) {
-	configCache = make(map[Sport]Config)
-
-	got := New(NHL)
-	if got != nil {
-		t.Fatalf("New(NHL) = %#v, want nil", got)
-	}
-}
-
-func TestConvenienceGetters(t *testing.T) {
-	configCache = make(map[Sport]Config)
-
-	if GetSportsbook(MLB) == nil {
-		t.Fatalf("GetSportsbook(MLB) returned nil")
-	}
-	if GetScraper(WNBA) == nil {
-		t.Fatalf("GetScraper(WNBA) returned nil")
-	}
-	if GetAnalysis(NBA) == nil {
-		t.Fatalf("GetAnalysis(NBA) returned nil")
+func TestGetConfig_UnsupportedSport(t *testing.T) {
+	_, err := GetConfig(NHL)
+	if !errors.Is(err, ErrUnsupportedSport) {
+		t.Fatalf("expected ErrUnsupportedSport, got %v", err)
 	}
 }
