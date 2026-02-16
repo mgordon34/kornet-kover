@@ -2,7 +2,7 @@ package sports
 
 import "testing"
 
-func TestDefaultSportConfigs_HasExpectedEntries(t *testing.T) {
+func TestConfigs_HasExpectedEntries(t *testing.T) {
 	tests := []struct {
 		name  string
 		sport Sport
@@ -14,18 +14,18 @@ func TestDefaultSportConfigs_HasExpectedEntries(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg, ok := defaultSportConfigs[tt.sport]
+			cfg, ok := Configs[tt.sport]
 			if !ok {
-				t.Fatalf("defaultSportConfigs missing %s", tt.sport)
+				t.Fatalf("Configs missing %s", tt.sport)
 			}
-			if cfg.Sportsbook == nil {
-				t.Fatalf("Sportsbook config is nil")
+			if cfg.Sportsbook.LeagueName == "" {
+				t.Fatalf("Sportsbook config is empty")
 			}
-			if cfg.Scraper == nil {
-				t.Fatalf("Scraper config is nil")
+			if cfg.Scraper.Domain == "" {
+				t.Fatalf("Scraper config is empty")
 			}
-			if cfg.Analysis == nil {
-				t.Fatalf("Analysis config is nil")
+			if len(cfg.Analysis.DefaultStats) == 0 {
+				t.Fatalf("Analysis config is empty")
 			}
 		})
 	}

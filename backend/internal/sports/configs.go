@@ -1,14 +1,8 @@
 package sports
 
-var defaultSportConfigs = map[Sport]SportConfig{
-	NBA:  nbaConfig(),
-	WNBA: wnbaConfig(),
-	MLB:  mlbConfig(),
-}
-
-func nbaConfig() SportConfig {
-	return SportConfig{
-		Sportsbook: &SportsbookConfig{
+var Configs = map[Sport]SportConfig{
+	NBA: {
+		Sportsbook: SportsbookConfig{
 			StatMapping: map[string]string{
 				"player_points":   "points",
 				"player_rebounds": "rebounds",
@@ -27,7 +21,7 @@ func nbaConfig() SportConfig {
 				},
 			},
 		},
-		Scraper: &ScraperConfig{
+		Scraper: ScraperConfig{
 			Domain:      "https://www.basketball-reference.com",
 			BoxScoreURL: "/boxscores",
 			StatMapping: map[string]string{
@@ -35,19 +29,16 @@ func nbaConfig() SportConfig {
 				"ast": "assists",
 			},
 		},
-		Analysis: &AnalysisConfig{
+		Analysis: AnalysisConfig{
 			DefaultStats: []string{"points", "rebounds", "assists"},
 			StatWeights: map[string]float64{
 				"points":  1.0,
 				"assists": 1.5,
 			},
 		},
-	}
-}
-
-func wnbaConfig() SportConfig {
-	return SportConfig{
-		Sportsbook: &SportsbookConfig{
+	},
+	WNBA: {
+		Sportsbook: SportsbookConfig{
 			StatMapping: map[string]string{
 				"player_points":   "points",
 				"player_rebounds": "rebounds",
@@ -66,7 +57,7 @@ func wnbaConfig() SportConfig {
 				},
 			},
 		},
-		Scraper: &ScraperConfig{
+		Scraper: ScraperConfig{
 			Domain:      "https://www.basketball-reference.com",
 			BoxScoreURL: "/wnba/boxscores",
 			StatMapping: map[string]string{
@@ -74,19 +65,16 @@ func wnbaConfig() SportConfig {
 				"ast": "assists",
 			},
 		},
-		Analysis: &AnalysisConfig{
+		Analysis: AnalysisConfig{
 			DefaultStats: []string{"points", "rebounds", "assists"},
 			StatWeights: map[string]float64{
 				"points":  1.0,
 				"assists": 1.5,
 			},
 		},
-	}
-}
-
-func mlbConfig() SportConfig {
-	return SportConfig{
-		Sportsbook: &SportsbookConfig{
+	},
+	MLB: {
+		Sportsbook: SportsbookConfig{
 			StatMapping: map[string]string{
 				"batter_home_runs": "home_runs",
 				"batter_hits":      "hits",
@@ -104,7 +92,7 @@ func mlbConfig() SportConfig {
 				},
 			},
 		},
-		Scraper: &ScraperConfig{
+		Scraper: ScraperConfig{
 			Domain:      "https://www.baseball-reference.com",
 			BoxScoreURL: "/boxes",
 			StatMapping: map[string]string{
@@ -112,12 +100,12 @@ func mlbConfig() SportConfig {
 				"so": "strikeouts",
 			},
 		},
-		Analysis: &AnalysisConfig{
+		Analysis: AnalysisConfig{
 			DefaultStats: []string{"hits", "strikeouts", "runs"},
 			StatWeights: map[string]float64{
 				"hits":       1.0,
 				"strikeouts": 1.2,
 			},
 		},
-	}
+	},
 }

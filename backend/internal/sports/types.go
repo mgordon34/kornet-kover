@@ -13,12 +13,6 @@ const (
 
 var ErrUnsupportedSport = fmt.Errorf("unsupported sport")
 
-type ConfigProvider interface {
-	SportsbookConfig(sport Sport) (*SportsbookConfig, error)
-	ScraperConfig(sport Sport) (*ScraperConfig, error)
-	AnalysisConfig(sport Sport) (*AnalysisConfig, error)
-}
-
 type SportsbookConfig struct {
 	LeagueName  string
 	Markets     map[string]MarketConfig
@@ -42,7 +36,7 @@ type AnalysisConfig struct {
 }
 
 type SportConfig struct {
-	Sportsbook *SportsbookConfig
-	Scraper    *ScraperConfig
-	Analysis   *AnalysisConfig
+	Sportsbook SportsbookConfig
+	Scraper    ScraperConfig
+	Analysis   AnalysisConfig
 }
