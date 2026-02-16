@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/mgordon34/kornet-kover/api/odds"
-	"github.com/mgordon34/kornet-kover/internal/sports"
 )
 
 type fakeSportsbookSources struct {
@@ -50,31 +49,4 @@ func (f fakeSportsbookStore) PlayerNameToIndex(nameMap map[string]string, player
 		return "", errors.New("PlayerNameToIndex not configured")
 	}
 	return f.playerNameToIndexFn(nameMap, playerName)
-}
-
-type fakeConfigProvider struct {
-	getSportsbookFn func(sport sports.Sport) (*sports.SportsbookConfig, error)
-	getScraperFn    func(sport sports.Sport) (*sports.ScraperConfig, error)
-	getAnalysisFn   func(sport sports.Sport) (*sports.AnalysisConfig, error)
-}
-
-func (f fakeConfigProvider) SportsbookConfig(sport sports.Sport) (*sports.SportsbookConfig, error) {
-	if f.getSportsbookFn == nil {
-		return nil, nil
-	}
-	return f.getSportsbookFn(sport)
-}
-
-func (f fakeConfigProvider) ScraperConfig(sport sports.Sport) (*sports.ScraperConfig, error) {
-	if f.getScraperFn == nil {
-		return nil, nil
-	}
-	return f.getScraperFn(sport)
-}
-
-func (f fakeConfigProvider) AnalysisConfig(sport sports.Sport) (*sports.AnalysisConfig, error) {
-	if f.getAnalysisFn == nil {
-		return nil, nil
-	}
-	return f.getAnalysisFn(sport)
 }

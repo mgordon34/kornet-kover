@@ -22,10 +22,9 @@ import (
 )
 
 type ScraperServiceDeps struct {
-	Sources        ScraperSources
-	Store          ScraperStore
-	ConfigProvider sports.ConfigProvider
-	Now            func() time.Time
+	Sources ScraperSources
+	Store   ScraperStore
+	Now     func() time.Time
 }
 
 type ScraperService struct {
@@ -33,11 +32,8 @@ type ScraperService struct {
 }
 
 func NewScraperService(deps ScraperServiceDeps) *ScraperService {
-	if deps.ConfigProvider == nil {
-		deps.ConfigProvider = sports.DefaultConfigProvider()
-	}
 	if deps.Sources == nil {
-		deps.Sources = defaultScraperSources{ConfigProvider: deps.ConfigProvider}
+		deps.Sources = defaultScraperSources{}
 	}
 	if deps.Store == nil {
 		deps.Store = defaultScraperStore{}
@@ -49,15 +45,16 @@ func NewScraperService(deps ScraperServiceDeps) *ScraperService {
 	return &ScraperService{deps: deps}
 }
 
-func scraperConfig(configProvider sports.ConfigProvider, sport sports.Sport) (*sports.ScraperConfig, error) {
-	if configProvider == nil {
-		configProvider = sports.DefaultConfigProvider()
+func getScraperConfig(sport sports.Sport) (sports.ScraperConfig, error) {
+	config, ok := sports.Configs[sport]
+	if !ok {
+		return sports.ScraperConfig{}, fmt.Errorf("%w: %s", sports.ErrUnsupportedSport, sport)
 	}
-	return configProvider.ScraperConfig(sport)
+	return config.Scraper, nil
 }
 
-func mustScraperConfig(configProvider sports.ConfigProvider, sport sports.Sport) *sports.ScraperConfig {
-	config, err := scraperConfig(configProvider, sport)
+func mustScraperConfig(sport sports.Sport) sports.ScraperConfig {
+	config, err := getScraperConfig(sport)
 	if err != nil {
 		log.Panicf("failed to get scraper config for sport %s: %v", sport, err)
 	}
@@ -83,7 +80,7 @@ func ScrapeNbaTeams() {
 		})
 	})
 
-	c.Visit(mustScraperConfig(nil, sports.NBA).Domain + "/leagues/NBA_2024_standings.html")
+	c.Visit(mustScraperConfig(sports.NBA).Domain + "/leagues/NBA_2024_standings.html")
 
 	teams.AddTeams(nbaTeams)
 }
@@ -107,7 +104,7 @@ func ScrapeWNBATeams() {
 		})
 	})
 
-	c.Visit(mustScraperConfig(nil, sports.WNBA).Domain + "/years/2026.html")
+	c.Visit(mustScraperConfig(sports.WNBA).Domain + "/years/2026.html")
 
 	teams.AddTeams(wnbaTeams)
 }
@@ -124,17 +121,13 @@ func ScrapeMLBTeams() {
 		})
 	})
 
-	c.Visit(mustScraperConfig(nil, sports.MLB).Domain + "/leagues/majors/2024-standings.shtml")
+	c.Visit(mustScraperConfig(sports.MLB).Domain + "/leagues/majors/2024-standings.shtml")
 
 	teams.AddTeams(mlbTeams)
 }
 
 func ScrapeGames(sport sports.Sport, startDate time.Time, endDate time.Time) error {
-	return scrapeGamesWithProvider(nil, sport, startDate, endDate)
-}
-
-func scrapeGamesWithProvider(configProvider sports.ConfigProvider, sport sports.Sport, startDate time.Time, endDate time.Time) error {
-	config, err := scraperConfig(configProvider, sport)
+	config, err := getScraperConfig(sport)
 	if err != nil {
 		return err
 	}
@@ -148,7 +141,7 @@ func scrapeGamesWithProvider(configProvider sports.ConfigProvider, sport sports.
 				continue
 			}
 			time.Sleep(4 * time.Second)
-			scrapeGame(configProvider, sport, gameString)
+			scrapeGame(sport, gameString)
 		}
 	})
 
@@ -201,9 +194,9 @@ func getDate(gameString string, sport sports.Sport) (time.Time, error) {
 	return date, nil
 }
 
-func scrapeGame(configProvider sports.ConfigProvider, sport sports.Sport, gameString string) {
+func scrapeGame(sport sports.Sport, gameString string) {
 	log.Printf("Scraping %s game: %s", sport, gameString)
-	config := mustScraperConfig(configProvider, sport)
+	config := mustScraperConfig(sport)
 
 	baseUrl := config.Domain
 
@@ -872,10 +865,10 @@ func (s *ScraperService) UpdateActiveRosters() error {
 	return nil
 }
 
-func scrapePlayersForTeam(configProvider sports.ConfigProvider, teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
+func scrapePlayersForTeam(teamIndex string, injuredPlayers map[string]string) []players.PlayerRoster {
 	var roster []players.PlayerRoster
 
-	url := fmt.Sprintf("%s/teams/%v/2026.html", mustScraperConfig(configProvider, sports.NBA).Domain, teamIndex)
+	url := fmt.Sprintf("%s/teams/%v/2026.html", mustScraperConfig(sports.NBA).Domain, teamIndex)
 	c := colly.NewCollector()
 	log.Println("Visiting team page for ", teamIndex)
 	time.Sleep(4 * time.Second)
@@ -1009,7 +1002,7 @@ func ScrapeTodaysRosters() [][]players.Roster {
 		})
 	})
 
-	str := fmt.Sprintf(baseUrl, mustScraperConfig(nil, sports.NBA).Domain, month)
+	str := fmt.Sprintf(baseUrl, mustScraperConfig(sports.NBA).Domain, month)
 	c.Visit(str)
 
 	return games
@@ -1042,7 +1035,7 @@ func ScrapeTodaysGames() [][]string {
 		})
 	})
 
-	str := fmt.Sprintf(baseUrl, mustScraperConfig(nil, sports.NBA).Domain, month)
+	str := fmt.Sprintf(baseUrl, mustScraperConfig(sports.NBA).Domain, month)
 	c.Visit(str)
 
 	return games
@@ -1050,7 +1043,7 @@ func ScrapeTodaysGames() [][]string {
 
 func getRosterForTeam(teamIndex string, missingPlayers map[string]string) players.Roster {
 	var roster = players.Roster{}
-	url := fmt.Sprintf("%s/teams/%v/2026.html", mustScraperConfig(nil, sports.NBA).Domain, teamIndex)
+	url := fmt.Sprintf("%s/teams/%v/2026.html", mustScraperConfig(sports.NBA).Domain, teamIndex)
 	c := colly.NewCollector()
 	log.Println("Visiting team page for ", teamIndex)
 	time.Sleep(4 * time.Second)
@@ -1108,7 +1101,7 @@ func GetMissingPlayers() map[string]string {
 		})
 	})
 
-	c.Visit(mustScraperConfig(nil, sports.NBA).Domain + "/friv/injuries.fcgi")
+	c.Visit(mustScraperConfig(sports.NBA).Domain + "/friv/injuries.fcgi")
 	return players
 }
 
