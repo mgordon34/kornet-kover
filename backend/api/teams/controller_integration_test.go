@@ -4,16 +4,13 @@
 package teams
 
 import (
-	"os"
 	"testing"
 
 	"github.com/mgordon34/kornet-kover/internal/storage"
 )
 
 func TestAddTeamsAndGetTeams(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 
 	AddTeams([]Team{

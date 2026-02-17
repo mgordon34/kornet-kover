@@ -5,14 +5,11 @@ package storage
 
 import (
 	"context"
-	"os"
 	"testing"
 )
 
 func TestGetDBAndPingAndInitTables(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration test")
-	}
+	UseLocalDBForIntegrationTests(t)
 
 	db := GetDB()
 	if db == nil {

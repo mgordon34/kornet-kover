@@ -14,7 +14,7 @@ Integration tests are separated with the `integration` build tag and are exclude
 ./scripts/test_non_main_packages.sh -tags=integration
 ```
 
-Integration tests may write to the database. Use a dedicated test database via `DB_URL`.
+Integration tests may write to the database. Set `LOCAL_DB_URL`; integration tests map it to `DB_URL` automatically.
 
 ## Run unit tests with coverage
 

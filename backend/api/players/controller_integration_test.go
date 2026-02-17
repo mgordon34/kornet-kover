@@ -6,7 +6,6 @@ package players
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -17,9 +16,7 @@ import (
 )
 
 func TestPlayerNameToIndex(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration-style test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 
 	nameMap := map[string]string{}
@@ -35,9 +32,7 @@ func TestPlayerNameToIndex(t *testing.T) {
 }
 
 func TestPlayerNameToIndexWithBadName(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration-style test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 
 	nameMap := map[string]string{}
@@ -49,9 +44,7 @@ func TestPlayerNameToIndexWithBadName(t *testing.T) {
 }
 
 func TestPlayerNameToIndex_SuffixTolerantLookup(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration-style test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 
 	db := storage.GetDB()
@@ -75,9 +68,7 @@ func TestPlayerNameToIndex_SuffixTolerantLookup(t *testing.T) {
 }
 
 func TestPlayerControllerDatabaseFlows(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration-style test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 
 	suffix := fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -28,9 +27,7 @@ func createTestUser(t *testing.T) int {
 }
 
 func TestAddAndGetStrategies(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 
 	userID := createTestUser(t)
@@ -61,9 +58,7 @@ func TestAddAndGetStrategies(t *testing.T) {
 }
 
 func TestGetStrategiesHandlerSuccess(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	gin.SetMode(gin.TestMode)
 	storage.InitTables()
 	userID := createTestUser(t)

@@ -4,7 +4,6 @@
 package odds
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -14,9 +13,7 @@ import (
 )
 
 func TestOddsDatabaseFlows(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 
 	players.AddPlayers([]players.Player{{Index: "oddsit01", Sport: "nba", Name: "Odds IT Player"}})

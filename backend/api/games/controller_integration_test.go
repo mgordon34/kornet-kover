@@ -5,7 +5,6 @@ package games
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -27,9 +26,7 @@ func ensureTeams(t *testing.T) {
 }
 
 func TestAddAndQueryGames(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 	ensureTeams(t)
 
@@ -62,9 +59,7 @@ func TestAddAndQueryGames(t *testing.T) {
 }
 
 func TestGetGamesForDateNoResults(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 
 	games, err := GetGamesForDate(sports.NBA, time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC))

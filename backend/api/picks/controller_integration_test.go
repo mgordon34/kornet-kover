@@ -5,7 +5,6 @@ package picks
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -17,9 +16,7 @@ import (
 )
 
 func TestPicksDatabaseFlows(t *testing.T) {
-	if os.Getenv("DB_URL") == "" {
-		t.Skip("DB_URL not set; skipping integration test")
-	}
+	storage.UseLocalDBForIntegrationTests(t)
 	storage.InitTables()
 	db := storage.GetDB()
 
